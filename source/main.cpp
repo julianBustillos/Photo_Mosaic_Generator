@@ -1,7 +1,34 @@
 #include <iostream>
+#include "customException.h"
+#include "parameters.h"
+
 
 int main(int argc, char *argv[])
 {
-	std::cout << "HELLO WORLD !" << std::endl;
-	std::cin.get();
+	Parameters parameters;
+
+	try {
+		parameters.parse(argc, argv);
+	}
+	catch (CustomException& e) {
+		switch (e.getLevel()) {
+		case CustomException::Level::HELP:
+			std::cout << Parameters::getHelp() << std::endl;
+			break;
+		case CustomException::Level::NORMAL:
+			std::cout << e.what() << std::endl << std::endl;
+			std::cout << Parameters::getHelp() << std::endl;
+			break;
+		case CustomException::Level::ERROR:
+			std::cerr << "ERROR : " << e.what() << std::endl;
+			break;
+		default:
+			std::cerr << "ERROR : we should not be here, you have to debug me !!" << std::endl;
+		}
+		std::cin.get(); //DEBUG
+	}
+	catch (std::exception& e) {
+		std::cerr << "ERROR unhandled exception : " << e.what() << std::endl;
+		std::cin.get(); //DEBUG
+	}
 }
