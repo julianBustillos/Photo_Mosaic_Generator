@@ -1,14 +1,16 @@
 #include <iostream>
 #include "customException.h"
 #include "parameters.h"
+#include "photo.h"
 
 
 int main(int argc, char *argv[])
 {
-	Parameters parameters;
-
 	try {
-		parameters.parse(argc, argv);
+		Parameters parameters(argc, argv);
+		Photo photo(parameters.getPhotoPath(), parameters.getSubdivision());
+
+		std::cin.get(); //DEBUG
 	}
 	catch (CustomException& e) {
 		switch (e.getLevel()) {

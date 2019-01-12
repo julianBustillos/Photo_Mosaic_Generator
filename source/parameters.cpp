@@ -15,29 +15,44 @@ std::string Parameters::getHelp()
 		"-s image subdivision (height and width)\n";
 }
 
-void Parameters::parse(int argc, char * argv[])
+Parameters::Parameters(int argc, char * argv[])
 {
 	for (int i = 1; i < argc; i += 2) {
 		char *parameter = argv[i];
 		char *value = ((i + 1) < argc) ? argv[i + 1] : NULL;
-		getArgument(parameter, value);
+		parseArgument(parameter, value);
 	}
 	checkParsing();
 }
 
-void Parameters::getArgument(char *parameter, char *value)
+const std::string Parameters::getPhotoPath()
+{
+	return _photoPath;
+}
+
+const std::string Parameters::tilesDirectoryPath()
+{
+	return _tilesDirectoryPath;
+}
+
+const int Parameters::getSubdivision()
+{
+	return _subdivision;
+}
+
+void Parameters::parseArgument(char *parameter, char *value)
 {
 	if (std::strcmp(parameter, "-h") == 0) {
 		throw CustomException("Help", CustomException::Level::HELP);
 	}
 	else if (std::strcmp(parameter, "-p") == 0) {
-		imageDirectoryPath = value ? value : "";
+		_tilesDirectoryPath = value ? value : "";
 	}
 	else if (std::strcmp(parameter, "-i") == 0) {
-		mainImagePath = value ? value : "";
+		_photoPath = value ? value : "";
 	}
 	else if (std::strcmp(parameter, "-s") == 0) {
-		subdivision = value ? std::atoi(value) : 0;
+		_subdivision = value ? std::atoi(value) : 0;
 	}
 	else {
 		std::string message = "Invalid parameter : ";
@@ -48,23 +63,23 @@ void Parameters::getArgument(char *parameter, char *value)
 
 void Parameters::checkParsing()
 {
-	if (imageDirectoryPath == "")
+	if (_tilesDirectoryPath == "")
 		throw CustomException("No path defined, use -p option", CustomException::Level::NORMAL);
-	else if (!pathExist(imageDirectoryPath)) {
+	else if (!pathExist(_tilesDirectoryPath)) {
 		std::string message = "Invalid path : ";
-		message += imageDirectoryPath;
+		message += _tilesDirectoryPath;
 		message += ", use -p option";
 		throw CustomException(message, CustomException::Level::NORMAL);
 	}
-	if (mainImagePath == "")
+	if (_photoPath == "")
 		throw CustomException("No image defined, use -i option", CustomException::Level::NORMAL);
-	else if (!pathExist(mainImagePath)) {
+	else if (!pathExist(_photoPath)) {
 		std::string message = "Invalid file : ";
-		message += mainImagePath;
+		message += _photoPath;
 		message += ", use -i option";
 		throw CustomException(message, CustomException::Level::NORMAL);
 	}
-	if (subdivision == 0)
+	if (_subdivision == 0)
 		throw CustomException("Invalid subdivision value, use -s option", CustomException::Level::NORMAL);
 }
 

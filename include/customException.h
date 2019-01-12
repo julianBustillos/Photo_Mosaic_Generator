@@ -13,12 +13,12 @@ public:
 	};
 
 public:
-	CustomException(std::string message, Level level) : message(message), level(level) {};
+	CustomException(std::string message, Level level) : _message(message), _level(level) {};
 	~CustomException() {};
-	const char * what() const throw () { return message.c_str(); };
-	Level getLevel() { return level; };
+	const char * what() const throw () { return _message.c_str(); };
+	Level getLevel() { return _level; };
 
 private:
-	std::string message;
-	Level level;
+	std::string _message;
+	Level _level;
 };

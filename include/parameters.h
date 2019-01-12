@@ -8,17 +8,19 @@ public:
 	static std::string getHelp();
 
 public:
-	Parameters() {};
+	Parameters(int argc, char *argv[]);
 	~Parameters() {};
-	void parse(int argc, char *argv[]);
+	const std::string getPhotoPath();
+	const std::string tilesDirectoryPath();
+	const int getSubdivision();
 
 private:
-	void getArgument(char *parameter, char *value);
+	void parseArgument(char *parameter, char *value);
 	void checkParsing();
 	bool pathExist(std::string &path);
 
 private:
-	std::string imageDirectoryPath = "";
-	std::string mainImagePath = "";
-	unsigned int subdivision = 0;
+	std::string _tilesDirectoryPath = "";
+	std::string _photoPath = "";
+	unsigned int _subdivision = 0;
 };
