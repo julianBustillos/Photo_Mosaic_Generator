@@ -1,6 +1,6 @@
 #include "parameters.h"
 #include "customException.h"
-#include <sys/stat.h>
+#include <boost/filesystem.hpp>
 
 
 std::string Parameters::getHelp()
@@ -30,9 +30,9 @@ const std::string Parameters::getPhotoPath()
 	return _photoPath;
 }
 
-const std::string Parameters::tilesDirectoryPath()
+const std::string Parameters::getTilesPath()
 {
-	return _tilesDirectoryPath;
+	return _tilesPath;
 }
 
 const int Parameters::getSubdivision()
@@ -46,7 +46,7 @@ void Parameters::parseArgument(char *parameter, char *value)
 		throw CustomException("Help", CustomException::Level::HELP);
 	}
 	else if (std::strcmp(parameter, "-p") == 0) {
-		_tilesDirectoryPath = value ? value : "";
+		_tilesPath = value ? value : "";
 	}
 	else if (std::strcmp(parameter, "-i") == 0) {
 		_photoPath = value ? value : "";
@@ -63,17 +63,17 @@ void Parameters::parseArgument(char *parameter, char *value)
 
 void Parameters::checkParsing()
 {
-	if (_tilesDirectoryPath == "")
+	if (_tilesPath == "")
 		throw CustomException("No path defined, use -p option", CustomException::Level::NORMAL);
-	else if (!pathExist(_tilesDirectoryPath)) {
+	else if (!boost::filesystem::exists(_tilesPath)) {
 		std::string message = "Invalid path : ";
-		message += _tilesDirectoryPath;
+		message += _tilesPath;
 		message += ", use -p option";
 		throw CustomException(message, CustomException::Level::NORMAL);
 	}
 	if (_photoPath == "")
 		throw CustomException("No image defined, use -i option", CustomException::Level::NORMAL);
-	else if (!pathExist(_photoPath)) {
+	else if (!boost::filesystem::exists(_photoPath)) {
 		std::string message = "Invalid file : ";
 		message += _photoPath;
 		message += ", use -i option";
@@ -81,10 +81,4 @@ void Parameters::checkParsing()
 	}
 	if (_subdivision == 0)
 		throw CustomException("Invalid subdivision value, use -s option", CustomException::Level::NORMAL);
-}
-
-bool Parameters::pathExist(std::string &path)
-{
-	struct stat buffer;
-	return (stat(path.c_str(), &buffer) == 0);
 }

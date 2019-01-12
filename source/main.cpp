@@ -2,6 +2,7 @@
 #include "customException.h"
 #include "parameters.h"
 #include "photo.h"
+#include "tiles.h"
 
 
 int main(int argc, char *argv[])
@@ -9,6 +10,7 @@ int main(int argc, char *argv[])
 	try {
 		Parameters parameters(argc, argv);
 		Photo photo(parameters.getPhotoPath(), parameters.getSubdivision());
+		Tiles tiles(parameters.getTilesPath());
 
 		std::cin.get(); //DEBUG
 	}
