@@ -1,6 +1,7 @@
 #include "parameters.h"
 #include "customException.h"
 #include <boost/filesystem.hpp>
+#include <algorithm>
 
 
 std::string Parameters::getHelp()
@@ -47,9 +48,13 @@ void Parameters::parseArgument(char *parameter, char *value)
 	}
 	else if (std::strcmp(parameter, "-p") == 0) {
 		_tilesPath = value ? value : "";
+		std::replace(_tilesPath.begin(), _tilesPath.end(), '/', '\\');
+		if (_tilesPath.back() != '\\')
+			_tilesPath += "\\";
 	}
 	else if (std::strcmp(parameter, "-i") == 0) {
 		_photoPath = value ? value : "";
+		std::replace(_photoPath.begin(), _photoPath.end(), '/', '\\');
 	}
 	else if (std::strcmp(parameter, "-s") == 0) {
 		_subdivision = value ? std::atoi(value) : 0;

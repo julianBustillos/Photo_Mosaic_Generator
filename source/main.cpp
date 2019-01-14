@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 	try {
 		Parameters parameters(argc, argv);
 		Photo photo(parameters.getPhotoPath(), parameters.getSubdivision());
-		Tiles tiles(parameters.getTilesPath());
+		Tiles tiles(parameters.getTilesPath(), photo.getTileSize());
 
 		std::cin.get(); //DEBUG
 	}
