@@ -6,9 +6,9 @@
 
 class Photo {
 public:
-	Photo(const std::string &path, unsigned int subdivision);
+	Photo(const std::string &path, int subdivision);
 	~Photo() {};
-	cv::Point getFirstPixel(unsigned int i, unsigned int j) const;
+	cv::Point getFirstPixel(int i, int j) const;
 	cv::Size getTileSize() const;
 
 private:

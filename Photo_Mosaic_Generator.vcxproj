@@ -119,12 +119,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\mathTools.cpp" />
     <ClCompile Include="source\parameters.cpp" />
     <ClCompile Include="source\photo.cpp" />
     <ClCompile Include="source\tiles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\customException.h" />
+    <ClInclude Include="include\mathTools.h" />
     <ClInclude Include="include\parameters.h" />
     <ClInclude Include="include\photo.h" />
     <ClInclude Include="include\tiles.h" />

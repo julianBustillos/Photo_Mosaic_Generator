@@ -2,6 +2,7 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include "customException.h"
+#include "mathTools.h"
 
 
 Tiles::Tiles(const std::string &path, const cv::Size &tileSize) :
@@ -46,8 +47,7 @@ void Tiles::computeTileData(const cv::Mat & image, const std::string &filename)
 	uchar *tileMatData = tileMat.data;
     for (int i = 0; i < _tileSize.height; i++)
         for (int j = 0; j < _tileSize.width; j++)
-			for (int color = 0; color < 3; color++)
-				tileMatData[3 * (i * tileMat.cols + j) + color] = computeTilePixelValue(image, i, j, color, firstPixelPos, ratio);
+			computeTilePixelColor(&tileMatData[getDataIndex(i, j, tileMat)], image, i, j, firstPixelPos, ratio);
 
 	_tilesData.push_back(data);
 	exportTile(tileMat, filename);
@@ -55,21 +55,39 @@ void Tiles::computeTileData(const cv::Mat & image, const std::string &filename)
 
 void Tiles::computeCropInfo(const cv::Size &imageSize, cv::Point & firstPixelPos, double & ratio)
 {
+    double rWidth = (double)imageSize.width / (double)_tileSize.width;
 	double rHeight = (double)imageSize.height / (double)_tileSize.height;
-	double rWidth  = (double)imageSize.width  / (double)_tileSize.width;
 
 	ratio = std::min(rHeight, rWidth);
-	firstPixelPos.x = (int)((imageSize.height - ratio * _tileSize.height) / 2.);
-	firstPixelPos.y = (int)((imageSize.width  - ratio * _tileSize.width) / 2.);
-
-	std::cout << firstPixelPos << std::endl;
-	std::cout << ratio << std::endl;
+	firstPixelPos.x = (int)(floor((imageSize.width - ceil(ratio * _tileSize.width)) / 2.));
+	firstPixelPos.y = (int)(floor((imageSize.height  - ceil(ratio * _tileSize.height)) / 2.));
 }
 
-uchar Tiles::computeTilePixelValue(const cv::Mat &image, const unsigned int i, const unsigned int j, const unsigned int colorId, const cv::Point &firstPixelPos, const double ratio)
+void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const int i, const int j, const cv::Point &firstPixelPos, const double ratio)
 {
-    //Todo bicubic interpolation
-	return 137;
+    cv::Mat pointColorGrid(4, 4, CV_64F);
+    double *pointColorGridData = (double *)pointColorGrid.data;
+    uchar *imageData = image.data;
+    double x = (double)firstPixelPos.x + j * ratio;
+    double y = (double)firstPixelPos.y + i * ratio;
+    int iFirstGrid = (int)floor(y) - 1;
+    int jFirstGrid = (int)floor(x) - 1;
+     
+    for (int color = 0; color < 3; color++) {
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
+                pointColorGridData[i * 4 + j] = (double)imageData[getDataIndex(iFirstGrid + i, jFirstGrid + j, image) + color];
+
+        tilePixel[color] = MathTools::biCubicInterpolation(x - floor(x), y - floor(y), pointColorGrid);
+    }
+}
+
+int Tiles::getDataIndex(const int i, const int j, const cv::Mat & mat)
+{
+    int iSafe = MathTools::clipInt(i, 0, mat.size().height);
+    int jSafe = MathTools::clipInt(j, 0, mat.size().width);
+
+    return mat.channels() * (iSafe * mat.cols + jSafe);
 }
 
 void Tiles::exportTile(const cv::Mat & tile, const std::string & filename)

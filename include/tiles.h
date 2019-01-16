@@ -18,7 +18,8 @@ public:
 private:
 	void computeTileData(const cv::Mat &image, const std::string &filename);
 	void computeCropInfo(const cv::Size &imageSize, cv::Point &firstPixelPos, double &ratio);
-	uchar computeTilePixelValue(const cv::Mat &image, const unsigned int i, const unsigned int j, const unsigned int color, const cv::Point &firstPixelPos, const double ratio);
+	void computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, int i, int j, const cv::Point &firstPixelPos, double ratio);
+    int getDataIndex(int i, int j, const cv::Mat &mat);
 	void exportTile(const cv::Mat &tile, const std::string &filename);
 	void printInfo();
 

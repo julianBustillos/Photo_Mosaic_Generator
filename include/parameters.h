@@ -21,5 +21,5 @@ private:
 private:
 	std::string _tilesPath = "";
 	std::string _photoPath = "";
-	unsigned int _subdivision = 0;
+	int _subdivision = 0;
 };

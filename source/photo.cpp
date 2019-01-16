@@ -3,7 +3,7 @@
 #include <iostream>
 
 
-Photo::Photo(const std::string &path, unsigned int subdivision)
+Photo::Photo(const std::string &path, int subdivision)
 {
 	_mat = cv::imread(path, cv::IMREAD_COLOR);
 	if (!_mat.data)
@@ -15,7 +15,7 @@ Photo::Photo(const std::string &path, unsigned int subdivision)
 	printData();
 }
 
-cv::Point Photo::getFirstPixel(unsigned int i, unsigned int j) const
+cv::Point Photo::getFirstPixel(int i, int j) const
 {
 	cv::Point position;
 	position.x = _lostSize.height / 2 + i * _tileSize.height;
