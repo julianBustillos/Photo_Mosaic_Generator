@@ -130,6 +130,7 @@
     <ClInclude Include="include\parameters.h" />
     <ClInclude Include="include\photo.h" />
     <ClInclude Include="include\tiles.h" />
+    <ClInclude Include="include\clock.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

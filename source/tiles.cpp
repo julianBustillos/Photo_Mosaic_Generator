@@ -65,8 +65,7 @@ void Tiles::computeCropInfo(const cv::Size &imageSize, cv::Point & firstPixelPos
 
 void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const int i, const int j, const cv::Point &firstPixelPos, const double ratio)
 {
-    cv::Mat pointColorGrid(4, 4, CV_64F);
-    double *pointColorGridData = (double *)pointColorGrid.data;
+    double pixelColorGrid[16];
     uchar *imageData = image.data;
     double x = (double)firstPixelPos.x + j * ratio;
     double y = (double)firstPixelPos.y + i * ratio;
@@ -74,18 +73,18 @@ void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const 
     int jFirstGrid = (int)floor(x) - 1;
      
     for (int color = 0; color < 3; color++) {
-        for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
-                pointColorGridData[i * 4 + j] = (double)imageData[getDataIndex(iFirstGrid + i, jFirstGrid + j, image) + color];
+        for (int j = 0; j < 4; j++)
+            for (int i = 0; i < 4; i++)
+                pixelColorGrid[j * 4 + i] = (double)imageData[getDataIndex(iFirstGrid + i, jFirstGrid + j, image) + color];
 
-        tilePixel[color] = MathTools::biCubicInterpolation(x - floor(x), y - floor(y), pointColorGrid);
+        tilePixel[color] = MathTools::biCubicInterpolation(x - floor(x), y - floor(y), pixelColorGrid);
     }
 }
 
 int Tiles::getDataIndex(const int i, const int j, const cv::Mat & mat)
 {
-    int iSafe = MathTools::clipInt(i, 0, mat.size().height);
-    int jSafe = MathTools::clipInt(j, 0, mat.size().width);
+    int iSafe = MathTools::clipInt(i, 0, mat.size().height - 1);
+    int jSafe = MathTools::clipInt(j, 0, mat.size().width - 1);
 
     return mat.channels() * (iSafe * mat.cols + jSafe);
 }

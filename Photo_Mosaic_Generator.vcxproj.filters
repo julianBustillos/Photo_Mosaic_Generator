@@ -47,6 +47,9 @@
     <ClInclude Include="include\mathTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\clock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

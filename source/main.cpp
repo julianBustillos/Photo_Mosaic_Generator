@@ -1,16 +1,23 @@
 #include <iostream>
+#include "clock.h"
 #include "customException.h"
 #include "parameters.h"
 #include "photo.h"
 #include "tiles.h"
 
 
+
 int main(int argc, char *argv[])
 {
 	try {
+        TIME_NOW(start);
+
 		Parameters parameters(argc, argv);
 		Photo photo(parameters.getPhotoPath(), parameters.getSubdivision());
 		Tiles tiles(parameters.getTilesPath(), photo.getTileSize());
+
+        TIME_NOW(end);
+        PRINT_DURATION(start, end);
 
 		std::cin.get(); //DEBUG
 	}
