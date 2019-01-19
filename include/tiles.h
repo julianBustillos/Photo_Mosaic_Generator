@@ -9,6 +9,7 @@ class Tiles {
 private:
 	struct Data {
 		std::string filename;
+        double features[48];
 	};
 
 public:

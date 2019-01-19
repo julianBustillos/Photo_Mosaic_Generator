@@ -44,11 +44,11 @@ void Tiles::computeTileData(const cv::Mat & image, const std::string &filename)
 	data.filename = filename;
 
 	cv::Mat tileMat(_tileSize, CV_8UC3 , cv::Scalar(0, 0, 0));
-	uchar *tileMatData = tileMat.data;
     for (int i = 0; i < _tileSize.height; i++)
         for (int j = 0; j < _tileSize.width; j++)
-			computeTilePixelColor(&tileMatData[getDataIndex(i, j, tileMat)], image, i, j, firstPixelPos, ratio);
+			computeTilePixelColor(&tileMat.data[getDataIndex(i, j, tileMat)], image, i, j, firstPixelPos, ratio);
 
+    MathTools::computeTileFeatures(tileMat.data, _tileSize.width, _tileSize.height, 0, 0, _tileSize.width, tileMat.channels(), data.features);
 	_tilesData.push_back(data);
 	exportTile(tileMat, filename);
 }
@@ -65,7 +65,7 @@ void Tiles::computeCropInfo(const cv::Size &imageSize, cv::Point & firstPixelPos
 
 void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const int i, const int j, const cv::Point &firstPixelPos, const double ratio)
 {
-    double pixelColorGrid[16];
+    uchar pixelColorGrid[16];
     uchar *imageData = image.data;
     double x = (double)firstPixelPos.x + j * ratio;
     double y = (double)firstPixelPos.y + i * ratio;
@@ -75,7 +75,7 @@ void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const 
     for (int color = 0; color < 3; color++) {
         for (int j = 0; j < 4; j++)
             for (int i = 0; i < 4; i++)
-                pixelColorGrid[j * 4 + i] = (double)imageData[getDataIndex(iFirstGrid + i, jFirstGrid + j, image) + color];
+                pixelColorGrid[j * 4 + i] = imageData[getDataIndex(iFirstGrid + i, jFirstGrid + j, image) + color];
 
         tilePixel[color] = MathTools::biCubicInterpolation(x - floor(x), y - floor(y), pixelColorGrid);
     }
