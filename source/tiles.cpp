@@ -34,21 +34,38 @@ Tiles::~Tiles()
 		boost::filesystem::remove_all(_tempPath);
 }
 
+const std::vector<Tiles::Data>& Tiles::getTileDataVector() const
+{
+    return _tilesData;
+}
+
+const std::string Tiles::getTempTilePath() const
+{
+    return _tempPath;
+}
+
 void Tiles::computeTileData(const cv::Mat & image, const std::string &filename)
 {
 	Data data;
 	cv::Point firstPixelPos;
 	double ratio;
+    cv::Size imageSize = image.size();
+    cv::Mat tileMat(_tileSize, CV_8UC3, cv::Scalar(0, 0, 0));
 
-	computeCropInfo(image.size(), firstPixelPos, ratio);
-	data.filename = filename;
+    if (_tileSize != imageSize) {
+        computeCropInfo(imageSize, firstPixelPos, ratio);
 
-	cv::Mat tileMat(_tileSize, CV_8UC3 , cv::Scalar(0, 0, 0));
-    for (int i = 0; i < _tileSize.height; i++)
-        for (int j = 0; j < _tileSize.width; j++)
-			computeTilePixelColor(&tileMat.data[getDataIndex(i, j, tileMat)], image, i, j, firstPixelPos, ratio);
+        for (int i = 0; i < _tileSize.height; i++)
+            for (int j = 0; j < _tileSize.width; j++)
+                computeTilePixelColor(&tileMat.data[getDataIndex(i, j, _tileSize)], image, imageSize, i, j, firstPixelPos, ratio);
+    }
+    else {
+        tileMat = image;
+    }
 
-    MathTools::computeTileFeatures(tileMat.data, _tileSize.width, _tileSize.height, 0, 0, _tileSize.width, tileMat.channels(), data.features);
+    MathTools::computeImageFeatures(tileMat.data, _tileSize.width, _tileSize.height, 0, 0, _tileSize.width, tileMat.channels(), data.features);
+
+    data.filename = filename;
 	_tilesData.push_back(data);
 	exportTile(tileMat, filename);
 }
@@ -63,7 +80,7 @@ void Tiles::computeCropInfo(const cv::Size &imageSize, cv::Point & firstPixelPos
 	firstPixelPos.y = (int)(floor((imageSize.height  - ceil(ratio * _tileSize.height)) / 2.));
 }
 
-void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const int i, const int j, const cv::Point &firstPixelPos, const double ratio)
+void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const cv::Size &imageSize, const int i, const int j, const cv::Point &firstPixelPos, const double ratio)
 {
     uchar pixelColorGrid[16];
     uchar *imageData = image.data;
@@ -75,18 +92,18 @@ void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const 
     for (int color = 0; color < 3; color++) {
         for (int j = 0; j < 4; j++)
             for (int i = 0; i < 4; i++)
-                pixelColorGrid[j * 4 + i] = imageData[getDataIndex(iFirstGrid + i, jFirstGrid + j, image) + color];
+                pixelColorGrid[j * 4 + i] = imageData[getDataIndex(iFirstGrid + i, jFirstGrid + j, imageSize) + color];
 
         tilePixel[color] = MathTools::biCubicInterpolation(x - floor(x), y - floor(y), pixelColorGrid);
     }
 }
 
-int Tiles::getDataIndex(const int i, const int j, const cv::Mat & mat)
+int Tiles::getDataIndex(int i, int j, const cv::Size &matSize)
 {
-    int iSafe = MathTools::clipInt(i, 0, mat.size().height - 1);
-    int jSafe = MathTools::clipInt(j, 0, mat.size().width - 1);
+    int iSafe = MathTools::clipInt(i, 0, matSize.height - 1);
+    int jSafe = MathTools::clipInt(j, 0, matSize.width - 1);
 
-    return mat.channels() * (iSafe * mat.cols + jSafe);
+    return 3 * (iSafe * matSize.width + jSafe);
 }
 
 void Tiles::exportTile(const cv::Mat & tile, const std::string & filename)
@@ -96,7 +113,7 @@ void Tiles::exportTile(const cv::Mat & tile, const std::string & filename)
 		throw CustomException("Impossible to create temporary tile : " + _tempPath + filename, CustomException::Level::NORMAL);
 }
 
-void Tiles::printInfo()
+void Tiles::printInfo() const
 {
 	std::cout << "TILES :" << std::endl;
 	std::cout << "Number of tile found : " << _tilesData.size() << std::endl;

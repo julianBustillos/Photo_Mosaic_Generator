@@ -8,13 +8,17 @@ class Photo {
 public:
 	Photo(const std::string &path, int subdivision);
 	~Photo() {};
-	cv::Point getFirstPixel(int i, int j) const;
-	cv::Size getTileSize() const;
+	const cv::Point getFirstPixel(int i, int j, bool offset) const;
+	const cv::Size getTileSize() const;
+    const uchar *getData() const;
+    const int getStep() const;
+    const std::string getDirectory() const;
 
 private:
-	void printData() const;
+	void printInfo() const;
 
 private:
+    std::string _directory;
 	cv::Mat _mat;
 	cv::Size _tileSize;
 	cv::Size _lostSize;

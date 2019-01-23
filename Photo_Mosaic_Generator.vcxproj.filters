@@ -30,6 +30,12 @@
     <ClCompile Include="source\mathTools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\matchSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\mosaicBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\parameters.h">
@@ -48,6 +54,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\clock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\matchSolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\mosaicBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

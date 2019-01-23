@@ -4,6 +4,8 @@
 #include "parameters.h"
 #include "photo.h"
 #include "tiles.h"
+#include "matchSolver.h"
+#include "mosaicBuilder.h"
 
 
 
@@ -15,6 +17,8 @@ int main(int argc, char *argv[])
 		Parameters parameters(argc, argv);
 		Photo photo(parameters.getPhotoPath(), parameters.getSubdivision());
 		Tiles tiles(parameters.getTilesPath(), photo.getTileSize());
+        MatchSolver matchSolver(photo, tiles, parameters.getSubdivision());
+        MosaicBuilder mosaicBuilder(photo, tiles, parameters.getSubdivision(), matchSolver.getMatchingTiles());
 
         TIME_NOW(end);
         PRINT_DURATION(start, end);
