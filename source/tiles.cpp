@@ -3,6 +3,7 @@
 #include <boost/filesystem.hpp>
 #include "customException.h"
 #include "mathTools.h"
+#include "outputDisabler.h"
 
 
 Tiles::Tiles(const std::string &path, const cv::Size &tileSize) :
@@ -17,10 +18,11 @@ Tiles::Tiles(const std::string &path, const cv::Size &tileSize) :
 	for (auto it = boost::filesystem::directory_iterator(path); it != boost::filesystem::directory_iterator(); it++)
 	{
 		if (!is_directory(it->path())) {
+            START_DISABLE_STDERR
 			cv::Mat image = cv::imread(it->path().generic().string(), cv::IMREAD_COLOR);
+            END_DISABLE_STDERR
 			if (!image.data)
 				continue;
-
 			computeTileData(image, it->path().filename().string());
 		}
 	}

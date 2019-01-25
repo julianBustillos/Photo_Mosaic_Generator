@@ -130,6 +130,7 @@
     <ClInclude Include="include\customException.h" />
     <ClInclude Include="include\matchSolver.h" />
     <ClInclude Include="include\mathTools.h" />
+    <ClInclude Include="include\outputDisabler.h" />
     <ClInclude Include="include\parameters.h" />
     <ClInclude Include="include\photo.h" />
     <ClInclude Include="include\tiles.h" />
