@@ -1,5 +1,4 @@
 #include "mathTools.h"
-#include <opencv2/opencv.hpp> //DEBUG
 
 
 const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4, 1, 0, 1, -1, 0, 0 };
@@ -51,48 +50,29 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      return (uchar)clipInt((int)floor(interpolation), 0, 255);
 }
 
- //DEBUG
- //int debugVal = 0;
- //DEBUG
-
- void MathTools::computeImageFeatures(const uchar * image, int width, int height, int iFirstPos, int jFirstPos, int step, int channels, double * features)
+ void MathTools::computeImageFeatures(const uchar * image, int width, int height, int iFirstPos, int jFirstPos, int step, int channels, double * features, int featureDirSubdivision)
  {
-     int blockWidth  = (int)ceil(width / 4.);
-     int blockHeight = (int)ceil(height / 4.);
+     int blockWidth  = (int)ceil(width / (double)featureDirSubdivision);
+     int blockHeight = (int)ceil(height / (double)featureDirSubdivision);
      
-     for (int k = 0; k < channels * 16; k++)
+     for (int k = 0; k < channels * featureDirSubdivision * featureDirSubdivision; k++)
          features[k] = 0;
 
      for (int i = 0; i < height; i++) {
          for (int j = 0; j < width; j++) {
-             int blockId = 4 * (i / blockHeight) + j / blockWidth;
+             int blockId = featureDirSubdivision * (i / blockHeight) + j / blockWidth;
              int imageId = channels * ((iFirstPos + i) * step + jFirstPos + j);
              for (int c = 0; c < channels; c++) 
                  features[channels * blockId + c] += image[imageId + c];
          }
      }
 
-     for (int k = 0; k < 48; k++) {
-         int corrBlockHeight = (k < 12 * channels) ? blockHeight : height - 3 * blockHeight;
-         int corrBlockWidth  = (((k / channels + 1) % 4) != 0) ? blockWidth : width - 3 * blockWidth;
+     for (int k = 0; k < channels * featureDirSubdivision * featureDirSubdivision; k++) {
+         int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * channels) ? blockHeight : height - (featureDirSubdivision - 1) * blockHeight;
+         int corrBlockWidth  = (((k / channels + 1) % featureDirSubdivision) != 0) ? blockWidth : width - (featureDirSubdivision - 1) * blockWidth;
          int deb = corrBlockHeight * corrBlockWidth;
          features[k] /= corrBlockWidth * corrBlockHeight;
      }
-
-     //DEBUG
-     /*cv::Mat debug(tileHeight, tileWidth, CV_8UC3);
-     for (int i = 0; i < tileHeight; i++) {
-         for (int j = 0; j < tileWidth; j++) {
-             int blockId = 4 * (i / blockHeight) + j / blockWidth;
-             for (int c = 0; c < channels; c++) {
-                 debug.data[channels * (i * tileWidth + j) + c] = (uchar)floor(features[channels * blockId + c]);
-             }
-         }
-     }
-
-     cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\tiles\\temp\\debug_" + std::to_string(++debugVal) + ".jpg" , debug);
-     int val = 1;*/
-     //DEBUG
  }
 
  double MathTools::squareDistance(const double * vec1, const double * vec2, int size)

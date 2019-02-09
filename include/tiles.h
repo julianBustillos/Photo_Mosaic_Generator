@@ -1,5 +1,6 @@
 #pragma once
 
+#include "variables.h"
 #include <vector>
 #include <string>
 #include <opencv2/opencv.hpp>
@@ -9,7 +10,7 @@ class Tiles {
 public:
 	struct Data {
 		std::string filename;
-        double features[48];
+        double features[3 * TILES_DIR_SUBDIVISION * TILES_DIR_SUBDIVISION];
 	};
 
 public:

@@ -1,4 +1,5 @@
 #include "matchSolver.h"
+#include "variables.h"
 #include <opencv2/opencv.hpp>
 #include "mathTools.h"
 #include "tiles.h"
@@ -33,7 +34,7 @@ MatchSolver::MatchSolver(const Photo &photo, const Tiles &tiles, int subdivision
         for (int j = 0; j < _subdivisions; j++) {
             double features[48];
             cv::Point firstPixel = photo.getFirstPixel(i, j, true);
-            MathTools::computeImageFeatures(data, tileSize.width, tileSize.height, firstPixel.y, firstPixel.x, step, 3, features);
+            MathTools::computeImageFeatures(data, tileSize.width, tileSize.height, firstPixel.y, firstPixel.x, step, 3, features, TILES_DIR_SUBDIVISION);
             _matchingTiles[k++] = findBestTile(tileData, features);
 
             //DEBUG
@@ -76,7 +77,7 @@ int MatchSolver::findBestTile(const std::vector<Tiles::Data>& tileData, const do
     double minSquareDistance = std::numeric_limits<double>::max();
     int bestIndex = -1;
     for (unsigned int t = 0; t < tileData.size(); t++) {
-        double tempSquareDistance = MathTools::squareDistance(features, tileData[t].features, 48);
+        double tempSquareDistance = MathTools::squareDistance(features, tileData[t].features, 3 * TILES_DIR_SUBDIVISION * TILES_DIR_SUBDIVISION);
         if (tempSquareDistance < minSquareDistance) {
             bestIndex = t;
             minSquareDistance = tempSquareDistance;

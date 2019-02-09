@@ -6,7 +6,7 @@ class MathTools {
 public:
     static int clipInt(int val, int min, int max);
     static uchar biCubicInterpolation(double x, double y, const uchar *pixelColorGrid);
-    static void computeImageFeatures(const uchar *image, int width, int height, int iFirstPos, int jFirstPos, int step, int channels, double *features);
+    static void computeImageFeatures(const uchar *image, int width, int height, int iFirstPos, int jFirstPos, int step, int channels, double *features, int featureDirSubdivision);
     static double squareDistance(const double *vec1, const double *vec2, int size);
 
 private:

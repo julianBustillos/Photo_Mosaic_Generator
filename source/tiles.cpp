@@ -65,7 +65,7 @@ void Tiles::computeTileData(const cv::Mat & image, const std::string &filename)
         tileMat = image;
     }
 
-    MathTools::computeImageFeatures(tileMat.data, _tileSize.width, _tileSize.height, 0, 0, _tileSize.width, tileMat.channels(), data.features);
+    MathTools::computeImageFeatures(tileMat.data, _tileSize.width, _tileSize.height, 0, 0, _tileSize.width, tileMat.channels(), data.features, TILES_DIR_SUBDIVISION);
 
     data.filename = filename;
 	_tilesData.push_back(data);

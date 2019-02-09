@@ -135,6 +135,7 @@
     <ClInclude Include="include\photo.h" />
     <ClInclude Include="include\tiles.h" />
     <ClInclude Include="include\clock.h" />
+    <ClInclude Include="include\variables.h" />
     <ClInclude Include="source\mosaicBuilder.h" />
   </ItemGroup>
   <ItemGroup>
