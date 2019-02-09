@@ -6,8 +6,6 @@
 #include "tiles.h"
 #include "matchSolver.h"
 #include "mosaicBuilder.h"
-#include <opencv2/opencv.hpp>
-
 
 
 int main(int argc, char *argv[])
@@ -15,7 +13,6 @@ int main(int argc, char *argv[])
 	try {
         TIME_NOW(start)
 
-        cv::redirectError(nullptr);
 		Parameters parameters(argc, argv);
 		Photo photo(parameters.getPhotoPath(), parameters.getSubdivision());
 		Tiles tiles(parameters.getTilesPath(), photo.getTileSize());

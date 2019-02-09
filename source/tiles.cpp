@@ -76,10 +76,14 @@ void Tiles::computeCropInfo(const cv::Size &imageSize, cv::Point & firstPixelPos
 {
     double rWidth = (double)imageSize.width / (double)_tileSize.width;
 	double rHeight = (double)imageSize.height / (double)_tileSize.height;
+    double imageRatio = (double)imageSize.width / (double)imageSize.height;
 
 	ratio = std::min(rHeight, rWidth);
 	firstPixelPos.x = (int)(floor((imageSize.width - ceil(ratio * _tileSize.width)) / 2.));
-	firstPixelPos.y = (int)(floor((imageSize.height  - ceil(ratio * _tileSize.height)) / 2.));
+    if (imageRatio > 1.)
+	    firstPixelPos.y = (int)(floor((imageSize.height  - ceil(ratio * _tileSize.height)) / 2.));
+    else 
+        firstPixelPos.y = (int)(floor((imageSize.height - ceil(ratio * _tileSize.height)) / 3.));
 }
 
 void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const cv::Size &imageSize, const int i, const int j, const cv::Point &firstPixelPos, const double ratio)
