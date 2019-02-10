@@ -1,3 +1,4 @@
 #pragma once
 
-#define TILES_DIR_SUBDIVISION 4
+#define FEATURE_ROOT_SUBDIVISION 4
+#define REDUNDANCY_DISTANCE 3

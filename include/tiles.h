@@ -10,7 +10,7 @@ class Tiles {
 public:
 	struct Data {
 		std::string filename;
-        double features[3 * TILES_DIR_SUBDIVISION * TILES_DIR_SUBDIVISION];
+        double features[3 * FEATURE_ROOT_SUBDIVISION * FEATURE_ROOT_SUBDIVISION];
 	};
 
 public:

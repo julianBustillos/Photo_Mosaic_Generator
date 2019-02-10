@@ -124,6 +124,7 @@
     <ClCompile Include="source\mosaicBuilder.cpp" />
     <ClCompile Include="source\parameters.cpp" />
     <ClCompile Include="source\photo.cpp" />
+    <ClCompile Include="source\sortedVector.cpp" />
     <ClCompile Include="source\tiles.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +134,7 @@
     <ClInclude Include="include\outputDisabler.h" />
     <ClInclude Include="include\parameters.h" />
     <ClInclude Include="include\photo.h" />
+    <ClInclude Include="include\sortedVector.h" />
     <ClInclude Include="include\tiles.h" />
     <ClInclude Include="include\clock.h" />
     <ClInclude Include="include\variables.h" />
