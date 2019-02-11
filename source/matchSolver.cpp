@@ -5,7 +5,8 @@
 #include "tiles.h"
 #include <vector>
 #include <iostream>
-#include <limits>
+#include <algorithm>
+#include "sortedVector.h"
 
 
 MatchSolver::MatchSolver(const Photo &photo, const Tiles &tiles, int subdivisions) :
@@ -23,22 +24,25 @@ MatchSolver::MatchSolver(const Photo &photo, const Tiles &tiles, int subdivision
     const std::vector<Tiles::Data> &tileData = tiles.getTileDataVector();
 
     //DEBUG
-    cv::Mat imageRes(1960, 4032, CV_8UC3);
+   /* cv::Mat imageRes(1960, 4032, CV_8UC3);
     uchar *imageResData = imageRes.data;
     for (int k = 0; k < 1960 * 4032 * 3; k++)
-        imageResData[k] = 0;
+        imageResData[k] = 0;*/
     //DEBUG
 
-    int k = 0;
+    std::vector<matchCandidate> candidates;
+
+    //int k = 0;
     for (int i = 0; i < _subdivisions; i++) {
         for (int j = 0; j < _subdivisions; j++) {
-            double features[48];
+            double features[3 * FEATURE_ROOT_SUBDIVISION * FEATURE_ROOT_SUBDIVISION];
             cv::Point firstPixel = photo.getFirstPixel(i, j, true);
             MathTools::computeImageFeatures(data, tileSize.width, tileSize.height, firstPixel.y, firstPixel.x, step, 3, features, FEATURE_ROOT_SUBDIVISION);
-            _matchingTiles[k++] = findBestTile(tileData, features);
+            findCandidateTiles(candidates, i, j, tileData, features);
+            //_matchingTiles[k++] = findBestTile(tileData, features);
 
             //DEBUG
-            int blockWidth = (int)ceil(tileSize.width / 4.);
+            /*int blockWidth = (int)ceil(tileSize.width / 4.);
             int blockHeight = (int)ceil(tileSize.height / 4.);
             cv::Point firstPixelNoOffset = photo.getFirstPixel(i, j, false);
             for (int pi = firstPixelNoOffset.y; pi < firstPixelNoOffset.y + tileSize.height; pi++) {
@@ -48,13 +52,15 @@ MatchSolver::MatchSolver(const Photo &photo, const Tiles &tiles, int subdivision
                         imageResData[3 * (pi * 4032 + pj) + c] = (uchar)floor(features[3 * blockId + c]);
                     }
                 }
-            }
+            }*/
             //DEBUG
         }
     }
 
+    findBestTiles(candidates);
+
     //DEBUG
-    cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\image_debug.jpg", imageRes);
+    //cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\image_debug.jpg", imageRes);
     //DEBUG
 
     printInfo();
@@ -72,6 +78,7 @@ int * MatchSolver::getMatchingTiles()
     return _matchingTiles;
 }
 
+/*
 int MatchSolver::findBestTile(const std::vector<Tiles::Data>& tileData, const double * features)
 {
     double minSquareDistance = std::numeric_limits<double>::max();
@@ -84,14 +91,60 @@ int MatchSolver::findBestTile(const std::vector<Tiles::Data>& tileData, const do
         }
     }
 
-    //TODO
     return bestIndex;
+}
+*/
+
+void MatchSolver::findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const std::vector<Tiles::Data>& tileData, const double * features)
+{
+    SortedVector<matchCandidate> tileCandidates(_redundancyTilesNumber);
+    matchCandidate temp;
+    temp._i = i;
+    temp._j = j;
+
+    for (unsigned int t = 0; t < tileData.size(); t++) {
+        temp._id = t;
+        temp._squareDistance = MathTools::squareDistance(features, tileData[t].features, 3 * FEATURE_ROOT_SUBDIVISION * FEATURE_ROOT_SUBDIVISION);
+        tileCandidates.push_sorted(temp);
+    }
+
+    for (int k = 0; k < tileCandidates.size(); k++)
+        candidates.push_back(tileCandidates[k]);
+}
+
+void MatchSolver::findBestTiles(std::vector<matchCandidate>& candidates)
+{
+    std::sort(candidates.begin(), candidates.end());
+    for (int k = 0; k < candidates.size(); k++) {
+        int candidateId = candidates[k]._i * _subdivisions + candidates[k]._j;
+        if (_matchingTiles[candidateId] >= 0)
+            continue;
+
+        int iMin = std::max(candidates[k]._i - REDUNDANCY_DISTANCE, 0);
+        int iMax = std::min(candidates[k]._i + REDUNDANCY_DISTANCE, _subdivisions - 1);
+        int jMin = std::max(candidates[k]._j - REDUNDANCY_DISTANCE, 0);
+        int jMax = std::min(candidates[k]._j + REDUNDANCY_DISTANCE, _subdivisions - 1);
+
+        bool redundancy = false;
+        for (int i = iMin; i <= iMax && !redundancy; i++) {
+            for (int j = jMax; j <= jMax && !redundancy; j++) {
+                int currentId = i * _subdivisions + j;
+                if (_matchingTiles[currentId] == candidates[k]._id)
+                    redundancy = true;
+            }
+        }
+
+        if (redundancy)
+            continue;
+
+        _matchingTiles[candidateId] = candidates[k]._id;
+    }
 }
 
 void MatchSolver::printInfo() const
 {
     std::cout << "MATCH SOLVER :" << std::endl;
     std::cout << "Number of tiles to find : " << _subdivisions * _subdivisions << std::endl;
-    std::cout << "TODO !!" << std::endl;
+    std::cout << "TODO (distance ?) !!" << std::endl;
     std::cout << std::endl;
 }

@@ -14,6 +14,8 @@ MosaicBuilder::MosaicBuilder(const Photo & photo, const Tiles & tiles, int subdi
             int tileIndex = matchingTiles[i * subdivisions + j];
             if (tileIndex >= 0)
                 copyTileOnMosaic(mosaicData, tiles.getTempTilePath() + tilesData[tileIndex].filename, photo.getFirstPixel(i, j, false), mosaicSize.width);
+            else 
+                throw CustomException("One or several tiles missing from match solver !", CustomException::Level::NORMAL);
         }
     }
 
