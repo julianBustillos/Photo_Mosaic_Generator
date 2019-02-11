@@ -25,7 +25,6 @@ private:
     };
 
 private:
-    //int findBestTile(const std::vector<Tiles::Data> &tileData, const double *features);
     void findCandidateTiles(std::vector<matchCandidate> &candidates, int i, int j, const std::vector<Tiles::Data> &tileData, const double *features);
     void findBestTiles(std::vector<matchCandidate> &candidates);
     void printInfo() const;
