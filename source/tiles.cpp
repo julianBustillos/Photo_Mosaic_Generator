@@ -106,8 +106,8 @@ void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const 
 
 int Tiles::getDataIndex(int i, int j, const cv::Size &matSize)
 {
-    int iSafe = MathTools::clipInt(i, 0, matSize.height - 1);
-    int jSafe = MathTools::clipInt(j, 0, matSize.width - 1);
+    int iSafe = MathTools::clip<int>(i, 0, matSize.height - 1);
+    int jSafe = MathTools::clip<int>(j, 0, matSize.width - 1);
 
     return 3 * (iSafe * matSize.width + jSafe);
 }

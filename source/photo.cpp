@@ -10,7 +10,7 @@ Photo::Photo(const std::string &path, int subdivision) :
 	if (!_mat.data)
 		throw CustomException("Impossible to load image : " + path + ", use -i option", CustomException::Level::NORMAL);
 
-    int filenameIndex = path.find_last_of('\\');
+    int filenameIndex = (int)path.find_last_of('\\');
     if (filenameIndex >= 0)
         _directory = path.substr(0, filenameIndex);
 
