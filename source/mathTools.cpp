@@ -4,11 +4,6 @@
 const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4, 1, 0, 1, -1, 0, 0 };
 
 
- int MathTools::clipInt(int val, int min, int max)
- {
-     return (val < min) ? min : (val > max) ? max : val;
- }
-
  uchar MathTools::biCubicInterpolation(double x, double y, const uchar *pixelColorGrid)
 {
      /*
@@ -47,7 +42,7 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      }
      interpolation /= 4.;
 
-     return (uchar)clipInt((int)floor(interpolation), 0, 255);
+     return (uchar)clip<int>((int)round(interpolation), 0, 255);
 }
 
  void MathTools::computeImageFeatures(const uchar * image, int width, int height, int iFirstPos, int jFirstPos, int step, int channels, double * features, int featureDirSubdivision)
@@ -85,4 +80,247 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      }
 
      return sqDist;
+ }
+
+ void MathTools::convertBGRtoHSV(double & hue, double & saturation, double & value, uchar blue, uchar green, uchar red)
+ {
+     double B = blue / 255.;
+     double G = green / 255.;
+     double R = red / 255.;
+
+     double min = B, max = B;
+     min = std::min(min, G);
+     min = std::min(min, R);
+     max = std::max(max, G);
+     max = std::max(max, R);
+
+     if (min == max)
+         hue = 0.;
+     else if (max == B)
+         hue = M_PI / 3. * (4 + (R - G) / (max - min));
+     else if (max == G)
+         hue = M_PI / 3. * (2 + (B - R) / (max - min));
+     else
+         hue = M_PI / 3. * (G - B) / (max - min);
+
+     if (hue < 0.)
+         hue += 2 * M_PI;
+
+     if (max == 0.)
+         saturation = 0.;
+     else
+         saturation = (max - min) / max;
+
+     value = max;
+
+     hue = clip<double>(hue, 0., 2 * M_PI);
+     saturation = clip<double>(saturation, 0., 1.);
+     value = clip<double>(value, 0., 1.);
+ }
+
+ void MathTools::convertHSVtoBGR(uchar & blue, uchar & green, uchar & red, double hue, double saturation, double value)
+ {
+     double C = value * saturation;
+     double H = hue * 3. / M_PI;
+     double X = C * (1. - std::abs(std::fmod(H, 2.) - 1.));
+
+     double B, G, R;
+     if (H < 0. || 6. < H) {
+         B = 0;
+         G = 0;
+         R = 0;
+     }
+     else if (H <= 1.) {
+         B = 0.; 
+         G = X; 
+         R = C;
+     }
+     else if (H <= 2.) {
+         B = 0.; 
+         G = C; 
+         R = X;
+     }
+     else if (H <= 3.) {
+         B = X; 
+         G = C; 
+         R = 0.;
+     }
+     else if (H <= 4.) {
+         B = C; 
+         G = X; 
+         R = 0.;
+     }
+     else if (H <= 5.) {
+         B = C; 
+         G = 0.; 
+         R = X;
+     }
+     else if (H <= 6.) {
+         B = X; 
+         G = 0.;
+         R = C;
+     }
+
+     double m = value - C;
+
+     blue = (uchar)clip<int>((int)round((B + m) * 255.), 0, 255);
+     green = (uchar)clip<int>((int)round((G + m) * 255.), 0, 255);
+     red = (uchar)clip<int>((int)round((R + m) * 255.), 0, 255);
+ }
+
+ void MathTools::convertBGRtoHSL(double & hue, double & saturation, double & lightness, uchar blue, uchar green, uchar red)
+ {
+     double B = blue / 255.;
+     double G = green / 255.;
+     double R = red / 255.;
+
+     double min = B, max = B;
+     min = std::min(min, G);
+     min = std::min(min, R);
+     max = std::max(max, G);
+     max = std::max(max, R);
+
+     if (min == max)
+         hue = 0.;
+     else if (max == B)
+         hue = M_PI / 3. * (4 + (R - G) / (max - min));
+     else if (max == G)
+         hue = M_PI / 3. * (2 + (B - R) / (max - min));
+     else
+         hue = M_PI / 3. * (G - B) / (max - min);
+
+     if (hue < 0.)
+         hue += 2 * M_PI;
+
+     lightness = (max + min) / 2.;
+
+     if (max == 0. || min == 1.)
+         saturation = 0.;
+     else
+         saturation = (max - lightness) / (std::min(lightness, 1. - lightness));
+
+     hue = clip<double>(hue, 0., 2 * M_PI);
+     saturation = clip<double>(saturation, 0., 1.);
+     lightness = clip<double>(lightness, 0., 1.);
+ }
+
+ void MathTools::convertHSLtoBGR(uchar & blue, uchar & green, uchar & red, double hue, double saturation, double lightness)
+ {
+     double C = (1. - std::abs(2. * lightness - 1.)) * saturation;
+     double H = hue * 3. / M_PI;
+     double X = C * (1. - std::abs(std::fmod(H, 2.) - 1.));
+
+     double B, G, R;
+     if (H < 0. || 6. < H) {
+         B = 0;
+         G = 0;
+         R = 0;
+     }
+     else if (H <= 1.) {
+         B = 0.;
+         G = X;
+         R = C;
+     }
+     else if (H <= 2.) {
+         B = 0.;
+         G = C;
+         R = X;
+     }
+     else if (H <= 3.) {
+         B = X;
+         G = C;
+         R = 0.;
+     }
+     else if (H <= 4.) {
+         B = C;
+         G = X;
+         R = 0.;
+     }
+     else if (H <= 5.) {
+         B = C;
+         G = 0.;
+         R = X;
+     }
+     else if (H <= 6.) {
+         B = X;
+         G = 0.;
+         R = C;
+     }
+
+     double m = lightness - C / 2.;
+
+     blue = (uchar)clip<int>((int)round((B + m) * 255.), 0, 255);
+     green = (uchar)clip<int>((int)round((G + m) * 255.), 0, 255);
+     red = (uchar)clip<int>((int)round((R + m) * 255.), 0, 255);
+ }
+
+ void MathTools::convertBGRtoHSI(double & hue, double & saturation, double & intensity, uchar blue, uchar green, uchar red)
+ {
+     double B = blue / 255.;
+     double G = green / 255.;
+     double R = red / 255.;
+     double i = B + G + R;
+     intensity = i / 3;
+
+     if (R == G && G == B) {
+         hue = 0.;
+         saturation = 0.;
+     }
+     else {
+         double w = 0.5 * (2 * R - G - B) / sqrt((R - G) * (R - G) + (R - B) * (G - B));
+         w = clip<double>(w, -1., 1.);
+         hue = acos(w);
+         if (B > G)
+             hue = 2 * M_PI - hue;
+         double min;
+         if (R <= B && R <= G)
+             min = R;
+         else if (B <= G)
+             min = B;
+         else
+             min = G;
+         saturation = 1 - 3 * min / i;
+     }
+
+     hue = clip<double>(hue, 0., 2 * M_PI);
+     saturation = clip<double>(saturation, 0., 1.);
+     intensity = clip<double>(intensity, 0., 1.);
+ }
+
+ void MathTools::convertHSItoBGR(uchar & blue, uchar & green, uchar & red, double hue, double saturation, double intensity)
+ {
+     double B, G, R;
+
+     if (saturation == 0.)
+         B = G = R = intensity;
+     else {
+         if ((hue >= 0.) && (hue < 2. * M_PI / 3.)) {
+             B = (1. - saturation) / 3.;
+             R = (1. + saturation * cos(hue) / cos(M_PI / 3. - hue)) / 3.;
+             G = 1. - R - B;
+         }
+         else if ((hue >= 2. * M_PI / 3.) && (hue < 4. * M_PI / 3.)) {
+             hue = hue - 2. * M_PI / 3.;
+             R = (1. - saturation) / 3.;
+             G = (1. + saturation * cos(hue) / cos(M_PI / 3. - hue)) / 3.;
+             B = 1. - R - G;
+         }
+         else if ((hue >= 4. * M_PI / 3.) && (hue < 2. * M_PI)) {
+             hue = hue - 4. * M_PI / 3.;
+             G = (1. - saturation) / 3.;
+             B = (1. + saturation * cos(hue) / cos(M_PI / 3. - hue)) / 3.;
+             R = 1. - B - G;
+         }
+         else {
+             B = G = R = 0.;
+         }
+
+         B *= 3 * intensity;
+         G *= 3 * intensity;
+         R *= 3 * intensity;
+     }
+
+     blue = (uchar)clip<int>((int)round(B * 255.), 0, 255);
+     green = (uchar)clip<int>((int)round(G * 255.), 0, 255);
+     red = (uchar)clip<int>((int)round(R * 255.), 0, 255);
  }
