@@ -45,41 +45,44 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      return (uchar)clip<int>((int)round(interpolation), 0, 255);
 }
 
- void MathTools::computeImageFeatures(const uchar * image, int width, int height, int iFirstPos, int jFirstPos, int step, int channels, double * features, int featureDirSubdivision)
+ void MathTools::computeImageBGRFeatures(const uchar * image, int width, int height, int iFirstPos, int jFirstPos, int step, double * features, int featureDirSubdivision)
  {
      int blockWidth  = (int)ceil(width / (double)featureDirSubdivision);
      int blockHeight = (int)ceil(height / (double)featureDirSubdivision);
      
-     for (int k = 0; k < channels * featureDirSubdivision * featureDirSubdivision; k++)
+     for (int k = 0; k < 3 * featureDirSubdivision * featureDirSubdivision; k++)
          features[k] = 0;
 
      for (int i = 0; i < height; i++) {
          for (int j = 0; j < width; j++) {
              int blockId = featureDirSubdivision * (i / blockHeight) + j / blockWidth;
-             int imageId = channels * ((iFirstPos + i) * step + jFirstPos + j);
-             for (int c = 0; c < channels; c++) 
-                 features[channels * blockId + c] += image[imageId + c];
+             int imageId = 3 * ((iFirstPos + i) * step + jFirstPos + j);
+             for (int c = 0; c < 3; c++) 
+                 features[3 * blockId + c] += image[imageId + c];
          }
      }
 
-     for (int k = 0; k < channels * featureDirSubdivision * featureDirSubdivision; k++) {
-         int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * channels) ? blockHeight : height - (featureDirSubdivision - 1) * blockHeight;
-         int corrBlockWidth  = (((k / channels + 1) % featureDirSubdivision) != 0) ? blockWidth : width - (featureDirSubdivision - 1) * blockWidth;
-         int deb = corrBlockHeight * corrBlockWidth;
+     for (int k = 0; k < 3 * featureDirSubdivision * featureDirSubdivision; k++) {
+         int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * 3) ? blockHeight : height - (featureDirSubdivision - 1) * blockHeight;
+         int corrBlockWidth  = (((k / 4 + 1) % featureDirSubdivision) != 0) ? blockWidth : width - (featureDirSubdivision - 1) * blockWidth;
          features[k] /= corrBlockWidth * corrBlockHeight;
      }
  }
 
- double MathTools::squareDistance(const double * vec1, const double * vec2, int size)
+ double MathTools::BGRFeatureDistance(const double * vec1, const double * vec2, int size)
  {
-     double sqDist = 0.0;
-     double temp;
-     for (int i = 0; i < size; i++) {
-         temp = vec1[i] - vec2[i];
-         sqDist += temp * temp;
+     //Use deltaE distance
+     double sumDist = 0.;
+     for (int i = 0; i < 3 * size; i += 3) {
+         double dB = vec1[i] - vec2[i];
+         double dG = vec1[i + 1] - vec2[i + 1];
+         double dR = vec1[i + 2] - vec2[i + 2];
+         double mR = (vec1[i + 2] + vec2[i + 2]) / 2.;
+         double sqDist = (2. + mR / 256.) * dR * dR + 4 * dG * dG + (2. + (255. - mR) / 256.) * dB * dB;
+         sumDist += sqrt(sqDist);
      }
 
-     return sqDist;
+     return sumDist;
  }
 
  void MathTools::convertBGRtoHSV(double & hue, double & saturation, double & value, uchar blue, uchar green, uchar red)

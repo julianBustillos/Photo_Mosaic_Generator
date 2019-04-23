@@ -8,8 +8,8 @@
 class MatchSolver {
 public:
     MatchSolver(const Photo &photo, const Tiles &tiles, int subdivisions);
-    ~MatchSolver();
-    int *getMatchingTiles();
+    ~MatchSolver() {};
+    const std::vector<int> &getMatchingTiles();
 
 private:
     struct matchCandidate {
@@ -33,6 +33,6 @@ private:
     static const int _redundancyTilesNumber = (REDUNDANCY_DISTANCE * 2 + 1) * (REDUNDANCY_DISTANCE * 2 + 1);
 
 private:
-    int *_matchingTiles;
+    std::vector<int> _matchingTiles;
     int _subdivisions;
 };

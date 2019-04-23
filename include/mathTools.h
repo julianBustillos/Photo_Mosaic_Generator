@@ -12,8 +12,8 @@ public:
 
 public:
     static uchar biCubicInterpolation(double x, double y, const uchar *pixelColorGrid);
-    static void computeImageFeatures(const uchar *image, int width, int height, int iFirstPos, int jFirstPos, int step, int channels, double *features, int featureDirSubdivision);
-    static double squareDistance(const double *vec1, const double *vec2, int size);
+    static void computeImageBGRFeatures(const uchar *image, int width, int height, int iFirstPos, int jFirstPos, int step, double *features, int featureDirSubdivision);
+    static double BGRFeatureDistance(const double *vec1, const double *vec2, int size);
     static void convertBGRtoHSV(double &hue, double &saturation, double &value, uchar blue, uchar green, uchar red);
     static void convertHSVtoBGR(uchar &blue, uchar &green, uchar &red, double hue, double saturation, double value);
     static void convertBGRtoHSL(double &hue, double &saturation, double &lightness, uchar blue, uchar green, uchar red);

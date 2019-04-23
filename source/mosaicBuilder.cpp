@@ -3,7 +3,7 @@
 #include "customException.h"
 
 
-MosaicBuilder::MosaicBuilder(const Photo & photo, const Tiles & tiles, int subdivisions, int * matchingTiles)
+MosaicBuilder::MosaicBuilder(const Photo & photo, const PixelAdapter &pixelAdapter, const Tiles & tiles, int subdivisions, const std::vector<int> &matchingTiles)
 {
     cv::Size mosaicSize = photo.getTileSize() * subdivisions;
     cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
@@ -11,9 +11,10 @@ MosaicBuilder::MosaicBuilder(const Photo & photo, const Tiles & tiles, int subdi
     const std::vector<Tiles::Data> &tilesData = tiles.getTileDataVector();
     for (int i = 0; i < subdivisions; i++) {
         for (int j = 0; j < subdivisions; j++) {
-            int tileIndex = matchingTiles[i * subdivisions + j];
-            if (tileIndex >= 0)
-                copyTileOnMosaic(mosaicData, tiles.getTempTilePath() + tilesData[tileIndex].filename, photo.getFirstPixel(i, j, false), mosaicSize.width);
+            int mosaicId = i * subdivisions + j;
+            int tileId = matchingTiles[mosaicId];
+            if (tileId >= 0)
+                copyTileOnMosaic(mosaicData, tiles.getTempTilePath() + tilesData[tileId].filename, pixelAdapter, mosaicId, photo.getFirstPixel(i, j, false), mosaicSize.width);
             else 
                 throw CustomException("One or several tiles missing from match solver !", CustomException::Level::NORMAL);
         }
@@ -24,12 +25,14 @@ MosaicBuilder::MosaicBuilder(const Photo & photo, const Tiles & tiles, int subdi
     printInfo();
 }
 
-void MosaicBuilder::copyTileOnMosaic(uchar *mosaicData, const std::string & tilePath, const cv::Point firstPixelPos, const int step)
+void MosaicBuilder::copyTileOnMosaic(uchar *mosaicData, const std::string &tilePath, const PixelAdapter &pixelAdapter, int mosaicId, const cv::Point firstPixelPos, int step)
 {
     cv::Mat tile = cv::imread(tilePath);
     uchar *tileData = tile.data;
     if (!tileData)
         throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::NORMAL);
+
+    pixelAdapter.applyCorrection(tile, mosaicId);
 
     cv::Size tileSize = tile.size();
     for (int i = 0; i < tileSize.height; i++) {

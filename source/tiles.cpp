@@ -65,7 +65,7 @@ void Tiles::computeTileData(const cv::Mat & image, const std::string &filename)
         tileMat = image;
     }
 
-    MathTools::computeImageFeatures(tileMat.data, _tileSize.width, _tileSize.height, 0, 0, _tileSize.width, tileMat.channels(), data.features, FEATURE_ROOT_SUBDIVISION);
+    MathTools::computeImageBGRFeatures(tileMat.data, _tileSize.width, _tileSize.height, 0, 0, _tileSize.width, data.features, FEATURE_ROOT_SUBDIVISION);
 
     data.filename = filename;
 	_tilesData.push_back(data);
@@ -96,9 +96,9 @@ void Tiles::computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const 
     int jFirstGrid = (int)floor(x) - 1;
      
     for (int color = 0; color < 3; color++) {
-        for (int j = 0; j < 4; j++)
-            for (int i = 0; i < 4; i++)
-                pixelColorGrid[j * 4 + i] = imageData[getDataIndex(iFirstGrid + i, jFirstGrid + j, imageSize) + color];
+        for (int col = 0; col < 4; col++)
+            for (int row = 0; row < 4; row++)
+                pixelColorGrid[col * 4 + row] = imageData[getDataIndex(iFirstGrid + row, jFirstGrid + col, imageSize) + color];
 
         tilePixel[color] = MathTools::biCubicInterpolation(x - floor(x), y - floor(y), pixelColorGrid);
     }
