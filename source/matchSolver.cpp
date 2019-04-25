@@ -25,7 +25,7 @@ MatchSolver::MatchSolver(const Photo &photo, const Tiles &tiles, int subdivision
         for (int j = 0; j < _subdivisions; j++) {
             double features[3 * FEATURE_ROOT_SUBDIVISION * FEATURE_ROOT_SUBDIVISION];
             cv::Point firstPixel = photo.getFirstPixel(i, j, true);
-            MathTools::computeImageBGRFeatures(data, tileSize.width, tileSize.height, firstPixel.y, firstPixel.x, step, features, FEATURE_ROOT_SUBDIVISION);
+            MathTools::computeImageBGRFeatures(data, tileSize, firstPixel, step, features, FEATURE_ROOT_SUBDIVISION);
             findCandidateTiles(candidates, i, j, tileData, features);
         }
     }

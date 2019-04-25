@@ -1,6 +1,7 @@
 #include "mosaicBuilder.h"
 #include <vector>
 #include "customException.h"
+#include "mathTools.h"
 
 
 MosaicBuilder::MosaicBuilder(const Photo & photo, const PixelAdapter &pixelAdapter, const Tiles & tiles, int subdivisions, const std::vector<int> &matchingTiles)
@@ -37,8 +38,8 @@ void MosaicBuilder::copyTileOnMosaic(uchar *mosaicData, const std::string &tileP
     cv::Size tileSize = tile.size();
     for (int i = 0; i < tileSize.height; i++) {
         for (int j = 0; j < tileSize.width; j++) {
-            int mosaicId = 3 * ((firstPixelPos.y + i) * step + firstPixelPos.x + j);
-            int tileId = 3 * (i * tileSize.width + j);
+            int mosaicId = MathTools::getDataIndex(firstPixelPos.y + i, firstPixelPos.x + j, step);
+            int tileId = MathTools::getDataIndex(i, j, tileSize.width);
             for (int c = 0; c < 3; c++) {
                 mosaicData[mosaicId + c] = tileData[tileId + c];
             }

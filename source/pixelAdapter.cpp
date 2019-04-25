@@ -78,7 +78,7 @@ void PixelAdapter::computeAdapterData(AdapterData &adapterData, const uchar *dat
 
     for (int i = 0; i < size.height; i++) {
         for (int j = 0; j < size.width; j++) {
-            int id = 3 * (((firstPixel.y + i) * step + firstPixel.x + j));
+            int id = MathTools::getDataIndex(firstPixel.y + i, firstPixel.x + j, step);
             blue = data[id];
             green = data[id + 1];
             red = data[id + 2];

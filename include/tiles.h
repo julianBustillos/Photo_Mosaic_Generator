@@ -21,9 +21,9 @@ public:
 	
 private:
 	void computeTileData(const cv::Mat &image, const std::string &filename);
-	void computeCropInfo(const cv::Size &imageSize, cv::Point &firstPixelPos, double &ratio);
-	void computeTilePixelColor(uchar* tilePixel, const cv::Mat &image, const cv::Size &imageSize, int i, int j, const cv::Point &firstPixelPos, double ratio);
-    int getDataIndex(int i, int j, const cv::Size &matSize);
+	void computeCropInfo(const cv::Size &imageSize, cv::Point &firstPixelPos, cv::Size &cropSize);
+    void computeTileImage(uchar *tileData, const cv::Mat &image, const cv::Point &firstPixelPos, const cv::Size &cropSize);
+	void computeBicubicInterpolationPixelColor(uchar* pixel, const uchar *imageData, const cv::Size &size, int i, int j, double ratio);
 	void exportTile(const cv::Mat &tile, const std::string &filename);
 	void printInfo() const;
 

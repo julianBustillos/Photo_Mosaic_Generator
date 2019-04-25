@@ -45,26 +45,26 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      return (uchar)clip<int>((int)round(interpolation), 0, 255);
 }
 
- void MathTools::computeImageBGRFeatures(const uchar * image, int width, int height, int iFirstPos, int jFirstPos, int step, double * features, int featureDirSubdivision)
+ void MathTools::computeImageBGRFeatures(const uchar * image, const cv::Size&size, const cv::Point &firstPos, int step, double * features, int featureDirSubdivision)
  {
-     int blockWidth  = (int)ceil(width / (double)featureDirSubdivision);
-     int blockHeight = (int)ceil(height / (double)featureDirSubdivision);
+     int blockWidth  = (int)ceil(size.width / (double)featureDirSubdivision);
+     int blockHeight = (int)ceil(size.height / (double)featureDirSubdivision);
      
      for (int k = 0; k < 3 * featureDirSubdivision * featureDirSubdivision; k++)
          features[k] = 0;
 
-     for (int i = 0; i < height; i++) {
-         for (int j = 0; j < width; j++) {
+     for (int i = 0; i < size.height; i++) {
+         for (int j = 0; j < size.width; j++) {
              int blockId = featureDirSubdivision * (i / blockHeight) + j / blockWidth;
-             int imageId = 3 * ((iFirstPos + i) * step + jFirstPos + j);
+             int imageId = getDataIndex(firstPos.y + i, firstPos.x + j, step);
              for (int c = 0; c < 3; c++) 
                  features[3 * blockId + c] += image[imageId + c];
          }
      }
 
      for (int k = 0; k < 3 * featureDirSubdivision * featureDirSubdivision; k++) {
-         int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * 3) ? blockHeight : height - (featureDirSubdivision - 1) * blockHeight;
-         int corrBlockWidth  = (((k / 4 + 1) % featureDirSubdivision) != 0) ? blockWidth : width - (featureDirSubdivision - 1) * blockWidth;
+         int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * 3) ? blockHeight : size.height - (featureDirSubdivision - 1) * blockHeight;
+         int corrBlockWidth  = (((k / 4 + 1) % featureDirSubdivision) != 0) ? blockWidth : size.width - (featureDirSubdivision - 1) * blockWidth;
          features[k] /= corrBlockWidth * corrBlockHeight;
      }
  }
