@@ -45,6 +45,23 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      return (uchar)clip<int>((int)round(interpolation), 0, 255);
 }
 
+ void MathTools::applyGaussianBlur(uchar * image, const cv::Size & size, int sigma, int nbBoxes)
+ {
+     uchar *temp = new uchar[3 * size.width * size.height];
+     if (!temp)
+         return;
+
+     std::vector<int> boxRadius(nbBoxes);
+     getGaussianApproximationBoxRadiuses(sigma, boxRadius);
+
+     if (boxRadius[boxRadius.size() - 1] <= std::min(size.width, size.height) / 2) {
+         for (int k = 0; k < boxRadius.size(); k++)
+             applyBoxBlur(image, temp, size, boxRadius[k]);
+     }
+
+     delete temp;
+ }
+
  void MathTools::computeImageBGRFeatures(const uchar * image, const cv::Size&size, const cv::Point &firstPos, int step, double * features, int featureDirSubdivision)
  {
      int blockWidth  = (int)ceil(size.width / (double)featureDirSubdivision);
@@ -326,4 +343,126 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      blue = (uchar)clip<int>((int)round(B * 255.), 0, 255);
      green = (uchar)clip<int>((int)round(G * 255.), 0, 255);
      red = (uchar)clip<int>((int)round(R * 255.), 0, 255);
+ }
+
+ void MathTools::getGaussianApproximationBoxRadiuses(int sigma, std::vector<int> &boxRadius)
+ {
+     int n = (int)boxRadius.size();
+     double wIdeal = sqrt(12. * sigma * sigma / n + 1.);
+     int wl = (int)floor(wIdeal);
+     if ((wl % 2) == 0)
+         wl--;
+     int wu = wl + 2;
+     int m = (int)round((12. * sigma * sigma - n * wl * wl - 4. * n * wl - 3 * n) / (-4. * wl - 4.));
+     int wlr = (wl - 1) / 2;
+     int wur = (wu - 1) / 2;
+
+     for (int k = 0; k < n; k++)
+         boxRadius[k] = (k < m) ? wlr : wur;
+ }
+
+ void MathTools::applyBoxBlur(uchar * image, uchar * temp, const cv::Size & size, int boxRadius)
+ {
+     applyRowBlur(image, temp, size, boxRadius);
+     applyColBlur(temp, image, size, boxRadius);
+ }
+
+ void MathTools::applyRowBlur(uchar * source, uchar * target, const cv::Size & size, int lineRadius)
+ {
+     int lineSize = 2 * lineRadius + 1;
+     int accumulator[3];
+     int start[3];
+     int end[3];
+
+     for (int i = 0; i < size.height; i++) {
+         // Average filter start middle and end indices
+         int startId = 3 * i * size.width;
+         int endId = 3 * (i * size.width + lineRadius);
+         int targetId = startId;
+
+         // Initialization 
+         for (int c = 0; c < 3; c++) {
+             start[c] = source[startId + c];
+             end[c] = source[3 * (i * size.width + (size.height - 1)) + c];
+             accumulator[c] = start[c] * (lineRadius + 1);
+         }
+
+         for (int j = 0; j < lineRadius; j++) {
+             for (int c = 0; c < 3; c++) {
+                 accumulator[c] += source[startId + 3 * j + c];
+             }
+         }
+
+         // Average filtering
+         for (int j = 0; j <= lineRadius; j++, targetId += 3, endId += 3) {
+             for (int c = 0; c < 3; c++) {
+                 accumulator[c] += source[endId + c] - start[c];
+                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+             }
+         }
+
+         for (int j = lineRadius + 1; j < size.width - lineRadius; j++, targetId += 3, startId += 3, endId += 3) {
+             for (int c = 0; c < 3; c++) {
+                 accumulator[c] += source[endId + c] - source[startId + c];
+                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+             }
+         }
+
+         for (int j = size.width - lineRadius; j < size.width; j++, targetId += 3, startId += 3) {
+             for (int c = 0; c < 3; c++) {
+                 accumulator[c] += end[c] - source[startId + c];
+                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+             }
+         }
+     }
+ }
+
+ void MathTools::applyColBlur(uchar * source, uchar * target, const cv::Size & size, int lineRadius)
+ {
+     int lineSize = 2 * lineRadius + 1;
+     int accumulator[3];
+     int start[3];
+     int end[3];
+
+     for (int j = 0; j < size.width; j++) {
+         // Average filter start middle and end indices
+         int startId = 3 * j;
+         int endId = 3 * (lineRadius * size.width + j);
+         int targetId = startId;
+
+         // Initialization 
+         for (int c = 0; c < 3; c++) {
+             start[c] = source[startId + c];
+             end[c] = source[3 * ((size.height - 1) * size.width + j) + c];
+             accumulator[c] = start[c] * (lineRadius + 1);
+         }
+
+         for (int i = 0; i < lineRadius; i++) {
+             for (int c = 0; c < 3; c++) {
+                 accumulator[c] += source[startId + 3 * i * size.width + c];
+             }
+         }
+
+         // Average filtering
+         for (int i = 0; i <= lineRadius; i++, targetId += 3 * size.width, endId += 3 * size.width) {
+             for (int c = 0; c < 3; c++) {
+                 accumulator[c] += source[endId + c] - start[c];
+                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+             }
+         }
+         
+         for (int i = lineRadius + 1; i < size.height - lineRadius; i++, targetId += 3 * size.width, startId += 3 * size.width, endId += 3 * size.width) {
+             for (int c = 0; c < 3; c++) {
+                 accumulator[c] += source[endId + c] - source[startId + c];
+                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+             }
+         }
+
+         for (int i = size.height - lineRadius; i < size.height; i++, targetId += 3 * size.width, startId += 3 * size.width) {
+             for (int c = 0; c < 3; c++) {
+                 accumulator[c] += end[c] - source[startId + c];
+                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+             }
+         }
+     }
  }

@@ -21,14 +21,6 @@ void PixelAdapter::applyCorrection(cv::Mat & tile, int mosaicId) const
     AdapterData originalTile;
     computeAdapterData(originalTile, data, cv::Point(0, 0), size, size.width);
 
-    //DEBUG
-    std::vector<int> image_params;
-    image_params.push_back(cv::IMWRITE_JPEG_QUALITY);
-    image_params.push_back(100);
-    cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\current_tile.jpg", tile, image_params);
-    cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\current_part.jpg", _tileCorrection[mosaicId]._image, image_params);
-    //DEBUG
-
     int tileDataSize = 3 * size.width * size.height;
 
     int BGR_correction_function[3][256];
@@ -51,23 +43,11 @@ void PixelAdapter::applyCorrection(cv::Mat & tile, int mosaicId) const
         data[k + 1] = BGR_correction_function[1][green];
         data[k + 2] = BGR_correction_function[2][red];
     }
-
-    //DEBUG
-    cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\current_tile_corrected.jpg", tile, image_params);
-    computeAdapterData(originalTile, data, cv::Point(0, 0), size, size.width);
-    AdapterData resultTileShouldBe = _tileCorrection[mosaicId];
-    int debug = 1;
-    //DEBUG
 }
 
 void PixelAdapter::computeAdapterData(AdapterData &adapterData, const uchar *data, const cv::Point &firstPixel, const cv::Size &size, int step) const
 {
     uchar blue, green, red;
-
-    //DEBUG
-    adapterData._image = cv::Mat(size, CV_8UC3, cv::Scalar(0, 0, 0));
-    uchar *imageData = adapterData._image.data;
-    //DEBUG
 
     //Compute cumulative distribution function for BGR colors
     for (int c = 0; c < 3; c++) {
@@ -86,13 +66,6 @@ void PixelAdapter::computeAdapterData(AdapterData &adapterData, const uchar *dat
             adapterData._BGR_cdf[0][blue] += 1.;
             adapterData._BGR_cdf[1][green] += 1.;
             adapterData._BGR_cdf[2][red] += 1.;
-
-            //DEBUG
-            int currentId = i * size.width + j;
-            imageData[3 * currentId] = blue;
-            imageData[3 * currentId + 1] = green;
-            imageData[3 * currentId + 2] = red;
-            //DEBUG
         }
     }
 

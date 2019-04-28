@@ -13,9 +13,6 @@ public:
 private:
     struct AdapterData {
         double _BGR_cdf[3][256];
-        //DEBUG
-        cv::Mat _image;
-        //DEBUG
     };
 
 private:

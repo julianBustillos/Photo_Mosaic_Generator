@@ -16,7 +16,7 @@ public:
 
 public:
     static uchar biCubicInterpolation(double x, double y, const uchar *pixelColorGrid);
-
+    static void applyGaussianBlur(uchar *image, const cv::Size &size, int sigma, int nbBoxes);
     static void computeImageBGRFeatures(const uchar *image, const cv::Size&size, const cv::Point &firstPos, int step, double *features, int featureDirSubdivision);
     static double BGRFeatureDistance(const double *vec1, const double *vec2, int size);
     static void convertBGRtoHSV(double &hue, double &saturation, double &value, uchar blue, uchar green, uchar red);
@@ -29,6 +29,10 @@ public:
 private:
     MathTools() {};
     ~MathTools() {};
+    static void getGaussianApproximationBoxRadiuses(int sigma, std::vector<int> &boxRadius);
+    static void applyBoxBlur(uchar *image, uchar *temp, const cv::Size &size, int boxRadius);
+    static void applyRowBlur(uchar *source, uchar *target, const cv::Size &size, int lineRadius);
+    static void applyColBlur(uchar *source, uchar *target, const cv::Size &size, int lineRadius);
 
 private:
     static const double _biCubicCoeffs[16];

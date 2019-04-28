@@ -87,15 +87,8 @@ void Tiles::computeCropInfo(const cv::Size &imageSize, cv::Point & firstPixelPos
 
 void Tiles::computeTileImage(uchar * tileData, const cv::Mat & image, const cv::Point & firstPixelPos, const cv::Size &cropSize)
 {
-    //Temporary data
-    cv::Mat imageToProcess0(cropSize, CV_8UC3);
-    cv::Mat imageToProcess1(cropSize, CV_8UC3);
-    uchar *imageToProcessData[2] = { imageToProcess0.data, imageToProcess1.data };
-    cv::Size currentSize[2] = { cropSize, cropSize };
-    int sourceId = 0;
-    int targetId = 1;
-
-    //Copy cropped image
+    cv::Mat croppedImage(cropSize, CV_8UC3);
+    uchar *croppedImageData = croppedImage.data;
     uchar *imageData = image.data;
     int step = image.size().width;
     for (int i = 0; i < cropSize.height; i++) {
@@ -103,56 +96,30 @@ void Tiles::computeTileImage(uchar * tileData, const cv::Mat & image, const cv::
             int imageId = MathTools::getDataIndex(firstPixelPos.y + i, firstPixelPos.x + j, step);
             int imageToProcessId = MathTools::getDataIndex(i, j, cropSize.width);
             for (int c = 0; c < 3; c++)
-                imageToProcessData[sourceId][imageToProcessId + c] = imageData[imageId + c];
+                croppedImageData[imageToProcessId + c] = imageData[imageId + c];
         }
     }
 
-    //DEBUG
-    int debugStep = 0;
-    //DEBUG
+    double wRatio = (double)cropSize.width / (double)_tileSize.width;
+    double hRatio = (double)cropSize.height / (double)_tileSize.height;
+    double ratio = std::min(wRatio, hRatio);
 
-
-    while (true) {
-        double ratio = (double)currentSize[sourceId].width / (double)_tileSize.width;
-
-        //DEBUG
-        cv::Mat debugExport(currentSize[sourceId], CV_8UC3);
-        for (int k = 0; k < 3 * currentSize[sourceId].width * currentSize[sourceId].height; k++) {
-            debugExport.data[k] = imageToProcessData[sourceId][k];
-        }
-        std::vector<int> image_params;
-        image_params.push_back(cv::IMWRITE_JPEG_QUALITY);
-        image_params.push_back(100);
-        cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\Tile_step_" + std::to_string(debugStep) + ".jpg", debugExport, image_params);
-        debugStep++;
-        //DEBUG
-
-        if (ratio == 1.)
-            break;
-        else if (ratio > 2.) {
-            currentSize[targetId].width = (int)ceil(currentSize[sourceId].width / 2.);
-            currentSize[targetId].height = (int)ceil(currentSize[sourceId].height / 2.);
-        }
-        else {
-            currentSize[targetId] = _tileSize;
+    if (ratio != 1.) {
+        if (ratio > 1.) {
+            double blurSigma = ratio / 3.;
+            MathTools::applyGaussianBlur(croppedImageData, cropSize, blurSigma, BLUR_NB_BOXES);
         }
 
-        ratio = (double)currentSize[sourceId].width / (double)currentSize[targetId].width;
-
-        for (int i = 0; i < currentSize[targetId].height; i++) {
-            for (int j = 0; j < currentSize[targetId].width; j++) {
-                int dataId = MathTools::getDataIndex(i, j, currentSize[targetId].width);
-                computeBicubicInterpolationPixelColor(&imageToProcessData[targetId][dataId], imageToProcessData[sourceId], currentSize[sourceId], i, j, ratio);
+        for (int i = 0; i < _tileSize.height; i++) {
+            for (int j = 0; j < _tileSize.width; j++) {
+                int dataId = MathTools::getDataIndex(i, j, _tileSize.width);
+                computeBicubicInterpolationPixelColor(&tileData[dataId], croppedImageData, cropSize, i, j, ratio);
             }
         }
-
-        sourceId = (sourceId + 1) % 2;
-        targetId = (targetId + 1) % 2;
     }
-
-    //Copy result tile
-    for (int k = 0; k < 3 * _tileSize.width * _tileSize.height; k++) {
-        tileData[k] = imageToProcessData[sourceId][k];
+    else {
+        for (int k = 0; k < 3 * _tileSize.width * _tileSize.height; k++)
+            tileData[k] = croppedImageData[k];
     }
 }
 
