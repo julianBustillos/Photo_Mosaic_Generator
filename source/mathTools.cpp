@@ -369,7 +369,7 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
 
  void MathTools::applyRowBlur(uchar * source, uchar * target, const cv::Size & size, int lineRadius)
  {
-     int lineSize = 2 * lineRadius + 1;
+     double invLineSize = 1. / (double)(2 * lineRadius + 1);
      int accumulator[3];
      int start[3];
      int end[3];
@@ -397,21 +397,21 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
          for (int j = 0; j <= lineRadius; j++, targetId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += source[endId + c] - start[c];
-                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
              }
          }
 
          for (int j = lineRadius + 1; j < size.width - lineRadius; j++, targetId += 3, startId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += source[endId + c] - source[startId + c];
-                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
              }
          }
 
          for (int j = size.width - lineRadius; j < size.width; j++, targetId += 3, startId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += end[c] - source[startId + c];
-                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
              }
          }
      }
@@ -419,7 +419,7 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
 
  void MathTools::applyColBlur(uchar * source, uchar * target, const cv::Size & size, int lineRadius)
  {
-     int lineSize = 2 * lineRadius + 1;
+     double invLineSize = 1. / (double)(2 * lineRadius + 1);
      int accumulator[3];
      int start[3];
      int end[3];
@@ -447,21 +447,21 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
          for (int i = 0; i <= lineRadius; i++, targetId += 3 * size.width, endId += 3 * size.width) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += source[endId + c] - start[c];
-                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
              }
          }
          
          for (int i = lineRadius + 1; i < size.height - lineRadius; i++, targetId += 3 * size.width, startId += 3 * size.width, endId += 3 * size.width) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += source[endId + c] - source[startId + c];
-                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
              }
          }
 
          for (int i = size.height - lineRadius; i < size.height; i++, targetId += 3 * size.width, startId += 3 * size.width) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += end[c] - source[startId + c];
-                 target[targetId + c] = (uchar)round(accumulator[c] / lineSize);
+                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
              }
          }
      }
