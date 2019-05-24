@@ -45,7 +45,7 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      return (uchar)clip<int>((int)round(interpolation), 0, 255);
 }
 
- void MathTools::applyGaussianBlur(uchar * image, const cv::Size & size, int sigma, int nbBoxes)
+ void MathTools::applyGaussianBlur(uchar * image, const cv::Size & size, double sigma, int nbBoxes)
  {
      uchar *temp = new uchar[3 * size.width * size.height];
      if (!temp)
@@ -345,7 +345,72 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      red = (uchar)clip<int>((int)round(R * 255.), 0, 255);
  }
 
- void MathTools::getGaussianApproximationBoxRadiuses(int sigma, std::vector<int> &boxRadius)
+ void MathTools::convertBGRtoLUV(double & L, double & u, double & v, uchar blue, uchar green, uchar red)
+ {
+     //Using illuminant D65 as white reference
+     
+     if (blue == 0 && green == 0 && red == 0) {
+         L = 0.;
+         u = 0.;
+         v = 0.;
+         return;
+     }
+
+     double R = (double)red / 255.;
+     double G = (double)green / 255.;
+     double B = (double)blue / 255.;
+
+     double X = (0.49 * R + 0.31 * G + 0.2 * B) / 0.17697;
+     double Y = (0.17697 * R + 0.8124 * G + 0.01063 * B) / 0.17697;
+     double Z = (0.01 * G + 0.99 * B) / 0.17697;
+
+     double Y_norm = Y / 100.;
+     double div = X + 15. * Y + 3. * Z;
+     double u_p = 4. * X / div;
+     double v_p = 9. * Y / div;
+
+     if (Y_norm > 0.00885645167903563082)
+         L = 116. * cbrt(Y_norm) - 16.;
+     else
+         L = Y_norm * 903.2962962962962962963;
+
+     u = 13. * L * (u_p - 0.19783982);
+     v = 13. * L * (v_p - 0.4683363);
+
+     L = clip<double>(L, 0., 100.);
+     u = clip<double>(u, -100., 100.);
+     v = clip<double>(v, -100., 100.);
+ }
+
+ void MathTools::convertLUVtoBGR(uchar & blue, uchar & green, uchar & red, double L, double u, double v)
+ {
+     //Using illuminant D65 as white reference
+     
+     if (L == 0. && u == 0. && v == 0.) {
+         blue = 0;
+         green = 0;
+         red = 0;
+         return;
+     }
+
+     double u_p = u / (13. * L) + 0.19783982;
+     double v_p = v / (13. * L) + 0.4683363;
+
+     double Y;
+     if (L > 8.)
+         Y = 100. * (L + 16.) * (L + 16.) * (L + 16.) / 1560896.;
+     else
+         Y = 100. * L * 0.00110705645987945385;
+
+     double X = Y * 9. *u_p / (4. * v_p);
+     double Z = Y * (12. - 3. * u_p - 20. * v_p) / (4. * v_p);
+
+     red = (uchar)clip<int>((int)round((0.41847 * X - 0.15866 * Y - 0.082835 * Z) * 255.), 0, 255);
+     green = (uchar)clip<int>((int)round((-0.091169 * X + 0.25243 * Y + 0.015708 * Z) * 255.), 0, 255);
+     blue = (uchar)clip<int>((int)round((0.0009209 * X - 0.0025498 * Y + 0.1786 * Z) * 255.), 0, 255);
+ }
+
+ void MathTools::getGaussianApproximationBoxRadiuses(double sigma, std::vector<int> &boxRadius)
  {
      int n = (int)boxRadius.size();
      double wIdeal = sqrt(12. * sigma * sigma / n + 1.);
@@ -383,7 +448,7 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
          // Initialization 
          for (int c = 0; c < 3; c++) {
              start[c] = source[startId + c];
-             end[c] = source[3 * (i * size.width + (size.height - 1)) + c];
+             end[c] = source[3 * ((i + 1) * size.width - 1) + c];
              accumulator[c] = start[c] * (lineRadius + 1);
          }
 

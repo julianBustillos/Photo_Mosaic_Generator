@@ -82,6 +82,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(OPENCV4_INCLUDE);$(ProjectDir)\include</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(OPENCV4_LIB)</AdditionalLibraryDirectories>
@@ -109,6 +110,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(OPENCV4_INCLUDE);$(ProjectDir)\include</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -121,20 +123,24 @@
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\matchSolver.cpp" />
     <ClCompile Include="source\mathTools.cpp" />
+    <ClCompile Include="source\MeanShift.cpp" />
     <ClCompile Include="source\mosaicBuilder.cpp" />
     <ClCompile Include="source\parameters.cpp" />
     <ClCompile Include="source\photo.cpp" />
     <ClCompile Include="source\pixelAdapter.cpp" />
+    <ClCompile Include="source\regionOfInterest.cpp" />
     <ClCompile Include="source\tiles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\customException.h" />
     <ClInclude Include="include\matchSolver.h" />
     <ClInclude Include="include\mathTools.h" />
+    <ClInclude Include="include\MeanShift.h" />
     <ClInclude Include="include\outputDisabler.h" />
     <ClInclude Include="include\parameters.h" />
     <ClInclude Include="include\photo.h" />
     <ClInclude Include="include\pixelAdapter.h" />
+    <ClInclude Include="include\regionOfInterest.h" />
     <ClInclude Include="include\sortedVector.h" />
     <ClInclude Include="include\tiles.h" />
     <ClInclude Include="include\clock.h" />

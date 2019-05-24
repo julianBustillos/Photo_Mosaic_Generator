@@ -4,6 +4,7 @@
 #include "customException.h"
 #include "mathTools.h"
 #include "outputDisabler.h"
+#include "regionOfInterest.h"
 
 
 Tiles::Tiles(const std::string &path, const cv::Size &tileSize) :
@@ -53,17 +54,19 @@ void Tiles::computeTileData(const cv::Mat & image, const std::string &filename)
     cv::Size cropSize;
     cv::Mat tileMat(_tileSize, CV_8UC3, cv::Scalar(0, 0, 0));
 
-    computeCropInfo(image.size(), cropFirstPixelPos, cropSize);
+    computeCropInfo(image, cropFirstPixelPos, cropSize);
     computeTileImage(tileMat.data, image, cropFirstPixelPos, cropSize);
     MathTools::computeImageBGRFeatures(tileMat.data, _tileSize, cv::Point(0, 0), _tileSize.width, data.features, FEATURE_ROOT_SUBDIVISION);
-    data.filename = filename;
+    data.filename = filename.substr(0, filename.find_last_of('.')) + ".png";
 	_tilesData.push_back(data);
 
-	exportTile(tileMat, filename);
+	exportTile(tileMat, data.filename);
 }
 
-void Tiles::computeCropInfo(const cv::Size &imageSize, cv::Point & firstPixelPos, cv::Size &cropSize)
+void Tiles::computeCropInfo(const cv::Mat &image, cv::Point & firstPixelPos, cv::Size &cropSize)
 {
+    const cv::Size imageSize = image.size();
+
     if (imageSize == _tileSize) {
         firstPixelPos = cv::Point(0, 0);
         cropSize = imageSize;
@@ -77,6 +80,8 @@ void Tiles::computeCropInfo(const cv::Size &imageSize, cv::Point & firstPixelPos
 	double ratio = std::min(rHeight, rWidth);
     cropSize.width = (int)ceil(_tileSize.width * ratio);
     cropSize.height = (int)ceil(_tileSize.height * ratio);
+
+    RegionOfInterest roi(image); //TODO
 
 	firstPixelPos.x = (int)(floor((imageSize.width - cropSize.width) / 2.));
     if (imageRatio > 1.)
@@ -145,7 +150,10 @@ void Tiles::computeBicubicInterpolationPixelColor(uchar* pixel, const uchar *ima
 
 void Tiles::exportTile(const cv::Mat & tile, const std::string & filename)
 {
-	cv::imwrite(_tempPath + filename, tile);
+    std::vector<int> image_params;
+    image_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+    image_params.push_back(0);
+	cv::imwrite(_tempPath + filename, tile, image_params);
 	if (!boost::filesystem::exists(_tempPath + filename))
 		throw CustomException("Impossible to create temporary tile : " + _tempPath + filename, CustomException::Level::NORMAL);
 }
