@@ -369,13 +369,13 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      double u_p = 4. * X / div;
      double v_p = 9. * Y / div;
 
-     if (Y_norm > 0.00885645167903563082)
+     if (Y_norm > 0.008856)
          L = 116. * cbrt(Y_norm) - 16.;
      else
-         L = Y_norm * 903.2962962962962962963;
+         L = Y_norm * 903.296296;
 
-     u = 13. * L * (u_p - 0.19783982);
-     v = 13. * L * (v_p - 0.4683363);
+     u = 13. * L * (u_p - 0.197840);
+     v = 13. * L * (v_p - 0.468336);
 
      L = clip<double>(L, 0., 100.);
      u = clip<double>(u, -100., 100.);
@@ -393,17 +393,102 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
          return;
      }
 
-     double u_p = u / (13. * L) + 0.19783982;
-     double v_p = v / (13. * L) + 0.4683363;
+     double u_p = u / (13. * L) + 0.197840;
+     double v_p = v / (13. * L) + 0.468336;
 
      double Y;
      if (L > 8.)
          Y = 100. * (L + 16.) * (L + 16.) * (L + 16.) / 1560896.;
      else
-         Y = 100. * L * 0.00110705645987945385;
+         Y = 100. * L * 0.001107;
 
      double X = Y * 9. *u_p / (4. * v_p);
      double Z = Y * (12. - 3. * u_p - 20. * v_p) / (4. * v_p);
+
+     red = (uchar)clip<int>((int)round((0.41847 * X - 0.15866 * Y - 0.082835 * Z) * 255.), 0, 255);
+     green = (uchar)clip<int>((int)round((-0.091169 * X + 0.25243 * Y + 0.015708 * Z) * 255.), 0, 255);
+     blue = (uchar)clip<int>((int)round((0.0009209 * X - 0.0025498 * Y + 0.1786 * Z) * 255.), 0, 255);
+ }
+
+ void MathTools::convertBGRtoLAB(double & L, double & a, double & b, uchar blue, uchar green, uchar red)
+ {
+     //Using illuminant D65 as white reference
+
+     if (blue == 0 && green == 0 && red == 0) {
+         L = 0.;
+         a = 0.;
+         b = 0.;
+         return;
+     }
+
+     double R = (double)red / 255.;
+     double G = (double)green / 255.;
+     double B = (double)blue / 255.;
+
+     double X_norm = (0.49 * R + 0.31 * G + 0.2 * B) / 16.820804;
+     double Y_norm = (0.17697 * R + 0.8124 * G + 0.01063 * B) / 17.697;
+     double Z_norm = (0.01 * G + 0.99 * B) / 19.269201;
+
+     double X_var, Y_var, Z_var;
+
+     if (X_norm > 0.008856)
+         X_var = cbrt(X_norm);
+     else
+         X_var = X_norm * 7.787037 + 0.137931;
+
+     if (Y_norm > 0.008856)
+         Y_var = cbrt(Y_norm);
+     else
+         Y_var = Y_norm * 7.787037 + 0.137931;
+
+     if (Z_norm > 0.008856)
+         Z_var = cbrt(Z_norm);
+     else
+         Z_var = Z_norm * 7.787037 + 0.137931;
+
+     L = 116. * Y_var - 16.;
+     a = 500 * (X_var - Y_var);
+     b = 200 * (Y_var - Z_var);
+
+     if (a < -100 || a > 100 || b < -100 || b > 100)
+         std::cout << a << ' ' << b << std::endl;
+
+     L = clip<double>(L, 0., 100.);
+     a = clip<double>(a, -100., 100.);
+     b = clip<double>(b, -100., 100.);
+ }
+
+ void MathTools::convertLABtoBGR(uchar & blue, uchar & green, uchar & red, double L, double a, double b)
+ {
+     //Using illuminant D65 as white reference
+
+     if (L == 0. && a == 0. && b == 0.) {
+         blue = 0;
+         green = 0;
+         red = 0;
+         return;
+     }
+
+     double Y_var = (L + 16.) / 116.;
+     double X_var = Y_var + a / 500.;
+     double Z_var = Y_var - b / 200.;
+
+     double X, Y, Z;
+
+     if (X_var > 0.206896)
+         X = 95.0489 * X_var * X_var * X_var;
+     else
+         X = 12.206042 * X_var - 1.683594;
+
+     if (Y_var > 0.206896)
+         Y = 100. * Y_var * Y_var * Y_var;
+     else
+         Y = 12.841855 * Y_var - 1.771290;
+
+     if (Z_var > 0.206896)
+         Z = 108.884 * Z_var * Z_var * Z_var;
+     else
+         Z = 13.982725 * Z_var - 1.928652;
 
      red = (uchar)clip<int>((int)round((0.41847 * X - 0.15866 * Y - 0.082835 * Z) * 255.), 0, 255);
      green = (uchar)clip<int>((int)round((-0.091169 * X + 0.25243 * Y + 0.015708 * Z) * 255.), 0, 255);

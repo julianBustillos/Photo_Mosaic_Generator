@@ -27,6 +27,8 @@ public:
     static void convertHSItoBGR(uchar &blue, uchar &green, uchar &red, double hue, double saturation, double intensity);
     static void convertBGRtoLUV(double &L, double &u, double &v, uchar blue, uchar green, uchar red);
     static void convertLUVtoBGR(uchar &blue, uchar &green, uchar &red, double L, double u, double v);
+    static void convertBGRtoLAB(double &L, double &a, double &b, uchar blue, uchar green, uchar red);
+    static void convertLABtoBGR(uchar &blue, uchar &green, uchar &red, double L, double a, double b);
 
 private:
     MathTools() {};
