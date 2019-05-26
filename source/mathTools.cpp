@@ -450,9 +450,6 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      a = 500 * (X_var - Y_var);
      b = 200 * (Y_var - Z_var);
 
-     if (a < -100 || a > 100 || b < -100 || b > 100)
-         std::cout << a << ' ' << b << std::endl;
-
      L = clip<double>(L, 0., 100.);
      a = clip<double>(a, -100., 100.);
      b = clip<double>(b, -100., 100.);
@@ -547,21 +544,21 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
          for (int j = 0; j <= lineRadius; j++, targetId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += source[endId + c] - start[c];
-                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
+                 target[targetId + c] = (uchar)(accumulator[c] * invLineSize);
              }
          }
 
          for (int j = lineRadius + 1; j < size.width - lineRadius; j++, targetId += 3, startId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += source[endId + c] - source[startId + c];
-                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
+                 target[targetId + c] = (uchar)(accumulator[c] * invLineSize);
              }
          }
 
          for (int j = size.width - lineRadius; j < size.width; j++, targetId += 3, startId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += end[c] - source[startId + c];
-                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
+                 target[targetId + c] = (uchar)(accumulator[c] * invLineSize);
              }
          }
      }
@@ -570,48 +567,56 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
  void MathTools::applyColBlur(uchar * source, uchar * target, const cv::Size & size, int lineRadius)
  {
      double invLineSize = 1. / (double)(2 * lineRadius + 1);
-     int accumulator[3];
-     int start[3];
-     int end[3];
+     std::vector<int> accumulator(3 * size.width);
+     std::vector<int> start(3 * size.width);
+     std::vector<int> end(3 * size.width);
 
+     // Average filter start middle and end indices
+     int startId = 0;
+     int endId = 3 * (lineRadius * size.width);
+     int targetId = 0;
+
+     // Initialization 
      for (int j = 0; j < size.width; j++) {
-         // Average filter start middle and end indices
-         int startId = 3 * j;
-         int endId = 3 * (lineRadius * size.width + j);
-         int targetId = startId;
-
-         // Initialization 
          for (int c = 0; c < 3; c++) {
-             start[c] = source[startId + c];
-             end[c] = source[3 * ((size.height - 1) * size.width + j) + c];
-             accumulator[c] = start[c] * (lineRadius + 1);
+             start[3 * j + c] = source[3 * j + c];
+             end[3 * j + c] = source[3 * ((size.height - 1) * size.width + j) + c];
+             accumulator[3 * j + c] = start[3 * j + c] * (lineRadius + 1);
          }
+     }
 
-         for (int i = 0; i < lineRadius; i++) {
+     for (int i = 0; i < lineRadius; i++) {
+         for (int j = 0; j < size.width; j++) {
              for (int c = 0; c < 3; c++) {
-                 accumulator[c] += source[startId + 3 * i * size.width + c];
+                 accumulator[3 * j + c] += source[3 * (i * size.width + j) + c];
              }
          }
+     }
 
-         // Average filtering
-         for (int i = 0; i <= lineRadius; i++, targetId += 3 * size.width, endId += 3 * size.width) {
+     // Average filtering
+     for (int i = 0; i <= lineRadius; i++) {
+         for (int j = 0; j < size.width; j++, targetId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
-                 accumulator[c] += source[endId + c] - start[c];
-                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
+                 accumulator[3 * j + c] += source[endId + c] - start[3 * j + c];
+                 target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize);
              }
          }
-         
-         for (int i = lineRadius + 1; i < size.height - lineRadius; i++, targetId += 3 * size.width, startId += 3 * size.width, endId += 3 * size.width) {
+     }
+
+     for (int i = lineRadius + 1; i < size.height - lineRadius; i++) {
+         for (int j = 0; j < size.width; j++, targetId += 3, startId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
-                 accumulator[c] += source[endId + c] - source[startId + c];
-                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
+                 accumulator[3 * j + c] += source[endId + c] - source[startId + c];
+                 target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize);
              }
          }
+     }
 
-         for (int i = size.height - lineRadius; i < size.height; i++, targetId += 3 * size.width, startId += 3 * size.width) {
+     for (int i = size.height - lineRadius; i < size.height; i++) {
+         for (int j = 0; j < size.width; j++, targetId += 3, startId += 3) {
              for (int c = 0; c < 3; c++) {
-                 accumulator[c] += end[c] - source[startId + c];
-                 target[targetId + c] = (uchar)round(accumulator[c] * invLineSize);
+                 accumulator[3 * j + c] += end[3 * j + c] - source[startId + c];
+                 target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize);
              }
          }
      }
