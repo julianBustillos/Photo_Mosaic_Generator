@@ -1,5 +1,6 @@
 #include "pixelAdapter.h"
 #include "mathTools.h"
+#include "variables.h"
 
 
 PixelAdapter::PixelAdapter(Photo photo, int subdivisions)
@@ -35,13 +36,17 @@ void PixelAdapter::applyCorrection(cv::Mat & tile, int mosaicId) const
     }
 
     for (int k = 0; k < tileDataSize; k += 3) {
-        uchar blue = data[k];
-        uchar green = data[k + 1];
-        uchar red = data[k + 2];
+        uchar originalBlue = data[k];
+        uchar originalGreen = data[k + 1];
+        uchar originalRed = data[k + 2];
 
-        data[k] = BGR_correction_function[0][blue];
-        data[k + 1] = BGR_correction_function[1][green];
-        data[k + 2] = BGR_correction_function[2][red];
+        uchar matchingBlue = BGR_correction_function[0][originalBlue];
+        uchar matchingGreen = BGR_correction_function[1][originalGreen];
+        uchar matchingRed = BGR_correction_function[2][originalRed];
+
+        data[k] = (uchar)(HISTOGRAM_CORRECTION_BLENDING * (double)matchingBlue + (1. - HISTOGRAM_CORRECTION_BLENDING) * (double)originalBlue);
+        data[k + 1] = (uchar)(HISTOGRAM_CORRECTION_BLENDING * (double)matchingGreen + (1. - HISTOGRAM_CORRECTION_BLENDING) * (double)originalGreen);
+        data[k + 2] = (uchar)(HISTOGRAM_CORRECTION_BLENDING * (double)matchingRed + (1. - HISTOGRAM_CORRECTION_BLENDING) * (double)originalRed);
     }
 }
 
