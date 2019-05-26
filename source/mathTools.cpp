@@ -544,21 +544,21 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
          for (int j = 0; j <= lineRadius; j++, targetId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += source[endId + c] - start[c];
-                 target[targetId + c] = (uchar)(accumulator[c] * invLineSize);
+                 target[targetId + c] = (uchar)(accumulator[c] * invLineSize + 0.5);
              }
          }
 
          for (int j = lineRadius + 1; j < size.width - lineRadius; j++, targetId += 3, startId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += source[endId + c] - source[startId + c];
-                 target[targetId + c] = (uchar)(accumulator[c] * invLineSize);
+                 target[targetId + c] = (uchar)(accumulator[c] * invLineSize + 0.5);
              }
          }
 
          for (int j = size.width - lineRadius; j < size.width; j++, targetId += 3, startId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[c] += end[c] - source[startId + c];
-                 target[targetId + c] = (uchar)(accumulator[c] * invLineSize);
+                 target[targetId + c] = (uchar)(accumulator[c] * invLineSize + 0.5);
              }
          }
      }
@@ -598,7 +598,7 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
          for (int j = 0; j < size.width; j++, targetId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[3 * j + c] += source[endId + c] - start[3 * j + c];
-                 target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize);
+                 target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize + 0.5);
              }
          }
      }
@@ -607,7 +607,7 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
          for (int j = 0; j < size.width; j++, targetId += 3, startId += 3, endId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[3 * j + c] += source[endId + c] - source[startId + c];
-                 target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize);
+                 target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize + 0.5);
              }
          }
      }
@@ -616,7 +616,7 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
          for (int j = 0; j < size.width; j++, targetId += 3, startId += 3) {
              for (int c = 0; c < 3; c++) {
                  accumulator[3 * j + c] += end[3 * j + c] - source[startId + c];
-                 target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize);
+                 target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize + 0.5);
              }
          }
      }
