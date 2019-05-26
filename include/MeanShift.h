@@ -17,6 +17,12 @@ private:
         int _j;
     };
 
+    struct LUV {
+        double _L;
+        double _u;
+        double _v;
+    };
+
     struct SpatialOffset {
         SpatialOffset(int i, int j, double sqSpatialDist) : _coords(i, j), _sqSpatialDist(sqSpatialDist) {};
 
@@ -75,7 +81,7 @@ private:
     };
 
 private:
-    static inline void getPixelWeightedMean(const std::vector<double[3]> &imageLuv, cv::Size &size, int i, int j, WeightedMean &weightedMean);
+    static inline void getPixelWeightedMean(const std::vector<LUV> &imageLuv, cv::Size &size, int i, int j, WeightedMean &weightedMean);
     static inline bool hasConverged(WeightedMean &wm1, WeightedMean &wm2);
     static inline double computeSqSpatialDistance(double i1, double j1, double i2, double j2);
     static inline double computeSqRangeDistance(WeightedMean &wm1, WeightedMean &wm2);

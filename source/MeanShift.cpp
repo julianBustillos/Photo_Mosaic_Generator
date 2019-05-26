@@ -1,4 +1,4 @@
-#include "MeanShift.h"
+#include "meanShift.h"
 #include "mathTools.h"
 #include <stack>
 
@@ -13,20 +13,21 @@ const double MeanShift::sqRangeMergeRatio = MEAN_SHIFT_RANGE_MERGE_RATIO * MEAN_
 
 void MeanShift::compute(const cv::Mat & image, std::vector<int>& clusterMapping, int &nbClusters)
 {
-    cv::Mat blurredImage(image);
+    cv::Mat blurredImage;
+    image.copyTo(blurredImage);
     MathTools::applyGaussianBlur(blurredImage.data, blurredImage.size(), MEAN_SHIFT_BLUR_SIGMA, BLUR_NB_BOXES);
 
     uchar *blurredImageData = blurredImage.data;
     cv::Size size = image.size();
-    std::vector<double[3]> imageLuv(size.width * size.height);
+    std::vector<LUV> imageLuv(size.width * size.height);
     Data meanShiftData(size.width * size.height);
-
 
     int luvId = 0, dataId = 0;
     for (luvId; luvId < imageLuv.size(); luvId++, dataId += 3)
-        MathTools::convertBGRtoLUV(imageLuv[luvId][0], imageLuv[luvId][1], imageLuv[luvId][2], blurredImageData[dataId], blurredImageData[dataId + 1], blurredImageData[dataId + 2]);
+        MathTools::convertBGRtoLUV(imageLuv[luvId]._L, imageLuv[luvId]._u, imageLuv[luvId]._v, blurredImageData[dataId], blurredImageData[dataId + 1], blurredImageData[dataId + 2]);
 
     std::vector<SpatialOffset> offset;
+    offset.reserve(4 * MEAN_SHIFT_SPATIAL_FILTER * (MEAN_SHIFT_SPATIAL_FILTER + 1) + 1);
     offset.push_back(SpatialOffset(0, 0, 0.));
     for (int iWindow = -MEAN_SHIFT_SPATIAL_FILTER; iWindow <= MEAN_SHIFT_SPATIAL_FILTER; iWindow++) {
         for (int jWindow = -MEAN_SHIFT_SPATIAL_FILTER; jWindow <= MEAN_SHIFT_SPATIAL_FILTER; jWindow++) {
@@ -130,42 +131,41 @@ void MeanShift::compute(const cv::Mat & image, std::vector<int>& clusterMapping,
     meanShiftData.buildClusterMap(clusterMapping, nbClusters);
 }
 
-inline void MeanShift::getPixelWeightedMean(const std::vector<double[3]> &imageLuv, cv::Size &size, int i, int j, WeightedMean &weightedMean)
+inline void MeanShift::getPixelWeightedMean(const std::vector<LUV> &imageLuv, cv::Size &size, int i, int j, WeightedMean &weightedMean)
 {
     int currentId = i * size.width + j;
 
     weightedMean._i = (double)i;
     weightedMean._j = (double)j;
-    const double *wmLuv = imageLuv[currentId];
-    weightedMean._L = wmLuv[0];
-    weightedMean._u = wmLuv[1];
-    weightedMean._v = wmLuv[2];
+    weightedMean._L = imageLuv[currentId]._L;
+    weightedMean._u = imageLuv[currentId]._u;
+    weightedMean._v = imageLuv[currentId]._v;
 }
 
 inline bool MeanShift::hasConverged(WeightedMean & wm1, WeightedMean & wm2)
 {
-    double iDist = (double)(wm2._i - wm1._i);
-    double jDist = (double)(wm2._j - wm1._j);
-    double distance = (iDist * iDist + jDist * jDist);
+    double di = (double)(wm2._i - wm1._i);
+    double dj = (double)(wm2._j - wm1._j);
+    double distance = (di * di + dj * dj);
 
     return distance < 0.25;
 }
 
 inline double MeanShift::computeSqSpatialDistance(double i1, double j1, double i2, double j2)
 {
-    double iDist = (double)(i2 - i1);
-    double jDist = (double)(j2 - j1);
-    double distance = (iDist * iDist + jDist * jDist) / (double)sqSpatialFilter;
+    double di = (double)(i2 - i1);
+    double dj = (double)(j2 - j1);
+    double distance = (di * di + dj * dj) / (double)sqSpatialFilter;
 
     return distance;
 }
 
 inline double MeanShift::computeSqRangeDistance(WeightedMean & wm1, WeightedMean & wm2)
 {
-    double LDist = wm1._L - wm2._L;
-    double uDist = wm1._u - wm2._u;
-    double vDist = wm1._v - wm2._v;
-    double distance = (LDist * LDist + uDist * uDist + vDist * vDist) / (double)sqRangeFilter;
+    double dL = wm1._L - wm2._L;
+    double du = wm1._u - wm2._u;
+    double dv = wm1._v - wm2._v;
+    double distance = (dL * dL + du * du + dv * dv) / (double)sqRangeFilter;
 
     return distance;
 }
