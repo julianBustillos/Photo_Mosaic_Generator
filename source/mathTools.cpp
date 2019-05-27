@@ -45,6 +45,63 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      return (uchar)clip<int>((int)round(interpolation), 0, 255);
 }
 
+ void MathTools::computeBicubicInterpolationPixelColor(uchar * pixel, const uchar * source, const cv::Size & size, int i, int j, double ratio)
+ {
+     uchar pixelColorGrid[16];
+     double x = (double)j * ratio;
+     double y = (double)i * ratio;
+     int iFirstGrid = (int)round(y) - 2;
+     int jFirstGrid = (int)round(x) - 2;
+
+     for (int color = 0; color < 3; color++) {
+         for (int col = 0; col < 4; col++) {
+             for (int row = 0; row < 4; row++) {
+                 int dataId = getClippedDataIndex(iFirstGrid + row, jFirstGrid + col, size.width, size);
+                 pixelColorGrid[col * 4 + row] = source[dataId + color];
+             }
+         }
+
+         pixel[color] = biCubicInterpolation(x - round(x) + 1, y - round(y) + 1, pixelColorGrid);
+     }
+ }
+
+ void MathTools::computeImageResampling(uchar * target, const cv::Size & targetSize, const uchar * source, const cv::Size & sourceSize, const cv::Point & cropFirstPixelPos, const cv::Size & cropSize, int blurNbBoxes)
+ {
+     cv::Mat croppedImage(cropSize, CV_8UC3);
+     uchar *croppedImageData = croppedImage.data;
+     int step = sourceSize.width;
+     for (int i = 0; i < cropSize.height; i++) {
+         for (int j = 0; j < cropSize.width; j++) {
+             int imageId = getDataIndex(cropFirstPixelPos.y + i, cropFirstPixelPos.x + j, step);
+             int imageToProcessId = getDataIndex(i, j, cropSize.width);
+             for (int c = 0; c < 3; c++)
+                 croppedImageData[imageToProcessId + c] = source[imageId + c];
+         }
+     }
+
+     double wRatio = (double)cropSize.width / (double)targetSize.width;
+     double hRatio = (double)cropSize.height / (double)targetSize.height;
+     double ratio = std::min(wRatio, hRatio);
+
+     if (ratio != 1.) {
+         if (ratio > 1.) {
+             double blurSigma = ratio / 3.;
+             applyGaussianBlur(croppedImageData, cropSize, blurSigma, blurNbBoxes);
+         }
+
+         for (int i = 0; i < targetSize.height; i++) {
+             for (int j = 0; j < targetSize.width; j++) {
+                 int dataId = getDataIndex(i, j, targetSize.width);
+                 computeBicubicInterpolationPixelColor(&target[dataId], croppedImageData, cropSize, i, j, ratio);
+             }
+         }
+     }
+     else {
+         for (int k = 0; k < 3 * targetSize.width * targetSize.height; k++)
+             target[k] = croppedImageData[k];
+     }
+ }
+
  void MathTools::applyGaussianBlur(uchar * image, const cv::Size & size, double sigma, int nbBoxes)
  {
      uchar *temp = new uchar[3 * size.width * size.height];

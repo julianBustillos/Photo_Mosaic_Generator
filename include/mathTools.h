@@ -15,7 +15,7 @@ public:
     static inline int getClippedDataIndex(int i, int j, int step, const cv::Size &size);
 
 public:
-    static uchar biCubicInterpolation(double x, double y, const uchar *pixelColorGrid);
+    static void computeImageResampling(uchar * target, const cv::Size & targetSize, const uchar * source, const cv::Size & sourceSize, const cv::Point & cropFirstPixelPos, const cv::Size & cropSize, int blurNbBoxes);
     static void applyGaussianBlur(uchar *image, const cv::Size &size, double sigma, int nbBoxes);
     static void computeImageBGRFeatures(const uchar *image, const cv::Size&size, const cv::Point &firstPos, int step, double *features, int featureDirSubdivision);
     static double BGRFeatureDistance(const double *vec1, const double *vec2, int size);
@@ -33,6 +33,8 @@ public:
 private:
     MathTools() {};
     ~MathTools() {};
+    static uchar biCubicInterpolation(double x, double y, const uchar *pixelColorGrid);
+    static void computeBicubicInterpolationPixelColor(uchar* pixel, const uchar *source, const cv::Size &size, int i, int j, double ratio);
     static void getGaussianApproximationBoxRadiuses(double sigma, std::vector<int> &boxRadius);
     static void applyBoxBlur(uchar *image, uchar *temp, const cv::Size &size, int boxRadius);
     static void applyRowBlur(uchar *source, uchar *target, const cv::Size &size, int lineRadius);
