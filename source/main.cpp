@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
         TIME_NOW(start)
 
 		Parameters parameters(argc, argv);
-		Photo photo(parameters.getPhotoPath(), parameters.getSubdivision());
+		Photo photo(parameters.getPhotoPath(), parameters.getWidth(), parameters.getHeight(), parameters.getSubdivision());
         PixelAdapter pixelAdapter(photo, parameters.getSubdivision());
 		Tiles tiles(parameters.getTilesPath(), photo.getTileSize());
         MatchSolver matchSolver(photo, tiles, parameters.getSubdivision());

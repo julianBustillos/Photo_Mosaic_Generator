@@ -8,12 +8,14 @@ std::string Parameters::getHelp()
 {
 	return
 		"HELP :\n"
-		"Photo_Mosaic_Generator.exe -i C:\\myImage -p C:\\path_to_tiles -s 13\n\n"
+        "Photo_Mosaic_Generator.exe -i C:\\myImage -p C:\\path_to_tiles -s 13 [-rw 1920 -rh 1080]\n\n"
 		"AVAILABLE ARGUMENTS :\n"
 		"-h : help\n"
 		"-p path to tiles image folder\n"
 		"-i path to image\n"
-		"-s image subdivision (height and width)\n";
+		"-s image subdivision (height and width)\n"
+        "-rw result width\n"
+        "-rh result height\n";
 }
 
 Parameters::Parameters(int argc, char * argv[])
@@ -34,6 +36,16 @@ const std::string Parameters::getPhotoPath()
 const std::string Parameters::getTilesPath()
 {
 	return _tilesPath;
+}
+
+const int Parameters::getWidth()
+{
+    return _width;
+}
+
+const int Parameters::getHeight()
+{
+    return _height;
 }
 
 const int Parameters::getSubdivision()
@@ -59,6 +71,12 @@ void Parameters::parseArgument(char *parameter, char *value)
 	else if (std::strcmp(parameter, "-s") == 0) {
 		_subdivision = value ? std::atoi(value) : 0;
 	}
+    else if (std::strcmp(parameter, "-rw") == 0) {
+        _width = value ? std::atoi(value) : 0;
+    }
+    else if (std::strcmp(parameter, "-rh") == 0) {
+        _height = value ? std::atoi(value) : 0;
+    }
 	else {
 		std::string message = "Invalid parameter : ";
 		message += parameter;
@@ -86,4 +104,10 @@ void Parameters::checkParsing()
 	}
 	if (_subdivision == 0)
 		throw CustomException("Invalid subdivision value, use -s option", CustomException::Level::NORMAL);
+    if (_width != 0 && _width < _subdivision) {
+        throw CustomException("Invalid result width value, use -rw option", CustomException::Level::NORMAL);
+    }
+    if (_height != 0 && _height < _subdivision) {
+        throw CustomException("Invalid result height value, use -rh option", CustomException::Level::NORMAL);
+    }
 }

@@ -1,14 +1,25 @@
 #include "photo.h"
 #include "customException.h"
+#include "mathTools.h"
+#include "variables.h"
 #include <iostream>
 
 
-Photo::Photo(const std::string &path, int subdivision) :
+Photo::Photo(const std::string &path, int width, int height, int subdivision) :
     _directory("")
 {
-	_mat = cv::imread(path, cv::IMREAD_COLOR);
-	if (!_mat.data)
+    cv::Mat originalImage = cv::imread(path, cv::IMREAD_COLOR);
+	if (!originalImage.data)
 		throw CustomException("Impossible to load image : " + path + ", use -i option", CustomException::Level::NORMAL);
+    _oldSize = originalImage.size();
+
+    if (width != 0 && height != 0) {
+        _mat = cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0));
+        MathTools::computeImageResampling(_mat.data, _mat.size(), originalImage.data, originalImage.size(), cv::Point(0, 0), originalImage.size(), BLUR_NB_BOXES);
+    }
+    else {
+        _mat = originalImage;
+    }
 
     int filenameIndex = (int)path.find_last_of('\\');
     if (filenameIndex >= 0)
@@ -60,8 +71,9 @@ const std::string Photo::getDirectory() const
 void Photo::printInfo() const
 {
 	std::cout << "PHOTO DATA : " << std::endl;
-	std::cout << "Photo size : " << _mat.size().width << "*" << _mat.size().height << std::endl;
-	std::cout << "Tile size  : " << _tileSize.width << "*" << _tileSize.height << std::endl;
-	std::cout << "Lost size  : " << _lostSize.width << "*" << _lostSize.height << std::endl;
+	std::cout << "Photo size  : " << _oldSize.width << "*" << _oldSize.height << std::endl;
+    std::cout << "Mosaic size : " << _mat.size().width << "*" << _mat.size().height << std::endl;
+	std::cout << "Tile size   : " << _tileSize.width << "*" << _tileSize.height << std::endl;
+	std::cout << "Lost size   : " << _lostSize.width << "*" << _lostSize.height << std::endl;
 	std::cout << std::endl;
 }
