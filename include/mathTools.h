@@ -33,6 +33,7 @@ public:
 private:
     MathTools() {};
     ~MathTools() {};
+    static double cubeRoot(double t);
     static uchar biCubicInterpolation(double x, double y, const uchar *pixelColorGrid);
     static void computeBicubicInterpolationPixelColor(uchar* pixel, const uchar *source, const cv::Size &size, int i, int j, double ratio);
     static void getGaussianApproximationBoxRadiuses(double sigma, std::vector<int> &boxRadius);

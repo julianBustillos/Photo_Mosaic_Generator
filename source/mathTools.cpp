@@ -4,7 +4,19 @@
 const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4, 1, 0, 1, -1, 0, 0 };
 
 
- uchar MathTools::biCubicInterpolation(double x, double y, const uchar *pixelColorGrid)
+double MathTools::cubeRoot(double t)
+{
+    double inv3 = 1. / 3.;
+    double root = 1.4774329094 - 0.8414323527 / (t + 0.7387320679);
+
+    while (abs(root * root * root - t) > 0.000001 ) {
+        root = (2. * root + t / (root * root)) * inv3;
+    } 
+
+    return root;
+}
+
+uchar MathTools::biCubicInterpolation(double x, double y, const uchar *pixelColorGrid)
 {
      /*
      Compute bicubic interpolation :
@@ -427,7 +439,7 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      double v_p = 9. * Y / div;
 
      if (Y_norm > 0.008856)
-         L = 116. * cbrt(Y_norm) - 16.;
+         L = 116. * cubeRoot(Y_norm) - 16.;
      else
          L = Y_norm * 903.296296;
 
@@ -489,17 +501,17 @@ const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4,
      double X_var, Y_var, Z_var;
 
      if (X_norm > 0.008856)
-         X_var = cbrt(X_norm);
+         X_var = cubeRoot(X_norm);
      else
          X_var = X_norm * 7.787037 + 0.137931;
 
      if (Y_norm > 0.008856)
-         Y_var = cbrt(Y_norm);
+         Y_var = cubeRoot(Y_norm);
      else
          Y_var = Y_norm * 7.787037 + 0.137931;
 
      if (Z_norm > 0.008856)
-         Z_var = cbrt(Z_norm);
+         Z_var = cubeRoot(Z_norm);
      else
          Z_var = Z_norm * 7.787037 + 0.137931;
 
