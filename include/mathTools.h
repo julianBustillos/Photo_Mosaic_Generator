@@ -5,7 +5,8 @@
 # define M_PI           3.14159265358979323846  /* pi */
 
 
-class MathTools {
+class MathTools 
+{
 public:
     template< typename T>
     static T clip(T val, T min, T max);

@@ -4,7 +4,8 @@
 #include <string>
 
 
-class CustomException : public std::exception {
+class CustomException : public std::exception 
+{
 public:
 	enum Level {
 		NORMAL,

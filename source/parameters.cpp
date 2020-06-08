@@ -1,5 +1,5 @@
-#include "parameters.h"
-#include "customException.h"
+#include "Parameters.h"
+#include "CustomException.h"
 #include <boost/filesystem.hpp>
 #include <algorithm>
 
@@ -28,27 +28,27 @@ Parameters::Parameters(int argc, char * argv[])
 	checkParsing();
 }
 
-const std::string Parameters::getPhotoPath()
+std::string Parameters::getPhotoPath() const
 {
 	return _photoPath;
 }
 
-const std::string Parameters::getTilesPath()
+std::string Parameters::getTilesPath() const
 {
 	return _tilesPath;
 }
 
-const int Parameters::getWidth()
+int Parameters::getWidth() const
 {
     return _width;
 }
 
-const int Parameters::getHeight()
+int Parameters::getHeight() const
 {
     return _height;
 }
 
-const int Parameters::getSubdivision()
+int Parameters::getSubdivision() const
 {
 	return _subdivision;
 }

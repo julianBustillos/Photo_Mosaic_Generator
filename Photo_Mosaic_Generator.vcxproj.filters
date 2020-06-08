@@ -18,60 +18,42 @@
     <ClCompile Include="source\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\parameters.cpp">
+    <ClCompile Include="source\MosaicGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\tiles.cpp">
+    <ClCompile Include="source\MathTools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\photo.cpp">
+    <ClCompile Include="source\MeanShift.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\mathTools.cpp">
+    <ClCompile Include="source\MosaicBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\matchSolver.cpp">
+    <ClCompile Include="source\Parameters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\mosaicBuilder.cpp">
+    <ClCompile Include="source\Photo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\pixelAdapter.cpp">
+    <ClCompile Include="source\RegionOfInterest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\regionOfInterest.cpp">
+    <ClCompile Include="source\SaliencyFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\meanShift.cpp">
+    <ClCompile Include="source\PixelAdapterImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\saliencyFilter.cpp">
+    <ClCompile Include="source\MatchSolverImpl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\TilesImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\parameters.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\customException.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\tiles.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\photo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\mathTools.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\clock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\matchSolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="source\mosaicBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\outputDisabler.h">
@@ -80,19 +62,52 @@
     <ClInclude Include="include\variables.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sortedVector.h">
+    <ClInclude Include="include\MosaicGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\pixelAdapter.h">
+    <ClInclude Include="include\CustomException.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\regionOfInterest.h">
+    <ClInclude Include="include\MathTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\meanShift.h">
+    <ClInclude Include="include\MeanShift.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\saliencyFilter.h">
+    <ClInclude Include="include\MosaicBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Parameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Photo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\RegionOfInterest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SaliencyFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SortedVector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\PixelAdapterImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\IPixelAdapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ITiles.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\IMatchSolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\MatchSolverImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TilesImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

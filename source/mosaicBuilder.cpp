@@ -1,32 +1,33 @@
-#include "mosaicBuilder.h"
+#include "MosaicBuilder.h"
 #include <vector>
-#include "customException.h"
-#include "mathTools.h"
+#include "CustomException.h"
+#include "MathTools.h"
 
 
-MosaicBuilder::MosaicBuilder(const Photo & photo, const PixelAdapter &pixelAdapter, const Tiles & tiles, int subdivisions, const std::vector<int> &matchingTiles)
+void MosaicBuilder::Build(const IPixelAdapter & pixelAdapter, const ITiles & tiles, const IMatchSolver & matchSolver)
 {
-    cv::Size mosaicSize = photo.getTileSize() * subdivisions;
+    cv::Size mosaicSize = _photo.getTileSize() * _subdivisions;
     cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
     uchar *mosaicData = mosaic.data;
-    const std::vector<Tiles::Data> &tilesData = tiles.getTileDataVector();
-    for (int i = 0; i < subdivisions; i++) {
-        for (int j = 0; j < subdivisions; j++) {
-            int mosaicId = i * subdivisions + j;
+    const std::vector<int> &matchingTiles = matchSolver.getMatchingTiles();
+
+    for (int i = 0; i < _subdivisions; i++) {
+        for (int j = 0; j < _subdivisions; j++) {
+            int mosaicId = i * _subdivisions + j;
             int tileId = matchingTiles[mosaicId];
             if (tileId >= 0)
-                copyTileOnMosaic(mosaicData, tiles.getTempTilePath() + tilesData[tileId].filename, pixelAdapter, mosaicId, photo.getFirstPixel(i, j, false), mosaicSize.width);
-            else 
+                copyTileOnMosaic(mosaicData, tiles.getTileFilepath(tileId), pixelAdapter, mosaicId, _photo.getFirstPixel(i, j, false), mosaicSize.width);
+            else
                 throw CustomException("One or several tiles missing from match solver !", CustomException::Level::NORMAL);
         }
     }
 
-    exportMosaic(photo.getDirectory(), mosaic);
+    exportMosaic(_photo.getDirectory(), mosaic);
 
     printInfo();
 }
 
-void MosaicBuilder::copyTileOnMosaic(uchar *mosaicData, const std::string &tilePath, const PixelAdapter &pixelAdapter, int mosaicId, const cv::Point firstPixelPos, int step)
+void MosaicBuilder::copyTileOnMosaic(uchar *mosaicData, const std::string &tilePath, const IPixelAdapter &pixelAdapter, int mosaicId, const cv::Point firstPixelPos, int step)
 {
     cv::Mat tile = cv::imread(tilePath);
     uchar *tileData = tile.data;

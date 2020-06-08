@@ -1,22 +1,26 @@
-#include "pixelAdapter.h"
-#include "mathTools.h"
+#include "PixelAdapterImpl.h"
+#include "MathTools.h"
 #include "variables.h"
+#include "CustomException.h"
 
 
-PixelAdapter::PixelAdapter(Photo photo, int subdivisions)
+void PixelAdapterImpl::compute()
 {
-    _tileCorrection.resize(subdivisions * subdivisions);
+    _tileCorrection.resize(_subdivisions * _subdivisions);
 
-    for (int i = 0; i < subdivisions; i++) {
-        for (int j = 0; j < subdivisions; j++) {
-            int mosaicId = i * subdivisions + j;
-            computeAdapterData(_tileCorrection[mosaicId], photo.getData(), photo.getFirstPixel(i, j, true), photo.getTileSize(), photo.getStep());
+    for (int i = 0; i < _subdivisions; i++) {
+        for (int j = 0; j < _subdivisions; j++) {
+            int mosaicId = i * _subdivisions + j;
+            computeAdapterData(_tileCorrection[mosaicId], _photo.getData(), _photo.getFirstPixel(i, j, true), _photo.getTileSize(), _photo.getStep());
         }
     }
 }
 
-void PixelAdapter::applyCorrection(cv::Mat & tile, int mosaicId) const
+void PixelAdapterImpl::applyCorrection(cv::Mat & tile, int mosaicId) const
 {
+    if (_tileCorrection.empty())
+        throw CustomException("PixelAdapterImpl::compute() has not generated data !", CustomException::Level::ERROR);
+
     uchar *data = tile.data;
     cv::Size size = tile.size();
     AdapterData originalTile;
@@ -50,7 +54,7 @@ void PixelAdapter::applyCorrection(cv::Mat & tile, int mosaicId) const
     }
 }
 
-void PixelAdapter::computeAdapterData(AdapterData &adapterData, const uchar *data, const cv::Point &firstPixel, const cv::Size &size, int step) const
+void PixelAdapterImpl::computeAdapterData(AdapterData &adapterData, const uchar *data, const cv::Point &firstPixel, const cv::Size &size, int step) const
 {
     uchar blue, green, red;
 

@@ -1,4 +1,4 @@
-#include "mathTools.h"
+#include "MathTools.h"
 
 
 const double MathTools::_biCubicCoeffs[16] = { -1, 2, -1, 0, 3, -5, 0, 2, -3, 4, 1, 0, 1, -1, 0, 0 };

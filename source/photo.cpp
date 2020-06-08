@@ -1,6 +1,6 @@
-#include "photo.h"
-#include "customException.h"
-#include "mathTools.h"
+#include "Photo.h"
+#include "CustomException.h"
+#include "MathTools.h"
 #include "variables.h"
 #include <iostream>
 
@@ -35,7 +35,7 @@ Photo::Photo(const std::string &path, int width, int height, int subdivision) :
 	printInfo();
 }
 
-const cv::Point Photo::getFirstPixel(int i, int j, bool offset) const
+cv::Point Photo::getFirstPixel(int i, int j, bool offset) const
 {
 	cv::Point position;
 	position.y = i * _tileSize.height;
@@ -48,7 +48,7 @@ const cv::Point Photo::getFirstPixel(int i, int j, bool offset) const
 	return position;
 }
 
-const cv::Size Photo::getTileSize() const
+cv::Size Photo::getTileSize() const
 {
 	return _tileSize;
 }
@@ -58,12 +58,12 @@ const uchar * Photo::getData() const
     return _mat.data;
 }
 
-const int Photo::getStep() const
+int Photo::getStep() const
 {
     return _mat.size().width;
 }
 
-const std::string Photo::getDirectory() const
+std::string Photo::getDirectory() const
 {
     return _directory;
 }

@@ -7,7 +7,8 @@
 */
 
 
-template<typename T> class SortedVector : public std::vector<T>
+template<typename T>
+class SortedVector : public std::vector<T>
 {
 public:
     SortedVector(int maxSize);

@@ -1,30 +1,31 @@
 #include <iostream>
 #include "clock.h"
-#include "customException.h"
-#include "parameters.h"
-#include "photo.h"
-#include "pixelAdapter.h"
-#include "tiles.h"
-#include "matchSolver.h"
-#include "mosaicBuilder.h"
+#include "CustomException.h"
+#include "Parameters.h"
+#include "MosaicGenerator.h"
 
 
 int main(int argc, char *argv[])
 {
 	try {
-        TIME_NOW(start)
+
+        std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++ PHOTO MOSAIC GENERATOR ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl << std::endl;
+        
+        TIME_NOW(start);
 
 		Parameters parameters(argc, argv);
-		Photo photo(parameters.getPhotoPath(), parameters.getWidth(), parameters.getHeight(), parameters.getSubdivision());
-        PixelAdapter pixelAdapter(photo, parameters.getSubdivision());
-		Tiles tiles(parameters.getTilesPath(), photo.getTileSize());
-        MatchSolver matchSolver(photo, tiles, parameters.getSubdivision());
-        MosaicBuilder mosaicBuilder(photo, pixelAdapter, tiles, parameters.getSubdivision(), matchSolver.getMatchingTiles());
+        MosaicGenerator generator(parameters);
 
-        TIME_NOW(end)
-        PRINT_DURATION(start, end)
+        generator.Build();
+        //TODO REMOVE
+        //MosaicBuilder mosaicBuilder(photo, pixelAdapter, tiles, parameters.getSubdivision(), matchSolver.getMatchingTiles());
+        //TODO REMOVE
 
-		std::cin.get(); //DEBUG
+        TIME_NOW(end);
+        PRINT_DURATION(start, end);
+
+        std::cout << std::endl << "++++++++++++++++++++++++++++++++++++++++++++++++           END          ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+		std::cin.get();
 	}
 	catch (CustomException& e) {
 		switch (e.getLevel()) {
@@ -41,10 +42,10 @@ int main(int argc, char *argv[])
 		default:
 			std::cerr << "ERROR : we should not be here, you have to debug me !!" << std::endl;
 		}
-		std::cin.get(); //DEBUG
+		std::cin.get();
 	}
 	catch (std::exception& e) {
 		std::cerr << "ERROR unhandled exception : " << e.what() << std::endl;
-		std::cin.get(); //DEBUG
+		std::cin.get();
 	}
 }

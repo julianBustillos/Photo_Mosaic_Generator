@@ -5,7 +5,8 @@
 #include <vector>
 
 
-class MeanShift {
+class MeanShift 
+{
 public:
     static void compute(const cv::Mat &image, std::vector<int>& clusterMapping, int &nbClusters);
 

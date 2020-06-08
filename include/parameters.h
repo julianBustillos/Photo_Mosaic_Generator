@@ -3,18 +3,19 @@
 #include <string>
 
 
-class Parameters {
+class Parameters 
+{
 public:
 	static std::string getHelp();
 
 public:
 	Parameters(int argc, char *argv[]);
 	~Parameters() {};
-	const std::string getPhotoPath();
-	const std::string getTilesPath();
-    const int getWidth();
-    const int getHeight();
-	const int getSubdivision();
+	std::string getPhotoPath() const;
+	std::string getTilesPath() const;
+    int getWidth() const;
+    int getHeight() const;
+	int getSubdivision() const;
 
 private:
 	void parseArgument(char *parameter, char *value);

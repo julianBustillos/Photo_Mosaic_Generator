@@ -1,5 +1,5 @@
-#include "meanShift.h"
-#include "mathTools.h"
+#include "MeanShift.h"
+#include "MathTools.h"
 #include <stack>
 
 

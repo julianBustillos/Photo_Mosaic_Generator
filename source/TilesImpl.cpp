@@ -1,16 +1,15 @@
-#include "tiles.h"
+#include "TilesImpl.h"
 #include <iostream>
 #include <boost/filesystem.hpp>
-#include "customException.h"
-#include "mathTools.h"
+#include "CustomException.h"
+#include "MathTools.h"
 #include "outputDisabler.h"
-#include "regionOfInterest.h"
+#include "RegionOfInterest.h"
 
 
-Tiles::Tiles(const std::string &path, const cv::Size &tileSize) :
-	_tileSize(tileSize)
+TilesImpl::TilesImpl(const std::string &path, const cv::Size &tileSize) :
+	ITiles(path, tileSize)
 {
-	_tempPath = path + "temp\\";
 	if (!boost::filesystem::exists(_tempPath))
 		boost::filesystem::create_directory(_tempPath);
 	if (!boost::filesystem::exists(_tempPath))
@@ -31,23 +30,30 @@ Tiles::Tiles(const std::string &path, const cv::Size &tileSize) :
 	printInfo();
 }
 
-Tiles::~Tiles()
+TilesImpl::~TilesImpl()
 {
 	if (boost::filesystem::exists(_tempPath))
 		boost::filesystem::remove_all(_tempPath);
 }
 
-const std::vector<Tiles::Data>& Tiles::getTileDataVector() const
+void TilesImpl::computeSquareDistanceVector(std::vector<double>& squareDistances, const Photo & photo, int i, int j) const
 {
-    return _tilesData;
+    squareDistances.resize(_tilesData.size(), -1);
+    double features[3 * FEATURE_ROOT_SUBDIVISION * FEATURE_ROOT_SUBDIVISION];
+    cv::Point firstPixel = photo.getFirstPixel(i, j, true);
+
+    MathTools::computeImageBGRFeatures(photo.getData(), photo.getTileSize(), firstPixel, photo.getStep(), features, FEATURE_ROOT_SUBDIVISION);
+    for (unsigned int t = 0; t < _tilesData.size(); t++) {
+        squareDistances[t] = MathTools::BGRFeatureDistance(features, _tilesData[t].features, FEATURE_ROOT_SUBDIVISION * FEATURE_ROOT_SUBDIVISION);
+    }
 }
 
-const std::string Tiles::getTempTilePath() const
+const std::string TilesImpl::getTileFilepath(int tileId) const
 {
-    return _tempPath;
+    return _tempPath + _tilesData[tileId].filename;
 }
 
-void Tiles::computeTileData(const cv::Mat & image, const std::string &filename)
+void TilesImpl::computeTileData(const cv::Mat & image, const std::string &filename)
 {
 	Data data;
 	cv::Point cropFirstPixelPos;
@@ -63,7 +69,7 @@ void Tiles::computeTileData(const cv::Mat & image, const std::string &filename)
 	exportTile(tileMat, data.filename);
 }
 
-void Tiles::computeCropInfo(const cv::Mat &image, cv::Point & firstPixelPos, cv::Size &cropSize)
+void TilesImpl::computeCropInfo(const cv::Mat &image, cv::Point & firstPixelPos, cv::Size &cropSize)
 {
     const cv::Size imageSize = image.size();
 
@@ -81,16 +87,10 @@ void Tiles::computeCropInfo(const cv::Mat &image, cv::Point & firstPixelPos, cv:
     cropSize.width = (int)ceil(_tileSize.width * ratio);
     cropSize.height = (int)ceil(_tileSize.height * ratio);
 
-    RegionOfInterest roi(image); //TODO
-
-	firstPixelPos.x = (int)(floor((imageSize.width - cropSize.width) / 2.));
-    if (imageRatio > 1.)
-	    firstPixelPos.y = (int)(floor((imageSize.height  - cropSize.height) / 2.));
-    else 
-        firstPixelPos.y = (int)(floor((imageSize.height - cropSize.height) / 3.));
+    RegionOfInterest roi(image, firstPixelPos, cropSize, (imageRatio > 1.));
 }
 
-void Tiles::exportTile(const cv::Mat & tile, const std::string & filename)
+void TilesImpl::exportTile(const cv::Mat & tile, const std::string & filename)
 {
     std::vector<int> image_params;
     image_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
@@ -100,7 +100,7 @@ void Tiles::exportTile(const cv::Mat & tile, const std::string & filename)
 		throw CustomException("Impossible to create temporary tile : " + _tempPath + filename, CustomException::Level::NORMAL);
 }
 
-void Tiles::printInfo() const
+void TilesImpl::printInfo() const
 {
 	std::cout << "TILES :" << std::endl;
 	std::cout << "Number of tile found : " << _tilesData.size() << std::endl;

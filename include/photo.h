@@ -4,15 +4,16 @@
 #include <opencv2/opencv.hpp>
 
 
-class Photo {
+class Photo 
+{
 public:
 	Photo(const std::string &path, int width, int height, int subdivision);
 	~Photo() {};
-	const cv::Point getFirstPixel(int i, int j, bool offset) const;
-	const cv::Size getTileSize() const;
+	cv::Point getFirstPixel(int i, int j, bool offset) const;
+	cv::Size getTileSize() const;
     const uchar *getData() const;
-    const int getStep() const;
-    const std::string getDirectory() const;
+    int getStep() const;
+    std::string getDirectory() const;
 
 private:
 	void printInfo() const;
