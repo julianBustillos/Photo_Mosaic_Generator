@@ -19,7 +19,7 @@ TilesImpl::TilesImpl(const std::string &path, const cv::Size &tileSize) :
 	{
 		if (!is_directory(it->path())) {
             START_DISABLE_STDERR
-			cv::Mat image = cv::imread(it->path().generic().string(), cv::IMREAD_COLOR);
+			cv::Mat image = cv::imread(it->path().generic_path().string(), cv::IMREAD_COLOR);
             END_DISABLE_STDERR
 			if (!image.data)
 				continue;
