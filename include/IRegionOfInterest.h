@@ -6,7 +6,12 @@
 class IRegionOfInterest
 {
 public:
+    //TODO : ADD COMMENT
     IRegionOfInterest() {};
+
+    //TODO : ADD COMMENT
     virtual ~IRegionOfInterest() {};
-    virtual void find(const cv::Mat &image) const = 0;
+
+    //TODO : ADD COMMENT
+    virtual void find(const cv::Mat& image, cv::Point& firstPixelPos, const cv::Size& cropSize, bool rowDirSearch) const = 0;
 };

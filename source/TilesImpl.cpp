@@ -4,36 +4,39 @@
 #include "CustomException.h"
 #include "MathTools.h"
 #include "outputDisabler.h"
-#include "RegionOfInterest.h"
 
 
 TilesImpl::TilesImpl(const std::string &path, const cv::Size &tileSize) :
 	ITiles(path, tileSize)
 {
-	if (!boost::filesystem::exists(_tempPath))
-		boost::filesystem::create_directory(_tempPath);
-	if (!boost::filesystem::exists(_tempPath))
-		throw CustomException("Impossible to create directory : " + _tempPath, CustomException::Level::NORMAL);
-
-	for (auto it = boost::filesystem::directory_iterator(path); it != boost::filesystem::directory_iterator(); it++)
-	{
-		if (!is_directory(it->path())) {
-            START_DISABLE_STDERR
-			cv::Mat image = cv::imread(it->path().generic_path().string(), cv::IMREAD_COLOR);
-            END_DISABLE_STDERR
-			if (!image.data)
-				continue;
-			computeTileData(image, it->path().filename().string());
-		}
-	}
-
-	printInfo();
 }
 
 TilesImpl::~TilesImpl()
 {
 	if (boost::filesystem::exists(_tempPath))
 		boost::filesystem::remove_all(_tempPath);
+}
+
+void TilesImpl::compute(const IRegionOfInterest& roi)
+{
+    if (!boost::filesystem::exists(_tempPath))
+        boost::filesystem::create_directory(_tempPath);
+    if (!boost::filesystem::exists(_tempPath))
+        throw CustomException("Impossible to create directory : " + _tempPath, CustomException::Level::NORMAL);
+
+    for (auto it = boost::filesystem::directory_iterator(_path); it != boost::filesystem::directory_iterator(); it++)
+    {
+        if (!is_directory(it->path())) {
+            START_DISABLE_STDERR
+                cv::Mat image = cv::imread(it->path().generic_path().string(), cv::IMREAD_COLOR);
+            END_DISABLE_STDERR
+                if (!image.data)
+                    continue;
+            computeTileData(image, it->path().filename().string(), roi);
+        }
+    }
+
+    printInfo();
 }
 
 void TilesImpl::computeSquareDistanceVector(std::vector<double>& squareDistances, const Photo & photo, int i, int j) const
@@ -53,14 +56,14 @@ const std::string TilesImpl::getTileFilepath(int tileId) const
     return _tempPath + _tilesData[tileId].filename;
 }
 
-void TilesImpl::computeTileData(const cv::Mat & image, const std::string &filename)
+void TilesImpl::computeTileData(const cv::Mat & image, const std::string &filename, const IRegionOfInterest& roi)
 {
 	Data data;
 	cv::Point cropFirstPixelPos;
     cv::Size cropSize;
     cv::Mat tileMat(_tileSize, CV_8UC3, cv::Scalar(0, 0, 0));
 
-    computeCropInfo(image, cropFirstPixelPos, cropSize);
+    computeCropInfo(image, cropFirstPixelPos, cropSize, roi);
     MathTools::computeImageResampling(tileMat.data, _tileSize, image.data, image.size(), cropFirstPixelPos, cropSize, BLUR_NB_BOXES);
     MathTools::computeImageBGRFeatures(tileMat.data, _tileSize, cv::Point(0, 0), _tileSize.width, data.features, FEATURE_ROOT_SUBDIVISION);
     data.filename = filename.substr(0, filename.find_last_of('.')) + ".png";
@@ -69,7 +72,7 @@ void TilesImpl::computeTileData(const cv::Mat & image, const std::string &filena
 	exportTile(tileMat, data.filename);
 }
 
-void TilesImpl::computeCropInfo(const cv::Mat &image, cv::Point & firstPixelPos, cv::Size &cropSize)
+void TilesImpl::computeCropInfo(const cv::Mat &image, cv::Point & firstPixelPos, cv::Size &cropSize, const IRegionOfInterest& roi)
 {
     const cv::Size imageSize = image.size();
 
@@ -87,7 +90,7 @@ void TilesImpl::computeCropInfo(const cv::Mat &image, cv::Point & firstPixelPos,
     cropSize.width = (int)ceil(_tileSize.width * ratio);
     cropSize.height = (int)ceil(_tileSize.height * ratio);
 
-    RegionOfInterest roi(image, firstPixelPos, cropSize, (imageRatio > 1.));
+    roi.find(image, firstPixelPos, cropSize, (imageRatio > 1.));
 }
 
 void TilesImpl::exportTile(const cv::Mat & tile, const std::string & filename)

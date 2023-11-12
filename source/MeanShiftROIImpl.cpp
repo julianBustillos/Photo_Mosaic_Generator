@@ -1,11 +1,15 @@
-#include "RegionOfInterest.h"
+#include "MeanShiftROIImpl.h"
 #include "MeanShift.h"
 #include "SaliencyFilter.h"
 
 
 
 
-RegionOfInterest::RegionOfInterest(const cv::Mat & image, cv::Point & firstPixelPos, const cv::Size &cropSize, bool rowDirSearch)
+MeanSHiftROIImpl::MeanSHiftROIImpl()
+{
+}
+
+void MeanSHiftROIImpl::find(const cv::Mat& image, cv::Point& firstPixelPos, const cv::Size& cropSize, bool rowDirSearch) const
 {
     std::vector<int> clusterMapping;
     int nbClusters;
@@ -15,7 +19,7 @@ RegionOfInterest::RegionOfInterest(const cv::Mat & image, cv::Point & firstPixel
 
     MeanShift::compute(image, clusterMapping, nbClusters);
     SaliencyFilter::compute(image, clusterMapping, nbClusters, saliency, iMean, jMean, saliencyFound);
-    
+
     if (saliencyFound) {
         if (rowDirSearch)
             findRowROI(image.size(), clusterMapping, saliency, jMean, firstPixelPos, cropSize);
@@ -25,10 +29,9 @@ RegionOfInterest::RegionOfInterest(const cv::Mat & image, cv::Point & firstPixel
     else {
         getDefaultROI(image.size(), firstPixelPos, cropSize, rowDirSearch);
     }
-
 }
 
-void RegionOfInterest::getDefaultROI(const cv::Size & imageSize, cv::Point & firstPixelPos, const cv::Size & cropSize, bool rowDirSearch)
+void MeanSHiftROIImpl::getDefaultROI(const cv::Size & imageSize, cv::Point & firstPixelPos, const cv::Size & cropSize, bool rowDirSearch) const
 {
     firstPixelPos.x = (int)(floor((imageSize.width - cropSize.width) / 2.));
     if (rowDirSearch)
@@ -37,7 +40,7 @@ void RegionOfInterest::getDefaultROI(const cv::Size & imageSize, cv::Point & fir
         firstPixelPos.y = (int)(floor((imageSize.height - cropSize.height) / 3.));
 }
 
-void RegionOfInterest::findRowROI(const cv::Size & imageSize, const std::vector<int>& clusterMapping, const std::vector<double>& saliency, int jMean, cv::Point & firstPixelPos, const cv::Size & cropSize)
+void MeanSHiftROIImpl::findRowROI(const cv::Size & imageSize, const std::vector<int>& clusterMapping, const std::vector<double>& saliency, int jMean, cv::Point & firstPixelPos, const cv::Size & cropSize) const
 {
     double saliencyAccumulator = 0.;
     double maxRegionSaliency;
@@ -81,7 +84,7 @@ void RegionOfInterest::findRowROI(const cv::Size & imageSize, const std::vector<
     }
 }
 
-void RegionOfInterest::findColROI(const cv::Size & imageSize, const std::vector<int>& clusterMapping, const std::vector<double>& saliency, int iMean, cv::Point & firstPixelPos, const cv::Size & cropSize)
+void MeanSHiftROIImpl::findColROI(const cv::Size & imageSize, const std::vector<int>& clusterMapping, const std::vector<double>& saliency, int iMean, cv::Point & firstPixelPos, const cv::Size & cropSize) const
 {
     double saliencyAccumulator = 0.;
     double maxRegionSaliency;

@@ -1,5 +1,6 @@
 #include "MosaicGenerator.h"
 #include "PixelAdapterImpl.h"
+#include "MeanSHiftROIImpl.h"
 #include "TilesImpl.h"
 #include "MatchSolverImpl.h"
 #include "CustomException.h"
@@ -12,6 +13,10 @@ MosaicGenerator::MosaicGenerator(const Parameters & parameters) :
     _pixelAdapter = new PixelAdapterImpl(_photo, parameters.getSubdivision());
     if (!_pixelAdapter)
         throw CustomException("Bad allocation for _pixelAdapter in MosaicGenerator constructor.", CustomException::Level::ERROR);
+
+    _roi = new MeanSHiftROIImpl();
+    if (!_roi)
+        throw CustomException("Bad allocation for _roi in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
     _tiles = new TilesImpl(parameters.getTilesPath(), _photo.getTileSize());
     if (!_tiles)
@@ -27,6 +32,9 @@ MosaicGenerator::~MosaicGenerator()
     if (_pixelAdapter)
         delete _pixelAdapter;
     _pixelAdapter = nullptr;
+    if (_roi)
+        delete _roi;
+    _roi = nullptr;
     if (_tiles)
         delete _tiles;
     _tiles = nullptr;
@@ -37,6 +45,7 @@ MosaicGenerator::~MosaicGenerator()
 
 void MosaicGenerator::Build()
 {
+    _tiles->compute(*_roi);
     _pixelAdapter->compute();
     _matchSolver->solve(*_tiles);
     _mosaicBuilder.Build(*_pixelAdapter, *_tiles, *_matchSolver);

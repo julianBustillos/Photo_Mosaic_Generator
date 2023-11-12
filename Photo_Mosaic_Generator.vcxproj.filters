@@ -36,7 +36,7 @@
     <ClCompile Include="source\Photo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\RegionOfInterest.cpp">
+    <ClCompile Include="source\MeanShiftROIImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\SaliencyFilter.cpp">
@@ -83,7 +83,7 @@
     <ClInclude Include="include\Photo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\RegionOfInterest.h">
+    <ClInclude Include="include\MeanShiftROIImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\SaliencyFilter.h">

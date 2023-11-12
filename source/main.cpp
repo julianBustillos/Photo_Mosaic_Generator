@@ -17,9 +17,6 @@ int main(int argc, char *argv[])
         MosaicGenerator generator(parameters);
 
         generator.Build();
-        //TODO REMOVE
-        //MosaicBuilder mosaicBuilder(photo, pixelAdapter, tiles, parameters.getSubdivision(), matchSolver.getMatchingTiles());
-        //TODO REMOVE
 
         TIME_NOW(end);
         PRINT_DURATION(start, end);

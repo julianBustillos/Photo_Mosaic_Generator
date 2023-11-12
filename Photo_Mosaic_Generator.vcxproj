@@ -129,7 +129,7 @@
     <ClCompile Include="source\Parameters.cpp" />
     <ClCompile Include="source\Photo.cpp" />
     <ClCompile Include="source\PixelAdapterImpl.cpp" />
-    <ClCompile Include="source\RegionOfInterest.cpp" />
+    <ClCompile Include="source\MeanShiftROIImpl.cpp" />
     <ClCompile Include="source\SaliencyFilter.cpp" />
     <ClCompile Include="source\TilesImpl.cpp" />
   </ItemGroup>
@@ -147,7 +147,7 @@
     <ClInclude Include="include\Photo.h" />
     <ClInclude Include="include\IPixelAdapter.h" />
     <ClInclude Include="include\PixelAdapterImpl.h" />
-    <ClInclude Include="include\RegionOfInterest.h" />
+    <ClInclude Include="include\MeanShiftROIImpl.h" />
     <ClInclude Include="include\SaliencyFilter.h" />
     <ClInclude Include="include\SortedVector.h" />
     <ClInclude Include="include\ITiles.h" />

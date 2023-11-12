@@ -3,6 +3,7 @@
 #include "Parameters.h"
 #include "Photo.h"
 #include "IPixelAdapter.h"
+#include "IRegionOfInterest.h"
 #include "ITiles.h"
 #include "IMatchSolver.h"
 #include "MosaicBuilder.h"
@@ -17,9 +18,9 @@ public:
 
 private:
     const Photo _photo;
-    IPixelAdapter *_pixelAdapter;
-    //TODO ADD ROI DETECTOR
-    ITiles *_tiles;
-    IMatchSolver *_matchSolver;
+    IPixelAdapter* _pixelAdapter;
+    IRegionOfInterest* _roi;
+    ITiles* _tiles;
+    IMatchSolver* _matchSolver;
     MosaicBuilder _mosaicBuilder;
 };
