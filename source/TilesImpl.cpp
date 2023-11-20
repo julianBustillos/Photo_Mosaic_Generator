@@ -24,7 +24,7 @@ void TilesImpl::compute(const IRegionOfInterest& roi)
     if (!boost::filesystem::exists(_tempPath))
         throw CustomException("Impossible to create directory : " + _tempPath, CustomException::Level::NORMAL);
 
-    for (auto it = boost::filesystem::directory_iterator(_path); it != boost::filesystem::directory_iterator(); it++)
+    for (auto it = boost::filesystem::recursive_directory_iterator(_path); it != boost::filesystem::recursive_directory_iterator(); it++)
     {
         if (!is_directory(it->path())) {
             START_DISABLE_STDERR
