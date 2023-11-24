@@ -1,6 +1,6 @@
 #include "TilesImpl.h"
 #include <iostream>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include "CustomException.h"
 #include "MathTools.h"
 #include "outputDisabler.h"
@@ -13,22 +13,22 @@ TilesImpl::TilesImpl(const std::string &path, const cv::Size &tileSize) :
 
 TilesImpl::~TilesImpl()
 {
-	if (boost::filesystem::exists(_tempPath))
-		boost::filesystem::remove_all(_tempPath);
+	if (std::filesystem::exists(_tempPath))
+		std::filesystem::remove_all(_tempPath);
 }
 
 void TilesImpl::compute(const IRegionOfInterest& roi)
 {
-    if (!boost::filesystem::exists(_tempPath))
-        boost::filesystem::create_directory(_tempPath);
-    if (!boost::filesystem::exists(_tempPath))
+    if (!std::filesystem::exists(_tempPath))
+        std::filesystem::create_directory(_tempPath);
+    if (!std::filesystem::exists(_tempPath))
         throw CustomException("Impossible to create directory : " + _tempPath, CustomException::Level::NORMAL);
 
-    for (auto it = boost::filesystem::recursive_directory_iterator(_path); it != boost::filesystem::recursive_directory_iterator(); it++)
+    for (auto it = std::filesystem::recursive_directory_iterator(_path); it != std::filesystem::recursive_directory_iterator(); it++)
     {
         if (!is_directory(it->path())) {
             START_DISABLE_STDERR
-                cv::Mat image = cv::imread(it->path().generic_path().string(), cv::IMREAD_COLOR);
+                cv::Mat image = cv::imread(it->path().string(), cv::IMREAD_COLOR);
             END_DISABLE_STDERR
                 if (!image.data)
                     continue;
@@ -99,7 +99,7 @@ void TilesImpl::exportTile(const cv::Mat & tile, const std::string & filename)
     image_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
     image_params.push_back(0);
 	cv::imwrite(_tempPath + filename, tile, image_params);
-	if (!boost::filesystem::exists(_tempPath + filename))
+	if (!std::filesystem::exists(_tempPath + filename))
 		throw CustomException("Impossible to create temporary tile : " + _tempPath + filename, CustomException::Level::NORMAL);
 }
 

@@ -1,6 +1,6 @@
 #include "Parameters.h"
 #include "CustomException.h"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <algorithm>
 
 
@@ -88,7 +88,7 @@ void Parameters::checkParsing()
 {
 	if (_tilesPath == "")
 		throw CustomException("No path defined, use -p option", CustomException::Level::NORMAL);
-	else if (!boost::filesystem::exists(_tilesPath)) {
+	else if (!std::filesystem::exists(_tilesPath)) {
 		std::string message = "Invalid path : ";
 		message += _tilesPath;
 		message += ", use -p option";
@@ -96,7 +96,7 @@ void Parameters::checkParsing()
 	}
 	if (_photoPath == "")
 		throw CustomException("No image defined, use -i option", CustomException::Level::NORMAL);
-	else if (!boost::filesystem::exists(_photoPath)) {
+	else if (!std::filesystem::exists(_photoPath)) {
 		std::string message = "Invalid file : ";
 		message += _photoPath;
 		message += ", use -i option";

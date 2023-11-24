@@ -29,13 +29,13 @@ SortedVector<T>::SortedVector(int maxSize) :
 template<typename T>
 void SortedVector<T>::push_sorted(const T &element)
 {
-    if ((size() >= _maxSize) && !(element < back()))
+    if ((this->size() >= _maxSize) && !(element < this->back()))
         return;
 
-    if (size() < _maxSize)
-        push_back(element);
+    if (this->size() < _maxSize)
+        this->push_back(element);
 
-    auto pos = std::upper_bound(begin(), end() - 1, element);
-    std::move_backward(pos, end() - 1, end());
+    auto pos = std::upper_bound(this->begin(), this->end() - 1, element);
+    std::move_backward(pos, this->end() - 1, this->end());
     *pos = element;
 }
