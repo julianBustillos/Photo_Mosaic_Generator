@@ -8,11 +8,11 @@
 #include "Photo.h"
 
 
-class ITiles 
+class ITiles
 {
 public:
     //TODO : ADD COMMENT
-    ITiles(const std::string &path, const cv::Size &tileSize) : _path(path), _tempPath(path + "temp\\"), _tileSize(tileSize) {};
+    ITiles(const std::string& path, const cv::Size& tileSize) : _path(path), _tempPath(path + "temp\\"), _tileSize(tileSize) {};
 
     //TODO : ADD COMMENT
     virtual ~ITiles() {};
@@ -21,7 +21,7 @@ public:
     virtual void compute(const IRegionOfInterest& roi) = 0;
 
     //TODO : ADD COMMENT
-    virtual void computeSquareDistanceVector(std::vector<double> &squareDistances, const Photo &photo, int i, int j) const = 0;
+    virtual void computeSquareDistanceVector(std::vector<double>& squareDistances, const Photo& photo, int i, int j) const = 0;
 
     //TODO : ADD COMMENT
     virtual const std::string getTileFilepath(int tileId) const = 0;

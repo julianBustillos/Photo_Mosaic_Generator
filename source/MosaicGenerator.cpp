@@ -1,12 +1,12 @@
 #include "MosaicGenerator.h"
 #include "PixelAdapterImpl.h"
-#include "MeanSHiftROIImpl.h"
+#include "FaceDetectionROIImpl.h"
 #include "TilesImpl.h"
 #include "MatchSolverImpl.h"
 #include "CustomException.h"
 
 
-MosaicGenerator::MosaicGenerator(const Parameters & parameters) :
+MosaicGenerator::MosaicGenerator(const Parameters& parameters) :
     _photo(parameters.getPhotoPath(), parameters.getWidth(), parameters.getHeight(), parameters.getSubdivision()),
     _mosaicBuilder(_photo, parameters.getSubdivision())
 {
@@ -14,7 +14,7 @@ MosaicGenerator::MosaicGenerator(const Parameters & parameters) :
     if (!_pixelAdapter)
         throw CustomException("Bad allocation for _pixelAdapter in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _roi = new MeanSHiftROIImpl();
+    _roi = new FaceDetectionROIImpl();
     if (!_roi)
         throw CustomException("Bad allocation for _roi in MosaicGenerator constructor.", CustomException::Level::ERROR);
 

@@ -9,10 +9,10 @@
 #include "MosaicBuilder.h"
 
 
-class MosaicGenerator 
+class MosaicGenerator
 {
 public:
-    MosaicGenerator(const Parameters &parameters);
+    MosaicGenerator(const Parameters& parameters);
     ~MosaicGenerator();
     void Build();
 

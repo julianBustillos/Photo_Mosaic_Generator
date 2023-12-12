@@ -1,7 +1,7 @@
 #include "MatchSolverImpl.h"
 #include "variables.h"
 #include <opencv2/opencv.hpp>
-#include "MathTools.h"
+#include "Utils.h"
 #include "ITiles.h"
 #include <vector>
 #include <iostream>
@@ -9,14 +9,16 @@
 #include "SortedVector.h"
 
 
-void MatchSolverImpl::solve(const ITiles & tiles)
+void MatchSolverImpl::solve(const ITiles& tiles)
 {
     _matchingTiles.resize(_subdivisions * _subdivisions, -1);
 
     std::vector<matchCandidate> candidates;
 
-    for (int i = 0; i < _subdivisions; i++) {
-        for (int j = 0; j < _subdivisions; j++) {
+    for (int i = 0; i < _subdivisions; i++)
+    {
+        for (int j = 0; j < _subdivisions; j++)
+        {
             findCandidateTiles(candidates, i, j, tiles);
         }
     }
@@ -26,12 +28,12 @@ void MatchSolverImpl::solve(const ITiles & tiles)
     printInfo();
 }
 
-const std::vector<int> &MatchSolverImpl::getMatchingTiles() const
+const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
 {
     return _matchingTiles;
 }
 
-void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate> &candidates, int i, int j, const ITiles &tiles)
+void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const ITiles& tiles)
 {
     SortedVector<matchCandidate> tileCandidates(_redundancyTilesNumber);
     matchCandidate temp(i, j);
@@ -39,7 +41,8 @@ void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate> &candidates
 
     tiles.computeSquareDistanceVector(squareDistances, _photo, i, j);
 
-    for (unsigned int t = 0; t < squareDistances.size(); t++) {
+    for (unsigned int t = 0; t < squareDistances.size(); t++)
+    {
         temp._id = t;
         temp._squareDistance = squareDistances[t];
         tileCandidates.push_sorted(temp);
@@ -52,7 +55,8 @@ void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate> &candidates
 void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)
 {
     std::sort(candidates.begin(), candidates.end());
-    for (int k = 0; k < candidates.size(); k++) {
+    for (int k = 0; k < candidates.size(); k++)
+    {
         int candidateId = candidates[k]._i * _subdivisions + candidates[k]._j;
         if (_matchingTiles[candidateId] >= 0)
             continue;
@@ -63,8 +67,10 @@ void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)
         int jMax = std::min(candidates[k]._j + REDUNDANCY_DISTANCE, _subdivisions - 1);
 
         bool redundancy = false;
-        for (int i = iMin; i <= iMax && !redundancy; i++) {
-            for (int j = jMin; j <= jMax && !redundancy; j++) {
+        for (int i = iMin; i <= iMax && !redundancy; i++)
+        {
+            for (int j = jMin; j <= jMax && !redundancy; j++)
+            {
                 int currentId = i * _subdivisions + j;
                 if (_matchingTiles[currentId] == candidates[k]._id)
                     redundancy = true;

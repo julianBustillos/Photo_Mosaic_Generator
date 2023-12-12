@@ -1,5 +1,5 @@
 #include "SaliencyFilter.h"
-#include "MathTools.h"
+#include "Utils.h"
 #include "variables.h"
 #include <limits>
 
@@ -8,7 +8,7 @@ const double SaliencyFilter::uniquenessCoefficient = 1. / (2. * SALIENCY_FILTER_
 const double SaliencyFilter::distributionCoefficient = 1. / (2. * SALIENCY_FILTER_DISTRIBUTION_SIGMA * SALIENCY_FILTER_DISTRIBUTION_SIGMA);
 
 
-void SaliencyFilter::compute(const cv::Mat &image, const std::vector<int>& clusterMapping, int nbClusters, std::vector<double> &saliency, int &iMean, int &jMean, bool &saliencyFound)
+void SaliencyFilter::compute(const cv::Mat& image, const std::vector<int>& clusterMapping, int nbClusters, std::vector<double>& saliency, int& iMean, int& jMean, bool& saliencyFound)
 {
     std::vector<ClusterPoint> cluster(nbClusters);
     buildClusters(cluster, image, clusterMapping);
@@ -33,7 +33,7 @@ void SaliencyFilter::compute(const cv::Mat &image, const std::vector<int>& clust
     for (int k = 0; k < nbClusters; k++) {
         MathTools::convertLABtoBGR(clusterVec[3 * k], clusterVec[3 * k + 1], clusterVec[3 * k + 2], cluster[k]._L, cluster[k]._a, cluster[k]._b);
     }
-         
+
     for (int i = 0; i < image.size().height; i++) {
         for (int j = 0; j < image.size().width; j++) {
             int currentId = i * image.size().width + j;
@@ -114,13 +114,15 @@ void SaliencyFilter::compute(const cv::Mat &image, const std::vector<int>& clust
     //DEBUG
 }
 
-void SaliencyFilter::buildClusters(std::vector<ClusterPoint> &cluster, const cv::Mat &image, const std::vector<int>& clusterMapping)
+void SaliencyFilter::buildClusters(std::vector<ClusterPoint>& cluster, const cv::Mat& image, const std::vector<int>& clusterMapping)
 {
-    const uchar *data = image.data;
+    const uchar* data = image.data;
     cv::Size size = image.size();
 
-    for (int i = 0; i < size.height; i++) {
-        for (int j = 0; j < size.width; j++) {
+    for (int i = 0; i < size.height; i++)
+    {
+        for (int j = 0; j < size.width; j++)
+        {
             int currentId = i * size.width + j;
             int clusterId = clusterMapping[currentId];
 
@@ -133,21 +135,24 @@ void SaliencyFilter::buildClusters(std::vector<ClusterPoint> &cluster, const cv:
         }
     }
 
-    for (int clusterId = 0; clusterId < cluster.size(); clusterId++) {
+    for (int clusterId = 0; clusterId < cluster.size(); clusterId++)
+    {
         cluster[clusterId]._i /= cluster[clusterId]._size;
         cluster[clusterId]._j /= cluster[clusterId]._size;
         cluster[clusterId]._B = (int)std::round((double)cluster[clusterId]._B / (double)cluster[clusterId]._size);
         cluster[clusterId]._G = (int)std::round((double)cluster[clusterId]._G / (double)cluster[clusterId]._size);
         cluster[clusterId]._R = (int)std::round((double)cluster[clusterId]._R / (double)cluster[clusterId]._size);
-        MathTools::convertBGRtoLAB(cluster[clusterId]._L, cluster[clusterId]._a, cluster[clusterId]._b, (uchar)cluster[clusterId]._B, (uchar)cluster[clusterId]._G, (uchar)cluster[clusterId]._R);
+        Utils::convertBGRtoLAB(cluster[clusterId]._L, cluster[clusterId]._a, cluster[clusterId]._b, (uchar)cluster[clusterId]._B, (uchar)cluster[clusterId]._G, (uchar)cluster[clusterId]._R);
     }
 }
 
 void SaliencyFilter::computeColorSqDistance(const std::vector<ClusterPoint>& cluster, std::vector<double>& colorSqDistance)
 {
     int size = (int)cluster.size();
-    for (int i = 0; i < size; i++) {
-        for (int j = i + 1; j < size; j++) {
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = i + 1; j < size; j++)
+        {
             int id = i * size + j;
             int idSym = j * size + i;
 
@@ -160,13 +165,15 @@ void SaliencyFilter::computeColorSqDistance(const std::vector<ClusterPoint>& clu
     }
 }
 
-void SaliencyFilter::computeUniqueness(const std::vector<double> &colorSqDistance, std::vector<ClusterPoint> &cluster)
+void SaliencyFilter::computeUniqueness(const std::vector<double>& colorSqDistance, std::vector<ClusterPoint>& cluster)
 {
     int size = (int)cluster.size();
     std::vector<double> weight(size * size, 1.);
 
-    for (int i = 0; i < size; i++) {
-        for (int j = i + 1; j < size; j++) {
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = i + 1; j < size; j++)
+        {
             int id = i * size + j;
             int idSym = j * size + i;
 
@@ -178,9 +185,11 @@ void SaliencyFilter::computeUniqueness(const std::vector<double> &colorSqDistanc
     }
 
     double maxUniqueness = 0., minUniqueness = std::numeric_limits<double>::max();
-    for (int clusterId = 0; clusterId < size; clusterId++) {
+    for (int clusterId = 0; clusterId < size; clusterId++)
+    {
         double weightSum = 0.;
-        for (int compareId = 0; compareId < size; compareId++) {
+        for (int compareId = 0; compareId < size; compareId++)
+        {
             int currentId = clusterId * size + compareId;
             double currentWeight = cluster[compareId]._size * weight[currentId];
 
@@ -204,8 +213,10 @@ void SaliencyFilter::computeDistribution(const std::vector<double>& colorSqDista
     int size = (int)cluster.size();
     std::vector<double> weight(size * size, 1.);
 
-    for (int i = 0; i < size; i++) {
-        for (int j = i + 1; j < size; j++) {
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = i + 1; j < size; j++)
+        {
             int id = i * size + j;
             int idSym = j * size + i;
 
@@ -214,10 +225,12 @@ void SaliencyFilter::computeDistribution(const std::vector<double>& colorSqDista
     }
 
     double maxDistribution = 0., minDistribution = std::numeric_limits<double>::max();
-    for (int clusterId = 0; clusterId < size; clusterId++) {
+    for (int clusterId = 0; clusterId < size; clusterId++)
+    {
         double weightSum = 0.;
         double mui = 0., muj = 0.;
-        for (int compareId = 0; compareId < size; compareId++) {
+        for (int compareId = 0; compareId < size; compareId++)
+        {
             int currentId = clusterId * size + compareId;
             double currentWeight = cluster[compareId]._size * weight[currentId];
 
@@ -244,8 +257,9 @@ void SaliencyFilter::computeSaliency(std::vector<ClusterPoint>& cluster)
     int size = (int)cluster.size();
 
     double maxSaliency = 0.;
-    for (int clusterId = 0; clusterId < size; clusterId++) {
-        cluster[clusterId]._saliency = cluster[clusterId]._uniqueness * std::exp(- SALIENCY_DISTRIBUTION_INFLUENCE * cluster[clusterId]._distribution);
+    for (int clusterId = 0; clusterId < size; clusterId++)
+    {
+        cluster[clusterId]._saliency = cluster[clusterId]._uniqueness * std::exp(-SALIENCY_DISTRIBUTION_INFLUENCE * cluster[clusterId]._distribution);
         if (cluster[clusterId]._saliency > maxSaliency)
             maxSaliency = cluster[clusterId]._saliency;
     }
@@ -254,13 +268,14 @@ void SaliencyFilter::computeSaliency(std::vector<ClusterPoint>& cluster)
         cluster[clusterId]._saliency /= maxSaliency;
 }
 
-void SaliencyFilter::findSaliencyThreshold(const std::vector<ClusterPoint>& cluster, double & threshold)
+void SaliencyFilter::findSaliencyThreshold(const std::vector<ClusterPoint>& cluster, double& threshold)
 {
     int size = (int)cluster.size();
     std::vector<std::pair<double, int>> sortedSaliency(size);
 
     int nbPixel = 0;
-    for (int clusterId = 0; clusterId < size; clusterId++) {
+    for (int clusterId = 0; clusterId < size; clusterId++)
+    {
         sortedSaliency[clusterId].first = cluster[clusterId]._saliency;
         sortedSaliency[clusterId].second = cluster[clusterId]._size;
         nbPixel += cluster[clusterId]._size;
@@ -271,9 +286,11 @@ void SaliencyFilter::findSaliencyThreshold(const std::vector<ClusterPoint>& clus
     int pixelSum = 0;
     const int minZeroSaliencyRegionSize = (int)(nbPixel * (1. - SALIENCY_REGION_MAX_SIZE));
     threshold = 0.;
-    for (int clusterId = 0; clusterId < size; clusterId++) {
+    for (int clusterId = 0; clusterId < size; clusterId++)
+    {
         pixelSum += sortedSaliency[clusterId].second;
-        if (pixelSum > minZeroSaliencyRegionSize) {
+        if (pixelSum > minZeroSaliencyRegionSize)
+        {
             threshold = sortedSaliency[clusterId].first;
             break;
         }
@@ -283,13 +300,14 @@ void SaliencyFilter::findSaliencyThreshold(const std::vector<ClusterPoint>& clus
         threshold = SALIENCY_MIN_THRESHOLD;
 }
 
-void SaliencyFilter::findMeanClusterPoint(const std::vector<ClusterPoint>& cluster, double threshold, int & iMean, int & jMean)
+void SaliencyFilter::findMeanClusterPoint(const std::vector<ClusterPoint>& cluster, double threshold, int& iMean, int& jMean)
 {
     int size = (int)cluster.size();
     double iSum = 0., jSum = 0., weightSum = 0.;
 
-    for (int clusterId = 0; clusterId < size; clusterId++) {
-        double currentWeight = (cluster[clusterId]._saliency > threshold) ? cluster[clusterId]._saliency > threshold * cluster[clusterId]._size : 0;
+    for (int clusterId = 0; clusterId < size; clusterId++)
+    {
+        double currentWeight = (cluster[clusterId]._saliency > threshold)?cluster[clusterId]._saliency > threshold * cluster[clusterId]._size : 0;
         iSum += cluster[clusterId]._i * currentWeight;
         jSum += cluster[clusterId]._j * currentWeight;
         weightSum += currentWeight;
@@ -299,11 +317,12 @@ void SaliencyFilter::findMeanClusterPoint(const std::vector<ClusterPoint>& clust
     jMean = (int)(jSum / weightSum + 0.5);
 }
 
-void SaliencyFilter::buildThresholdedSaliency(const std::vector<ClusterPoint>& cluster, std::vector<double> &saliency, double threshold)
+void SaliencyFilter::buildThresholdedSaliency(const std::vector<ClusterPoint>& cluster, std::vector<double>& saliency, double threshold)
 {
     int size = (int)cluster.size();
     saliency.resize(size);
-    for (int clusterId = 0; clusterId < size; clusterId++) {
-        saliency[clusterId] = (cluster[clusterId]._saliency > threshold) ? cluster[clusterId]._saliency : 0.;
+    for (int clusterId = 0; clusterId < size; clusterId++)
+    {
+        saliency[clusterId] = (cluster[clusterId]._saliency > threshold)?cluster[clusterId]._saliency:0.;
     }
 }
