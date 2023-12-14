@@ -13,20 +13,24 @@ TilesImpl::TilesImpl(const std::string& path, const cv::Size& tileSize) :
 
 TilesImpl::~TilesImpl()
 {
-    if (std::filesystem::exists(_tempPath))
-        std::filesystem::remove_all(_tempPath);
+    removeTemp();
 }
 
 void TilesImpl::compute(const IRegionOfInterest& roi)
 {
-    if (!std::filesystem::exists(_tempPath))
-        std::filesystem::create_directory(_tempPath);
-    if (!std::filesystem::exists(_tempPath))
-        throw CustomException("Impossible to create directory : " + _tempPath, CustomException::Level::NORMAL);
+    removeTemp();
+    createTemp();
 
     for (auto it = std::filesystem::recursive_directory_iterator(_path); it != std::filesystem::recursive_directory_iterator(); it++)
     {
-        if (!is_directory(it->path()))
+        if (is_directory(it->path()))
+        {
+            if (it->path() == _tempPath)
+            {
+                it.disable_recursion_pending();
+            }
+        }
+        else
         {
             START_DISABLE_STDERR
                 cv::Mat image = cv::imread(it->path().string(), cv::IMREAD_COLOR);
@@ -55,7 +59,27 @@ void TilesImpl::computeSquareDistanceVector(std::vector<double>& squareDistances
 
 const std::string TilesImpl::getTileFilepath(int tileId) const
 {
-    return _tempPath + _tilesData[tileId].filename;
+    return _tempPath + "\\" + _tilesData[tileId].filename;
+}
+
+void TilesImpl::createTemp() const
+{
+    if (!std::filesystem::exists(_tempPath))
+    {
+        std::filesystem::create_directory(_tempPath);
+    }
+    if (!std::filesystem::exists(_tempPath))
+    {
+        throw CustomException("Impossible to create directory : " + _tempPath, CustomException::Level::NORMAL);
+    }
+}
+
+void TilesImpl::removeTemp() const
+{
+    if (std::filesystem::exists(_tempPath))
+    {
+        std::filesystem::remove_all(_tempPath);
+    }
 }
 
 void TilesImpl::computeTileData(const cv::Mat& image, const std::string& filename, const IRegionOfInterest& roi)
@@ -98,9 +122,10 @@ void TilesImpl::exportTile(const cv::Mat& tile, const std::string& filename)
     std::vector<int> image_params;
     image_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
     image_params.push_back(0);
-    cv::imwrite(_tempPath + filename, tile, image_params);
-    if (!std::filesystem::exists(_tempPath + filename))
-        throw CustomException("Impossible to create temporary tile : " + _tempPath + filename, CustomException::Level::NORMAL);
+    std::string filePath = _tempPath + "\\" + filename;
+    cv::imwrite(filePath, tile, image_params);
+    if (!std::filesystem::exists(filePath))
+        throw CustomException("Impossible to create temporary tile : " + filePath, CustomException::Level::NORMAL);
 }
 
 void TilesImpl::printInfo() const
