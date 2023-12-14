@@ -21,7 +21,7 @@
     <ClCompile Include="source\MosaicGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\MathTools.cpp">
+    <ClCompile Include="source\Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\MeanShift.cpp">
@@ -51,6 +51,9 @@
     <ClCompile Include="source\TilesImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\FaceDetectionROIImpl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\clock.h">
@@ -68,7 +71,7 @@
     <ClInclude Include="include\CustomException.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\MathTools.h">
+    <ClInclude Include="include\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\MeanShift.h">
@@ -113,8 +116,8 @@
     <ClInclude Include="include\IRegionOfInterest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClInclude Include="include\FaceDetectionROIImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

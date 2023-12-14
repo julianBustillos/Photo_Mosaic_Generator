@@ -140,7 +140,7 @@ void Utils::computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, 
     }
 }
 
-void Utils::computeImageResampling(cv::Mat& target, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize)
+void Utils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize)
 {
     cv::Mat croppedImage(cropSize, CV_8UC3, cv::Scalar(0, 0, 0));
     if (croppedImage.size() != source.size())
@@ -162,7 +162,7 @@ void Utils::computeImageResampling(cv::Mat& target, const cv::Mat& source, const
         croppedImage = source;
     }
 
-    cv::Size targetSize = target.size();
+    target = cv::Mat(targetSize, CV_8UC3, cv::Scalar(0, 0, 0));
     double wScaleInv = (double)cropSize.width / (double)targetSize.width;
     double hScaleInv = (double)cropSize.height / (double)targetSize.height;
     double minScaleInv = std::min(wScaleInv, hScaleInv);

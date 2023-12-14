@@ -15,8 +15,7 @@ Photo::Photo(const std::string& path, int width, int height, int subdivision) :
 
     if (width != 0 && height != 0)
     {
-        _mat = cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0));
-        Utils::computeImageResampling(_mat, originalImage, cv::Point(0, 0), originalImage.size());
+        Utils::computeImageResampling(_mat, cv::Size(width, height), originalImage, cv::Point(0, 0), originalImage.size());
     }
     else
     {

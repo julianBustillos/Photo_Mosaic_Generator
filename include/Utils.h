@@ -16,7 +16,7 @@ public:
     static inline int getClippedDataIndex(int i, int j, int step, const cv::Size& size);
 
 public:
-    static void computeImageResampling(cv::Mat& target, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize);
+    static void computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize);
     static void applyGaussianBlur(uchar* image, const cv::Size& size, double sigma, int nbBoxes);
     static void computeImageBGRFeatures(const uchar* image, const cv::Size& size, const cv::Point& firstPos, int step, double* features, int featureDirSubdivision);
     static double BGRFeatureDistance(const double* vec1, const double* vec2, int size);

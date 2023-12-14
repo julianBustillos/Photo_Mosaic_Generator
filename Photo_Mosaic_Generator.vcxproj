@@ -83,6 +83,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(OPENCV4_INCLUDE);$(ProjectDir)\include</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(OPENCV4_LIB)</AdditionalLibraryDirectories>
@@ -120,9 +121,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\FaceDetectionROIImpl.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\MatchSolverImpl.cpp" />
-    <ClCompile Include="source\MathTools.cpp" />
+    <ClCompile Include="source\Utils.cpp" />
     <ClCompile Include="source\MeanShift.cpp" />
     <ClCompile Include="source\MosaicBuilder.cpp" />
     <ClCompile Include="source\MosaicGenerator.cpp" />
@@ -135,10 +137,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\CustomException.h" />
+    <ClInclude Include="include\FaceDetectionROIImpl.h" />
     <ClInclude Include="include\IMatchSolver.h" />
     <ClInclude Include="include\IRegionOfInterest.h" />
     <ClInclude Include="include\MatchSolverImpl.h" />
-    <ClInclude Include="include\MathTools.h" />
+    <ClInclude Include="include\Utils.h" />
     <ClInclude Include="include\MeanShift.h" />
     <ClInclude Include="include\MosaicBuilder.h" />
     <ClInclude Include="include\MosaicGenerator.h" />
@@ -155,19 +158,6 @@
     <ClInclude Include="include\TilesImpl.h" />
     <ClInclude Include="include\variables.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\boost.1.83.0\build\boost.targets" Condition="Exists('packages\boost.1.83.0\build\boost.targets')" />
-    <Import Project="packages\boost_filesystem-vc143.1.83.0\build\boost_filesystem-vc143.targets" Condition="Exists('packages\boost_filesystem-vc143.1.83.0\build\boost_filesystem-vc143.targets')" />
-  </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('packages\boost.1.83.0\build\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost.1.83.0\build\boost.targets'))" />
-    <Error Condition="!Exists('packages\boost_filesystem-vc143.1.83.0\build\boost_filesystem-vc143.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost_filesystem-vc143.1.83.0\build\boost_filesystem-vc143.targets'))" />
-  </Target>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>

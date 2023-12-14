@@ -63,10 +63,10 @@ void TilesImpl::computeTileData(const cv::Mat& image, const std::string& filenam
     Data data;
     cv::Point firstPixel;
     cv::Size cropSize;
-    cv::Mat tileMat(_tileSize, CV_8UC3, cv::Scalar(0, 0, 0));
+    cv::Mat tileMat;
 
     computeCropInfo(image, firstPixel, cropSize, roi);
-    Utils::computeImageResampling(tileMat, image, firstPixel, cropSize);
+    Utils::computeImageResampling(tileMat, _tileSize, image, firstPixel, cropSize);
     Utils::computeImageBGRFeatures(tileMat.data, _tileSize, cv::Point(0, 0), _tileSize.width, data.features, FEATURE_ROOT_SUBDIVISION);
     data.filename = filename.substr(0, filename.find_last_of('.')) + ".png";
     _tilesData.push_back(data);
@@ -90,7 +90,7 @@ void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Point& firstPixel, cv:
     cropSize.width = (int)ceil(_tileSize.width * scaleInv);
     cropSize.height = (int)ceil(_tileSize.height * scaleInv);
 
-    roi.find(image, firstPixel, cropSize, wScaleInv >= hScaleInv);
+    roi.find(image, firstPixel, cropSize, wScaleInv < hScaleInv);
 }
 
 void TilesImpl::exportTile(const cv::Mat& tile, const std::string& filename)
