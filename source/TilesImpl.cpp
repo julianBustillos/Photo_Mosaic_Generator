@@ -61,12 +61,12 @@ const std::string TilesImpl::getTileFilepath(int tileId) const
 void TilesImpl::computeTileData(const cv::Mat& image, const std::string& filename, const IRegionOfInterest& roi)
 {
     Data data;
-    cv::Point cropFirstPixelPos;
+    cv::Point firstPixel;
     cv::Size cropSize;
     cv::Mat tileMat(_tileSize, CV_8UC3, cv::Scalar(0, 0, 0));
 
-    computeCropInfo(image, cropFirstPixelPos, cropSize, roi);
-    Utils::computeImageResampling(tileMat.data, _tileSize, image.data, image.size(), cropFirstPixelPos, cropSize, BLUR_NB_BOXES);
+    computeCropInfo(image, firstPixel, cropSize, roi);
+    Utils::computeImageResampling(tileMat, image, firstPixel, cropSize);
     Utils::computeImageBGRFeatures(tileMat.data, _tileSize, cv::Point(0, 0), _tileSize.width, data.features, FEATURE_ROOT_SUBDIVISION);
     data.filename = filename.substr(0, filename.find_last_of('.')) + ".png";
     _tilesData.push_back(data);
@@ -74,26 +74,23 @@ void TilesImpl::computeTileData(const cv::Mat& image, const std::string& filenam
     exportTile(tileMat, data.filename);
 }
 
-void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Point& firstPixelPos, cv::Size& cropSize, const IRegionOfInterest& roi)
+void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Point& firstPixel, cv::Size& cropSize, const IRegionOfInterest& roi)
 {
-    const cv::Size imageSize = image.size();
-
-    if (imageSize == _tileSize)
+    if (image.size() == _tileSize)
     {
-        firstPixelPos = cv::Point(0, 0);
-        cropSize = imageSize;
+        firstPixel = cv::Point(0, 0);
+        cropSize = image.size();
         return;
     }
 
-    double rWidth = (double)imageSize.width / (double)_tileSize.width;
-    double rHeight = (double)imageSize.height / (double)_tileSize.height;
-    double imageRatio = (double)imageSize.width / (double)imageSize.height;
+    double wScaleInv = (double)image.size().width / (double)_tileSize.width;
+    double hScaleInv = (double)image.size().height / (double)_tileSize.height;
+    double scaleInv = std::min(wScaleInv, hScaleInv);
 
-    double ratio = std::min(rHeight, rWidth);
-    cropSize.width = (int)ceil(_tileSize.width * ratio);
-    cropSize.height = (int)ceil(_tileSize.height * ratio);
+    cropSize.width = (int)ceil(_tileSize.width * scaleInv);
+    cropSize.height = (int)ceil(_tileSize.height * scaleInv);
 
-    roi.find(image, firstPixelPos, cropSize, (imageRatio > 1.));
+    roi.find(image, firstPixel, cropSize, wScaleInv >= hScaleInv);
 }
 
 void TilesImpl::exportTile(const cv::Mat& tile, const std::string& filename)

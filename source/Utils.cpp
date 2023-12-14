@@ -1,4 +1,5 @@
 #include "Utils.h"
+#include "variables.h"
 
 
 const double Utils::_biCubicCoeffs[16] = {-1, 2, -1, 0, 3, -5, 0, 2, -3, 4, 1, 0, 1, -1, 0, 0};
@@ -17,22 +18,56 @@ double Utils::cubeRoot(double t)
     return root;
 }
 
-uchar Utils::areaInterpolation(double x, double y, const uchar* pixelGrid)
-{
-    //TODO 
-    return uchar();
-}
-
-void Utils::computeAreaInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double ratio)
+void Utils::computeAreaInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv)
 {
     /*
     Compute area interpolation :
     Compute convolution matrix representing pixel weights area based on original image subdivision according to new size.
     */
 
+    double xMin = (double)j * scaleInv;
+    double xMax = (double)(j + 1) * scaleInv;
+    double yMin = (double)i * scaleInv;
+    double yMax = (double)(i + 1) * scaleInv;
+
+    int xLoBound = (int)std::floor(xMin);
+    int xUpBound = (int)std::ceil(xMax);
+    int yLoBound = (int)std::floor(yMin);
+    int yUpBound = (int)std::ceil(yMax);
+    
     for (int color = 0; color < 3; color++)
     {
+        double colorVal = 0.;
+        double coefSum = 0.;
+        for (int col = xLoBound; col <= xUpBound; col++)
+        {
+            double colCoef = 1.;
+            if (col == xLoBound)
+            {
+                colCoef = (double)(xLoBound + 1) - xMin;
+            }
+            else if (col == xUpBound)
+            {
+                colCoef = xMax - (double)(xMax - 1);
+            }
+            for (int row = yLoBound; row <= yUpBound; row++)
+            {
+                double rowCoef = 1.;
+                if (row == yLoBound)
+                {
+                    rowCoef = (double)(yLoBound + 1) - yMin;
+                }
+                else if (row == yUpBound)
+                {
+                    rowCoef = yMax - (double)(yMax - 1);
+                }
+                int dataId = getClippedDataIndex(row, col, size.width, size);
+                colorVal += (double)source[dataId + color] * rowCoef * colCoef;
+                coefSum += rowCoef * colCoef;
+            }
+        }
 
+        pixel[color] = (uchar)clip<int>((int)round(colorVal / coefSum), 0, 255);
     }
 }
 
@@ -82,11 +117,11 @@ uchar Utils::biCubicInterpolation(double x, double y, const uchar* pixelGrid)
     return (uchar)clip<int>((int)round(interpolation), 0, 255);
 }
 
-void Utils::computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double ratio)
+void Utils::computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv)
 {
     uchar pixelGrid[16];
-    double x = (double)j * ratio;
-    double y = (double)i * ratio;
+    double x = (double)j * scaleInv;
+    double y = (double)i * scaleInv;
     int iFirstGrid = (int)round(y) - 2;
     int jFirstGrid = (int)round(x) - 2;
 
@@ -105,48 +140,66 @@ void Utils::computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, 
     }
 }
 
-void Utils::computeImageResampling(uchar* target, const cv::Size& targetSize, const uchar* source, const cv::Size& sourceSize, const cv::Point& cropFirstPixelPos, const cv::Size& cropSize, int blurNbBoxes)
+void Utils::computeImageResampling(cv::Mat& target, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize)
 {
-    cv::Mat croppedImage(cropSize, CV_8UC3);
-    uchar* croppedImageData = croppedImage.data;
-    int step = sourceSize.width;
-    for (int i = 0; i < cropSize.height; i++)
+    cv::Mat croppedImage(cropSize, CV_8UC3, cv::Scalar(0, 0, 0));
+    if (croppedImage.size() != source.size())
     {
-        for (int j = 0; j < cropSize.width; j++)
+        int step = source.size().width;
+        for (int i = 0; i < cropSize.height; i++)
         {
-            int imageId = getDataIndex(cropFirstPixelPos.y + i, cropFirstPixelPos.x + j, step);
-            int imageToProcessId = getDataIndex(i, j, cropSize.width);
-            for (int c = 0; c < 3; c++)
-                croppedImageData[imageToProcessId + c] = source[imageId + c];
+            for (int j = 0; j < cropSize.width; j++)
+            {
+                int imageId = getDataIndex(cropFirstPixel.y + i, cropFirstPixel.x + j, step);
+                int imageToProcessId = getDataIndex(i, j, cropSize.width);
+                for (int c = 0; c < 3; c++)
+                    croppedImage.data[imageToProcessId + c] = source.data[imageId + c];
+            }
         }
     }
-
-    double wRatio = (double)cropSize.width / (double)targetSize.width;
-    double hRatio = (double)cropSize.height / (double)targetSize.height;
-    double ratio = std::min(wRatio, hRatio);
-
-    //TODO use area interpolation if ratio < 1
-    if (ratio != 1.)
+    else
     {
-        if (ratio > 1.)
-        {
-            double blurSigma = ratio / 3.;
-            applyGaussianBlur(croppedImageData, cropSize, blurSigma, blurNbBoxes);
-        }
+        croppedImage = source;
+    }
 
-        for (int i = 0; i < targetSize.height; i++)
+    cv::Size targetSize = target.size();
+    double wScaleInv = (double)cropSize.width / (double)targetSize.width;
+    double hScaleInv = (double)cropSize.height / (double)targetSize.height;
+    double minScaleInv = std::min(wScaleInv, hScaleInv);
+
+    if (minScaleInv != 1.)
+    {
+        if (minScaleInv > 1.) //Use area interpolation for image downscaling
         {
-            for (int j = 0; j < targetSize.width; j++)
+            for (int i = 0; i < targetSize.height; i++)
             {
-                int dataId = getDataIndex(i, j, targetSize.width);
-                computeBicubicInterpolationPixel(&target[dataId], croppedImageData, cropSize, i, j, ratio);
+                for (int j = 0; j < targetSize.width; j++)
+                {
+                    int dataId = getDataIndex(i, j, targetSize.width);
+                    computeAreaInterpolationPixel(&target.data[dataId], croppedImage.data, cropSize, i, j, minScaleInv);
+                }
+            }
+        }
+        else //Use bicubic interpolation for image upscaling
+        {
+            //Use blurring only for downscaling
+            //double blurSigma = minScale / 3.;
+            //applyGaussianBlur(croppedImage.data, cropSize, blurSigma, BLUR_NB_BOXES);
+
+            for (int i = 0; i < targetSize.height; i++)
+            {
+                for (int j = 0; j < targetSize.width; j++)
+                {
+                    int dataId = getDataIndex(i, j, targetSize.width);
+                    computeBicubicInterpolationPixel(&target.data[dataId], croppedImage.data, cropSize, i, j, minScaleInv);
+                }
             }
         }
     }
     else
     {
         for (int k = 0; k < 3 * targetSize.width * targetSize.height; k++)
-            target[k] = croppedImageData[k];
+            target.data[k] = croppedImage.data[k];
     }
 }
 

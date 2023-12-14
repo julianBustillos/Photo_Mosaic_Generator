@@ -16,7 +16,7 @@ public:
     static inline int getClippedDataIndex(int i, int j, int step, const cv::Size& size);
 
 public:
-    static void computeImageResampling(uchar* target, const cv::Size& targetSize, const uchar* source, const cv::Size& sourceSize, const cv::Point& cropFirstPixelPos, const cv::Size& cropSize, int blurNbBoxes);
+    static void computeImageResampling(cv::Mat& target, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize);
     static void applyGaussianBlur(uchar* image, const cv::Size& size, double sigma, int nbBoxes);
     static void computeImageBGRFeatures(const uchar* image, const cv::Size& size, const cv::Point& firstPos, int step, double* features, int featureDirSubdivision);
     static double BGRFeatureDistance(const double* vec1, const double* vec2, int size);
@@ -35,10 +35,9 @@ private:
     Utils() {};
     ~Utils() {};
     static double cubeRoot(double t);
-    static uchar areaInterpolation(double x, double y, const uchar* pixelColorGrid);
-    static void computeAreaInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double ratio);
+    static void computeAreaInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv);
     static uchar biCubicInterpolation(double x, double y, const uchar* pixelColorGrid);
-    static void computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double ratio);
+    static void computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv);
     static void getGaussianApproxBoxRadiuses(double sigma, std::vector<int>& boxRadius);
     static void applyBoxBlur(uchar* image, uchar* temp, const cv::Size& size, int boxRadius);
     static void applyRowBlur(uchar* source, uchar* target, const cv::Size& size, int lineRadius);

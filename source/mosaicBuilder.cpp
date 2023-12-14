@@ -29,7 +29,7 @@ void MosaicBuilder::Build(const IPixelAdapter& pixelAdapter, const ITiles& tiles
     printInfo();
 }
 
-void MosaicBuilder::copyTileOnMosaic(uchar* mosaicData, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Point firstPixelPos, int step)
+void MosaicBuilder::copyTileOnMosaic(uchar* mosaicData, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Point firstPixel, int step)
 {
     cv::Mat tile = cv::imread(tilePath);
     uchar* tileData = tile.data;
@@ -43,7 +43,7 @@ void MosaicBuilder::copyTileOnMosaic(uchar* mosaicData, const std::string& tileP
     {
         for (int j = 0; j < tileSize.width; j++)
         {
-            int mosaicId = Utils::getDataIndex(firstPixelPos.y + i, firstPixelPos.x + j, step);
+            int mosaicId = Utils::getDataIndex(firstPixel.y + i, firstPixel.x + j, step);
             int tileId = Utils::getDataIndex(i, j, tileSize.width);
             for (int c = 0; c < 3; c++)
             {

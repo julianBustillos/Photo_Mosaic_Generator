@@ -16,7 +16,7 @@ Photo::Photo(const std::string& path, int width, int height, int subdivision) :
     if (width != 0 && height != 0)
     {
         _mat = cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0));
-        Utils::computeImageResampling(_mat.data, _mat.size(), originalImage.data, originalImage.size(), cv::Point(0, 0), originalImage.size(), BLUR_NB_BOXES);
+        Utils::computeImageResampling(_mat, originalImage, cv::Point(0, 0), originalImage.size());
     }
     else
     {
@@ -30,7 +30,7 @@ Photo::Photo(const std::string& path, int width, int height, int subdivision) :
     _tileSize = cv::Size(_mat.size().width / subdivision, _mat.size().height / subdivision);
     _lostSize = cv::Size(_mat.size().width - subdivision * _tileSize.width, _mat.size().height - subdivision * _tileSize.height);
 
-    int minimumSize = 20;
+    int minimumSize = 20; //TODO CONSTANT
     if (_tileSize.width < minimumSize || _tileSize.height < minimumSize)
         throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(minimumSize) + "*" + std::to_string(minimumSize) + ")", CustomException::Level::NORMAL);
 
