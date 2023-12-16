@@ -7,7 +7,7 @@
 
 
 MosaicGenerator::MosaicGenerator(const Parameters& parameters) :
-    _photo(parameters.getPhotoPath(), parameters.getWidth(), parameters.getHeight(), parameters.getSubdivision()),
+    _photo(parameters.getPhotoPath(), parameters.getScale(), parameters.getRatio(), parameters.getSubdivision()),
     _mosaicBuilder(_photo, parameters.getSubdivision())
 {
     _pixelAdapter = new PixelAdapterImpl(_photo, parameters.getSubdivision());

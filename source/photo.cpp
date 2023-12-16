@@ -5,21 +5,36 @@
 #include <iostream>
 
 
-Photo::Photo(const std::string& path, int width, int height, int subdivision) :
+Photo::Photo(const std::string& path, double scale, double ratio, int subdivision) :
     _directory("")
 {
-    cv::Mat originalImage = cv::imread(path, cv::IMREAD_COLOR);
-    if (!originalImage.data)
+    cv::Mat inputImage = cv::imread(path, cv::IMREAD_COLOR);
+    if (!inputImage.data)
         throw CustomException("Impossible to load image : " + path + ", use -i option", CustomException::Level::NORMAL);
-    _oldSize = originalImage.size();
+    _inSize = inputImage.size();
 
-    if (width != 0 && height != 0)
+    if (scale != 1. && ratio != 0.)
     {
-        Utils::computeImageResampling(_mat, cv::Size(width, height), originalImage, cv::Point(0, 0), originalImage.size());
+        double inputRatio = (double)_inSize.width / (double)_inSize.height;
+        cv::Size croppedSize = _inSize;
+        if (ratio > 0.)
+        {
+            if (inputRatio < ratio)
+            {
+                croppedSize.width = (double)_inSize.height * ratio;
+            }
+            else if (inputRatio > ratio)
+            {
+                croppedSize.height = (double)_inSize.width / ratio;
+            }
+        }
+
+        cv::Size targetSize((double)croppedSize.width * scale, (double)croppedSize.height * scale);
+        Utils::computeImageResampling(_mat, targetSize, inputImage, cv::Point(0, 0), croppedSize);
     }
     else
     {
-        _mat = originalImage;
+        _mat = inputImage;
     }
 
     int filenameIndex = (int)path.find_last_of('\\');
@@ -73,7 +88,7 @@ std::string Photo::getDirectory() const
 void Photo::printInfo() const
 {
     std::cout << "PHOTO DATA : " << std::endl;
-    std::cout << "Photo size  : " << _oldSize.width << "*" << _oldSize.height << std::endl;
+    std::cout << "Photo size  : " << _inSize.width << "*" << _inSize.height << std::endl;
     std::cout << "Mosaic size : " << _mat.size().width << "*" << _mat.size().height << std::endl;
     std::cout << "Tile size   : " << _tileSize.width << "*" << _tileSize.height << std::endl;
     std::cout << "Lost size   : " << _lostSize.width << "*" << _lostSize.height << std::endl;

@@ -8,14 +8,14 @@ std::string Parameters::getHelp()
 {
     return
         "HELP :\n"
-        "Photo_Mosaic_Generator.exe -i C:\\myImage -p C:\\path_to_tiles -s 13 [-rw 1920 -rh 1080]\n\n"
+        "Photo_Mosaic_Generator.exe -i C:\\myImage -p C:\\path_to_tiles -d 13 [-s 1.7 -r 3.33]\n\n"
         "AVAILABLE ARGUMENTS :\n"
         "-h : help\n"
         "-p path to tiles image folder\n"
         "-i path to image\n"
-        "-s image subdivision (height and width)\n"
-        "-rw result width\n"
-        "-rh result height\n";
+        "-d image subdivision (height and width)\n"
+        "-s image scale\n"
+        "-r image ratio (width / height)\n";
 }
 
 Parameters::Parameters(int argc, char* argv[])
@@ -24,9 +24,9 @@ Parameters::Parameters(int argc, char* argv[])
     {
         char* parameter = argv[i];
         char* value = ((i + 1) < argc)?argv[i + 1]:NULL;
-        parseArgument(parameter, value);
+        parse(parameter, value);
     }
-    checkParsing();
+    check();
 }
 
 std::string Parameters::getPhotoPath() const
@@ -39,14 +39,14 @@ std::string Parameters::getTilesPath() const
     return _tilesPath;
 }
 
-int Parameters::getWidth() const
+double Parameters::getScale() const
 {
-    return _width;
+    return _scale;
 }
 
-int Parameters::getHeight() const
+double Parameters::getRatio() const
 {
-    return _height;
+    return _ratio;
 }
 
 int Parameters::getSubdivision() const
@@ -54,7 +54,7 @@ int Parameters::getSubdivision() const
     return _subdivision;
 }
 
-void Parameters::parseArgument(char* parameter, char* value)
+void Parameters::parse(char* parameter, char* value)
 {
     if (std::strcmp(parameter, "-h") == 0)
     {
@@ -72,17 +72,17 @@ void Parameters::parseArgument(char* parameter, char* value)
         _photoPath = value?value:"";
         std::replace(_photoPath.begin(), _photoPath.end(), '/', '\\');
     }
-    else if (std::strcmp(parameter, "-s") == 0)
+    else if (std::strcmp(parameter, "-d") == 0)
     {
         _subdivision = value?std::atoi(value):0;
     }
-    else if (std::strcmp(parameter, "-rw") == 0)
+    else if (std::strcmp(parameter, "-s") == 0)
     {
-        _width = value?std::atoi(value):0;
+        _scale = value?std::atof(value):0;
     }
-    else if (std::strcmp(parameter, "-rh") == 0)
+    else if (std::strcmp(parameter, "-r") == 0)
     {
-        _height = value?std::atoi(value):0;
+        _ratio = value?std::atof(value):0;
     }
     else
     {
@@ -92,10 +92,12 @@ void Parameters::parseArgument(char* parameter, char* value)
     }
 }
 
-void Parameters::checkParsing()
+void Parameters::check()
 {
     if (_tilesPath == "")
+    {
         throw CustomException("No path defined, use -p option", CustomException::Level::NORMAL);
+    }
     else if (!std::filesystem::exists(_tilesPath))
     {
         std::string message = "Invalid path : ";
@@ -104,7 +106,9 @@ void Parameters::checkParsing()
         throw CustomException(message, CustomException::Level::NORMAL);
     }
     if (_photoPath == "")
+    {
         throw CustomException("No image defined, use -i option", CustomException::Level::NORMAL);
+    }
     else if (!std::filesystem::exists(_photoPath))
     {
         std::string message = "Invalid file : ";
@@ -112,14 +116,16 @@ void Parameters::checkParsing()
         message += ", use -i option";
         throw CustomException(message, CustomException::Level::NORMAL);
     }
-    if (_subdivision == 0)
-        throw CustomException("Invalid subdivision value, use -s option", CustomException::Level::NORMAL);
-    if (_width != 0 && _width < _subdivision)
+    if (_subdivision <= 0)
     {
-        throw CustomException("Invalid result width value, use -rw option", CustomException::Level::NORMAL);
+        throw CustomException("Invalid subdivision value, use -d option", CustomException::Level::NORMAL);
     }
-    if (_height != 0 && _height < _subdivision)
+    if (_scale <= 0)
     {
-        throw CustomException("Invalid result height value, use -rh option", CustomException::Level::NORMAL);
+        throw CustomException("Invalid scale value, use -s option", CustomException::Level::NORMAL);
+    }
+    if (_ratio < 0)
+    {
+        throw CustomException("Invalid ratio value, use -r option", CustomException::Level::NORMAL);
     }
 }

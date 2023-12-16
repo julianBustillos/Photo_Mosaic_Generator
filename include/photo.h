@@ -7,7 +7,7 @@
 class Photo
 {
 public:
-    Photo(const std::string& path, int width, int height, int subdivision);
+    Photo(const std::string& path, double scale, double ratio, int subdivision);
     ~Photo() {};
     cv::Point getFirstPixel(int i, int j, bool offset) const;
     cv::Size getTileSize() const;
@@ -23,5 +23,5 @@ private:
     cv::Mat _mat;
     cv::Size _tileSize;
     cv::Size _lostSize;
-    cv::Size _oldSize;
+    cv::Size _inSize;
 };

@@ -13,18 +13,18 @@ public:
 	~Parameters() {};
 	std::string getPhotoPath() const;
 	std::string getTilesPath() const;
-    int getWidth() const;
-    int getHeight() const;
+    double getScale() const;
+    double getRatio() const;
 	int getSubdivision() const;
 
 private:
-	void parseArgument(char *parameter, char *value);
-	void checkParsing();
+	void parse(char *parameter, char *value);
+	void check();
 
 private:
 	std::string _tilesPath = "";
 	std::string _photoPath = "";
-    int _width = 0;
-    int _height = 0;
+    double _scale = 1.;
+    double _ratio = 0.;
 	int _subdivision = 0;
 };
