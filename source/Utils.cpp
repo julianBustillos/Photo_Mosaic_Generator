@@ -2,143 +2,311 @@
 #include "variables.h"
 
 
-const double Utils::_biCubicCoeffs[16] = {-1, 2, -1, 0, 3, -5, 0, 2, -3, 4, 1, 0, 1, -1, 0, 0};
+/*
+    Unnamed namespace methods called by Utils methods
+*/
 
-
-double Utils::cubeRoot(double t)
+namespace
 {
-    double inv3 = 1. / 3.;
-    double root = 1.4774329094 - 0.8414323527 / (t + 0.7387320679);
-
-    while (abs(root * root * root - t) > 0.000001)
+    double cubeRoot(double t)
     {
-        root = (2. * root + t / (root * root)) * inv3;
-    }
+        double inv3 = 1. / 3.;
+        double root = 1.4774329094 - 0.8414323527 / (t + 0.7387320679);
 
-    return root;
-}
-
-void Utils::computeAreaInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv)
-{
-    /*
-    Compute area interpolation :
-    Compute convolution matrix representing pixel weights area based on original image subdivision according to new size.
-    */
-
-    double xMin = (double)j * scaleInv;
-    double xMax = (double)(j + 1) * scaleInv;
-    double yMin = (double)i * scaleInv;
-    double yMax = (double)(i + 1) * scaleInv;
-
-    int xLoBound = (int)std::floor(xMin);
-    int xUpBound = (int)std::ceil(xMax);
-    int yLoBound = (int)std::floor(yMin);
-    int yUpBound = (int)std::ceil(yMax);
-    
-    for (int color = 0; color < 3; color++)
-    {
-        double colorVal = 0.;
-        double coefSum = 0.;
-        for (int col = xLoBound; col <= xUpBound; col++)
+        while (abs(root * root * root - t) > 0.000001)
         {
-            double colCoef = 1.;
-            if (col == xLoBound)
-            {
-                colCoef = (double)(xLoBound + 1) - xMin;
-            }
-            else if (col == xUpBound)
-            {
-                colCoef = xMax - (double)(xMax - 1);
-            }
-            for (int row = yLoBound; row <= yUpBound; row++)
-            {
-                double rowCoef = 1.;
-                if (row == yLoBound)
-                {
-                    rowCoef = (double)(yLoBound + 1) - yMin;
-                }
-                else if (row == yUpBound)
-                {
-                    rowCoef = yMax - (double)(yMax - 1);
-                }
-                int dataId = getClippedDataIndex(row, col, size.width, size);
-                colorVal += (double)source[dataId + color] * rowCoef * colCoef;
-                coefSum += rowCoef * colCoef;
-            }
+            root = (2. * root + t / (root * root)) * inv3;
         }
 
-        pixel[color] = (uchar)clip<int>((int)round(colorVal / coefSum), 0, 255);
-    }
-}
-
-uchar Utils::biCubicInterpolation(double x, double y, const uchar* pixelGrid)
-{
-    /*
-    Compute bicubic interpolation :
-    vx = [x^3, x^2, x, 1]
-    vy = [y^3, y^2, y, 1]
-    B : 4*4 bicubic coeff matrix
-    P : 4*4 pixel grid value matrix
-    interpolation = 1/4 * vx * B * P^t * B^t * vy
-    */
-
-    double vx[4], vy[4], vxCoeffsMult[4], vyCoeffsMult[4];
-
-    vx[3] = vy[3] = 1.;
-    for (int i = 2; i > -1; i--)
-    {
-        vx[i] = vx[i + 1] * x;
-        vy[i] = vy[i + 1] * y;
+        return root;
     }
 
-    double xTemp, yTemp;
-    for (int j = 0; j < 4; j++)
+    void computeAreaInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv)
     {
-        xTemp = yTemp = 0;
-        for (int i = 0; i < 4; i++)
+        /*
+        Compute area interpolation :
+        Compute convolution matrix representing pixel weights area based on original image subdivision according to new size.
+        */
+
+        double xMin = (double)j * scaleInv;
+        double xMax = (double)(j + 1) * scaleInv;
+        double yMin = (double)i * scaleInv;
+        double yMax = (double)(i + 1) * scaleInv;
+
+        int xLoBound = (int)std::floor(xMin);
+        int xUpBound = (int)std::ceil(xMax);
+        int yLoBound = (int)std::floor(yMin);
+        int yUpBound = (int)std::ceil(yMax);
+
+        for (int color = 0; color < 3; color++)
         {
-            xTemp += vx[i] * _biCubicCoeffs[j * 4 + i];
-            yTemp += vy[i] * _biCubicCoeffs[j * 4 + i];
+            double colorVal = 0.;
+            double coefSum = 0.;
+            for (int col = xLoBound; col <= xUpBound; col++)
+            {
+                double colCoef = 1.;
+                if (col == xLoBound)
+                {
+                    colCoef = (double)(xLoBound + 1) - xMin;
+                }
+                else if (col == xUpBound)
+                {
+                    colCoef = xMax - (double)(xMax - 1);
+                }
+                for (int row = yLoBound; row <= yUpBound; row++)
+                {
+                    double rowCoef = 1.;
+                    if (row == yLoBound)
+                    {
+                        rowCoef = (double)(yLoBound + 1) - yMin;
+                    }
+                    else if (row == yUpBound)
+                    {
+                        rowCoef = yMax - (double)(yMax - 1);
+                    }
+                    int dataId = Utils::getClippedDataIndex(row, col, size.width, size);
+                    colorVal += (double)source[dataId + color] * rowCoef * colCoef;
+                    coefSum += rowCoef * colCoef;
+                }
+            }
+
+            pixel[color] = (uchar)Utils::clip<int>((int)round(colorVal / coefSum), 0, 255);
         }
-        vxCoeffsMult[j] = xTemp;
-        vyCoeffsMult[j] = yTemp;
     }
 
-    double interpolation = 0;
-    for (int i = 0; i < 4; i++)
+    uchar biCubicInterpolation(double x, double y, const uchar* pixelGrid)
     {
+        /*
+        Compute bicubic interpolation :
+        vx = [x^3, x^2, x, 1]
+        vy = [y^3, y^2, y, 1]
+        B : 4*4 bicubic coeff matrix
+        P : 4*4 pixel grid value matrix
+        interpolation = 1/4 * vx * B * P^t * B^t * vy
+        */
+        static const double biCubicCoeffs[16] = {-1,  2, -1,  0,
+                                                  3, -5,  0,  2,
+                                                 -3,  4,  1,  0,
+                                                  1, -1,  0,  0};
+
+
+        double vx[4], vy[4], vxCoeffsMult[4], vyCoeffsMult[4];
+
+        vx[3] = vy[3] = 1.;
+        for (int i = 2; i > -1; i--)
+        {
+            vx[i] = vx[i + 1] * x;
+            vy[i] = vy[i + 1] * y;
+        }
+
+        double xTemp, yTemp;
         for (int j = 0; j < 4; j++)
         {
-            interpolation += vxCoeffsMult[i] * pixelGrid[i * 4 + j] * vyCoeffsMult[j];
+            xTemp = yTemp = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                xTemp += vx[i] * biCubicCoeffs[j * 4 + i];
+                yTemp += vy[i] * biCubicCoeffs[j * 4 + i];
+            }
+            vxCoeffsMult[j] = xTemp;
+            vyCoeffsMult[j] = yTemp;
+        }
+
+        double interpolation = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                interpolation += vxCoeffsMult[i] * pixelGrid[i * 4 + j] * vyCoeffsMult[j];
+            }
+        }
+        interpolation /= 4.;
+
+        return (uchar)Utils::clip<int>((int)round(interpolation), 0, 255);
+    }
+
+    void computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv)
+    {
+        uchar pixelGrid[16];
+        double x = (double)j * scaleInv;
+        double y = (double)i * scaleInv;
+        int iFirstGrid = (int)round(y) - 2;
+        int jFirstGrid = (int)round(x) - 2;
+
+        for (int color = 0; color < 3; color++)
+        {
+            for (int col = 0; col < 4; col++)
+            {
+                for (int row = 0; row < 4; row++)
+                {
+                    int dataId = Utils::getClippedDataIndex(iFirstGrid + row, jFirstGrid + col, size.width, size);
+                    pixelGrid[col * 4 + row] = source[dataId + color];
+                }
+            }
+
+            pixel[color] = biCubicInterpolation(x - round(x) + 1, y - round(y) + 1, pixelGrid);
         }
     }
-    interpolation /= 4.;
 
-    return (uchar)clip<int>((int)round(interpolation), 0, 255);
-}
-
-void Utils::computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv)
-{
-    uchar pixelGrid[16];
-    double x = (double)j * scaleInv;
-    double y = (double)i * scaleInv;
-    int iFirstGrid = (int)round(y) - 2;
-    int jFirstGrid = (int)round(x) - 2;
-
-    for (int color = 0; color < 3; color++)
+    void getGaussianApproxBoxRadiuses(double sigma, std::vector<int>& boxRadius)
     {
-        for (int col = 0; col < 4; col++)
+        int n = (int)boxRadius.size();
+        double wIdeal = sqrt(12. * sigma * sigma / n + 1.);
+        int wl = (int)floor(wIdeal);
+        if ((wl % 2) == 0)
+            wl--;
+        int wu = wl + 2;
+        int m = (int)round((12. * sigma * sigma - n * wl * wl - 4. * n * wl - 3 * n) / (-4. * wl - 4.));
+        int wlr = (wl - 1) / 2;
+        int wur = (wu - 1) / 2;
+
+        for (int k = 0; k < n; k++)
+            boxRadius[k] = (k < m)?wlr:wur;
+    }
+
+    void applyRowBlur(uchar* source, uchar* target, const cv::Size& size, int lineRadius)
+    {
+        double invLineSize = 1. / (double)(2 * lineRadius + 1);
+        int accumulator[3];
+        int start[3];
+        int end[3];
+
+        for (int i = 0; i < size.height; i++)
         {
-            for (int row = 0; row < 4; row++)
+            // Average filter start middle and end indices
+            int startId = 3 * i * size.width;
+            int endId = 3 * (i * size.width + lineRadius);
+            int targetId = startId;
+
+            // Initialization 
+            for (int c = 0; c < 3; c++)
             {
-                int dataId = getClippedDataIndex(iFirstGrid + row, jFirstGrid + col, size.width, size);
-                pixelGrid[col * 4 + row] = source[dataId + color];
+                start[c] = source[startId + c];
+                end[c] = source[3 * ((i + 1) * size.width - 1) + c];
+                accumulator[c] = start[c] * (lineRadius + 1);
+            }
+
+            for (int j = 0; j < lineRadius; j++)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    accumulator[c] += source[startId + 3 * j + c];
+                }
+            }
+
+            // Average filtering
+            for (int j = 0; j <= lineRadius; j++, targetId += 3, endId += 3)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    accumulator[c] += source[endId + c] - start[c];
+                    target[targetId + c] = (uchar)(accumulator[c] * invLineSize + 0.5);
+                }
+            }
+
+            for (int j = lineRadius + 1; j < size.width - lineRadius; j++, targetId += 3, startId += 3, endId += 3)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    accumulator[c] += source[endId + c] - source[startId + c];
+                    target[targetId + c] = (uchar)(accumulator[c] * invLineSize + 0.5);
+                }
+            }
+
+            for (int j = size.width - lineRadius; j < size.width; j++, targetId += 3, startId += 3)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    accumulator[c] += end[c] - source[startId + c];
+                    target[targetId + c] = (uchar)(accumulator[c] * invLineSize + 0.5);
+                }
+            }
+        }
+    }
+
+    void applyColBlur(uchar* source, uchar* target, const cv::Size& size, int lineRadius)
+    {
+        double invLineSize = 1. / (double)(2 * lineRadius + 1);
+        std::vector<int> accumulator(3 * size.width);
+        std::vector<int> start(3 * size.width);
+        std::vector<int> end(3 * size.width);
+
+        // Average filter start middle and end indices
+        int startId = 0;
+        int endId = 3 * (lineRadius * size.width);
+        int targetId = 0;
+
+        // Initialization 
+        for (int j = 0; j < size.width; j++)
+        {
+            for (int c = 0; c < 3; c++)
+            {
+                start[3 * j + c] = source[3 * j + c];
+                end[3 * j + c] = source[3 * ((size.height - 1) * size.width + j) + c];
+                accumulator[3 * j + c] = start[3 * j + c] * (lineRadius + 1);
             }
         }
 
-        pixel[color] = biCubicInterpolation(x - round(x) + 1, y - round(y) + 1, pixelGrid);
+        for (int i = 0; i < lineRadius; i++)
+        {
+            for (int j = 0; j < size.width; j++)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    accumulator[3 * j + c] += source[3 * (i * size.width + j) + c];
+                }
+            }
+        }
+
+        // Average filtering
+        for (int i = 0; i <= lineRadius; i++)
+        {
+            for (int j = 0; j < size.width; j++, targetId += 3, endId += 3)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    accumulator[3 * j + c] += source[endId + c] - start[3 * j + c];
+                    target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize + 0.5);
+                }
+            }
+        }
+
+        for (int i = lineRadius + 1; i < size.height - lineRadius; i++)
+        {
+            for (int j = 0; j < size.width; j++, targetId += 3, startId += 3, endId += 3)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    accumulator[3 * j + c] += source[endId + c] - source[startId + c];
+                    target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize + 0.5);
+                }
+            }
+        }
+
+        for (int i = size.height - lineRadius; i < size.height; i++)
+        {
+            for (int j = 0; j < size.width; j++, targetId += 3, startId += 3)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    accumulator[3 * j + c] += end[3 * j + c] - source[startId + c];
+                    target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize + 0.5);
+                }
+            }
+        }
+    }
+
+    void applyBoxBlur(uchar* image, uchar* temp, const cv::Size& size, int boxRadius)
+    {
+        applyRowBlur(image, temp, size, boxRadius);
+        applyColBlur(temp, image, size, boxRadius);
     }
 }
+
+
+/*
+    Utils methods implementation 
+*/
 
 void Utils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize)
 {
@@ -680,156 +848,5 @@ void Utils::convertLABtoBGR(uchar& blue, uchar& green, uchar& red, double L, dou
     blue = (uchar)clip<int>((int)round((0.0009209 * X - 0.0025498 * Y + 0.1786 * Z) * 255.), 0, 255);
 }
 
-void Utils::getGaussianApproxBoxRadiuses(double sigma, std::vector<int>& boxRadius)
-{
-    int n = (int)boxRadius.size();
-    double wIdeal = sqrt(12. * sigma * sigma / n + 1.);
-    int wl = (int)floor(wIdeal);
-    if ((wl % 2) == 0)
-        wl--;
-    int wu = wl + 2;
-    int m = (int)round((12. * sigma * sigma - n * wl * wl - 4. * n * wl - 3 * n) / (-4. * wl - 4.));
-    int wlr = (wl - 1) / 2;
-    int wur = (wu - 1) / 2;
 
-    for (int k = 0; k < n; k++)
-        boxRadius[k] = (k < m)?wlr:wur;
-}
 
-void Utils::applyBoxBlur(uchar* image, uchar* temp, const cv::Size& size, int boxRadius)
-{
-    applyRowBlur(image, temp, size, boxRadius);
-    applyColBlur(temp, image, size, boxRadius);
-}
-
-void Utils::applyRowBlur(uchar* source, uchar* target, const cv::Size& size, int lineRadius)
-{
-    double invLineSize = 1. / (double)(2 * lineRadius + 1);
-    int accumulator[3];
-    int start[3];
-    int end[3];
-
-    for (int i = 0; i < size.height; i++)
-    {
-        // Average filter start middle and end indices
-        int startId = 3 * i * size.width;
-        int endId = 3 * (i * size.width + lineRadius);
-        int targetId = startId;
-
-        // Initialization 
-        for (int c = 0; c < 3; c++)
-        {
-            start[c] = source[startId + c];
-            end[c] = source[3 * ((i + 1) * size.width - 1) + c];
-            accumulator[c] = start[c] * (lineRadius + 1);
-        }
-
-        for (int j = 0; j < lineRadius; j++)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                accumulator[c] += source[startId + 3 * j + c];
-            }
-        }
-
-        // Average filtering
-        for (int j = 0; j <= lineRadius; j++, targetId += 3, endId += 3)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                accumulator[c] += source[endId + c] - start[c];
-                target[targetId + c] = (uchar)(accumulator[c] * invLineSize + 0.5);
-            }
-        }
-
-        for (int j = lineRadius + 1; j < size.width - lineRadius; j++, targetId += 3, startId += 3, endId += 3)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                accumulator[c] += source[endId + c] - source[startId + c];
-                target[targetId + c] = (uchar)(accumulator[c] * invLineSize + 0.5);
-            }
-        }
-
-        for (int j = size.width - lineRadius; j < size.width; j++, targetId += 3, startId += 3)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                accumulator[c] += end[c] - source[startId + c];
-                target[targetId + c] = (uchar)(accumulator[c] * invLineSize + 0.5);
-            }
-        }
-    }
-}
-
-void Utils::applyColBlur(uchar* source, uchar* target, const cv::Size& size, int lineRadius)
-{
-    double invLineSize = 1. / (double)(2 * lineRadius + 1);
-    std::vector<int> accumulator(3 * size.width);
-    std::vector<int> start(3 * size.width);
-    std::vector<int> end(3 * size.width);
-
-    // Average filter start middle and end indices
-    int startId = 0;
-    int endId = 3 * (lineRadius * size.width);
-    int targetId = 0;
-
-    // Initialization 
-    for (int j = 0; j < size.width; j++)
-    {
-        for (int c = 0; c < 3; c++)
-        {
-            start[3 * j + c] = source[3 * j + c];
-            end[3 * j + c] = source[3 * ((size.height - 1) * size.width + j) + c];
-            accumulator[3 * j + c] = start[3 * j + c] * (lineRadius + 1);
-        }
-    }
-
-    for (int i = 0; i < lineRadius; i++)
-    {
-        for (int j = 0; j < size.width; j++)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                accumulator[3 * j + c] += source[3 * (i * size.width + j) + c];
-            }
-        }
-    }
-
-    // Average filtering
-    for (int i = 0; i <= lineRadius; i++)
-    {
-        for (int j = 0; j < size.width; j++, targetId += 3, endId += 3)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                accumulator[3 * j + c] += source[endId + c] - start[3 * j + c];
-                target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize + 0.5);
-            }
-        }
-    }
-
-    for (int i = lineRadius + 1; i < size.height - lineRadius; i++)
-    {
-        for (int j = 0; j < size.width; j++, targetId += 3, startId += 3, endId += 3)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                accumulator[3 * j + c] += source[endId + c] - source[startId + c];
-                target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize + 0.5);
-            }
-        }
-    }
-
-    for (int i = size.height - lineRadius; i < size.height; i++)
-    {
-        for (int j = 0; j < size.width; j++, targetId += 3, startId += 3)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                accumulator[3 * j + c] += end[3 * j + c] - source[startId + c];
-                target[targetId + c] = (uchar)(accumulator[3 * j + c] * invLineSize + 0.5);
-            }
-        }
-    }
-}
