@@ -31,26 +31,31 @@ FaceDetectionROIImpl::~FaceDetectionROIImpl()
 
 void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Point& firstPixel, const cv::Size& cropSize, bool rowDirSearch) const
 {
-    //Deep learning based face detection
-    cv::Mat faces;
-    double maxSize = std::max(image.size().width, image.size().height);
-    double scale = _detectionSize / maxSize;
-    double scaleInv = maxSize / _detectionSize;
-    int sWidth = (int)std::round((double)image.size().width * scale);
-    int sHeight = (int)std::round((double)image.size().height * scale);
-    cv::Mat sImage;
-    Utils::computeImageResampling(sImage, cv::Size(sWidth, sHeight), image, cv::Point(0, 0), image.size());
-    _faceDetector->setInputSize(sImage.size());
-    _faceDetector->detect(sImage, faces);
+    //Test if face search is needed
+    double croppedRatio = rowDirSearch ? (double)cropSize.height / (double)image.size().height :(double)cropSize.width / (double)image.size().width;
 
-    if (!faces.empty())
+    if (croppedRatio < 0.9) //TODO variable
     {
-        getDetectionROI(image.size(), faces, firstPixel, cropSize, scaleInv, rowDirSearch);
+        //Deep learning based face detection using YuNet
+        cv::Mat faces;
+        double maxSize = std::max(image.size().width, image.size().height);
+        double scale = _detectionSize / maxSize;
+        double scaleInv = maxSize / _detectionSize;
+        int sWidth = (int)std::round((double)image.size().width * scale);
+        int sHeight = (int)std::round((double)image.size().height * scale);
+        cv::Mat sImage;
+        Utils::computeImageResampling(sImage, cv::Size(sWidth, sHeight), image, cv::Point(0, 0), image.size());
+        _faceDetector->setInputSize(sImage.size());
+        _faceDetector->detect(sImage, faces);
+
+        if (!faces.empty())
+        {
+            getDetectionROI(image.size(), faces, firstPixel, cropSize, scaleInv, rowDirSearch);
+            return;
+        }
     }
-    else
-    {
-        getDefaultROI(image.size(), firstPixel, cropSize, rowDirSearch);
-    }
+
+    getDefaultROI(image.size(), firstPixel, cropSize, rowDirSearch);
 }
 
 std::string FaceDetectionROIImpl::getCurrentProcessDirectory()

@@ -21,11 +21,11 @@ Photo::Photo(const std::string& path, double scale, double ratio, int subdivisio
         {
             if (inputRatio < ratio)
             {
-                croppedSize.width = (double)_inSize.height * ratio;
+                croppedSize.height = (double)_inSize.width / ratio;
             }
             else if (inputRatio > ratio)
             {
-                croppedSize.height = (double)_inSize.width / ratio;
+                croppedSize.width = (double)_inSize.height * ratio;
             }
         }
 

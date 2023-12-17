@@ -40,7 +40,6 @@ void TilesImpl::compute(const IRegionOfInterest& roi)
             computeTileData(image, it->path().filename().string(), roi);
         }
     }
-
     printInfo();
 }
 
