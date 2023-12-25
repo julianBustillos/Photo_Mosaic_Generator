@@ -3,7 +3,7 @@
 #include <filesystem>
 #include "CustomException.h"
 #include "Utils.h"
-#include "outputDisabler.h"
+#include "OutputDisabler.h"
 
 
 TilesImpl::TilesImpl(const std::string& path, const cv::Size& tileSize) :
@@ -18,6 +18,7 @@ TilesImpl::~TilesImpl()
 
 void TilesImpl::compute(const IRegionOfInterest& roi)
 {
+    OutputDisabler disabler;
     removeTemp();
     createTemp();
 
@@ -32,11 +33,13 @@ void TilesImpl::compute(const IRegionOfInterest& roi)
         }
         else
         {
-            START_DISABLE_STDERR
-                cv::Mat image = cv::imread(it->path().string(), cv::IMREAD_COLOR);
-            END_DISABLE_STDERR
-                if (!image.data)
-                    continue;
+            disabler.start();
+            cv::Mat image = cv::imread(it->path().string(), cv::IMREAD_COLOR);
+             disabler.end();
+             if (!image.data)
+             {
+                 continue;
+             }
             computeTileData(image, it->path().filename().string(), roi);
         }
     }

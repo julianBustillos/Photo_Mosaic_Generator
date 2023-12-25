@@ -145,7 +145,7 @@
     <ClInclude Include="include\MeanShift.h" />
     <ClInclude Include="include\MosaicBuilder.h" />
     <ClInclude Include="include\MosaicGenerator.h" />
-    <ClInclude Include="include\outputDisabler.h" />
+    <ClInclude Include="include\OutputDisabler.h" />
     <ClInclude Include="include\Parameters.h" />
     <ClInclude Include="include\Photo.h" />
     <ClInclude Include="include\IPixelAdapter.h" />
@@ -154,7 +154,7 @@
     <ClInclude Include="include\SaliencyFilter.h" />
     <ClInclude Include="include\SortedVector.h" />
     <ClInclude Include="include\ITiles.h" />
-    <ClInclude Include="include\clock.h" />
+    <ClInclude Include="include\Clock.h" />
     <ClInclude Include="include\TilesImpl.h" />
     <ClInclude Include="include\variables.h" />
   </ItemGroup>

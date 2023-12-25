@@ -1,5 +1,5 @@
 #include <iostream>
-#include "clock.h"
+#include "Clock.h"
 #include "CustomException.h"
 #include "Parameters.h"
 #include "MosaicGenerator.h"
@@ -11,15 +11,15 @@ int main(int argc, char* argv[])
     {
         std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++ PHOTO MOSAIC GENERATOR ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl << std::endl;
 
-        TIME_NOW(start);
+        Clock clock;
+        clock.start();
 
         Parameters parameters(argc, argv);
         MosaicGenerator generator(parameters);
 
         generator.Build();
 
-        TIME_NOW(end);
-        PRINT_DURATION(start, end);
+        clock.end();
 
         std::cout << std::endl << "++++++++++++++++++++++++++++++++++++++++++++++++           END          ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
         std::cin.get();

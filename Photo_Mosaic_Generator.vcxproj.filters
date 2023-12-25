@@ -56,10 +56,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\clock.h">
+    <ClInclude Include="include\Clock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\outputDisabler.h">
+    <ClInclude Include="include\OutputDisabler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\variables.h">
