@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include "variables.h"
+#include <numbers>
 
 
 /*
@@ -448,14 +449,14 @@ void Utils::convertBGRtoHSV(double& hue, double& saturation, double& value, ucha
     if (min == max)
         hue = 0.;
     else if (max == B)
-        hue = M_PI / 3. * (4 + (R - G) / (max - min));
+        hue = std::numbers::pi / 3. * (4 + (R - G) / (max - min));
     else if (max == G)
-        hue = M_PI / 3. * (2 + (B - R) / (max - min));
+        hue = std::numbers::pi / 3. * (2 + (B - R) / (max - min));
     else
-        hue = M_PI / 3. * (G - B) / (max - min);
+        hue = std::numbers::pi / 3. * (G - B) / (max - min);
 
     if (hue < 0.)
-        hue += 2 * M_PI;
+        hue += 2 * std::numbers::pi;
 
     if (max == 0.)
         saturation = 0.;
@@ -464,7 +465,7 @@ void Utils::convertBGRtoHSV(double& hue, double& saturation, double& value, ucha
 
     value = max;
 
-    hue = clip<double>(hue, 0., 2 * M_PI);
+    hue = clip<double>(hue, 0., 2 * std::numbers::pi);
     saturation = clip<double>(saturation, 0., 1.);
     value = clip<double>(value, 0., 1.);
 }
@@ -472,7 +473,7 @@ void Utils::convertBGRtoHSV(double& hue, double& saturation, double& value, ucha
 void Utils::convertHSVtoBGR(uchar& blue, uchar& green, uchar& red, double hue, double saturation, double value)
 {
     double C = value * saturation;
-    double H = hue * 3. / M_PI;
+    double H = hue * 3. / std::numbers::pi;
     double X = C * (1. - std::abs(std::fmod(H, 2.) - 1.));
 
     double B, G, R;
@@ -541,14 +542,14 @@ void Utils::convertBGRtoHSL(double& hue, double& saturation, double& lightness, 
     if (min == max)
         hue = 0.;
     else if (max == B)
-        hue = M_PI / 3. * (4 + (R - G) / (max - min));
+        hue = std::numbers::pi / 3. * (4 + (R - G) / (max - min));
     else if (max == G)
-        hue = M_PI / 3. * (2 + (B - R) / (max - min));
+        hue = std::numbers::pi / 3. * (2 + (B - R) / (max - min));
     else
-        hue = M_PI / 3. * (G - B) / (max - min);
+        hue = std::numbers::pi / 3. * (G - B) / (max - min);
 
     if (hue < 0.)
-        hue += 2 * M_PI;
+        hue += 2 * std::numbers::pi;
 
     lightness = (max + min) / 2.;
 
@@ -557,7 +558,7 @@ void Utils::convertBGRtoHSL(double& hue, double& saturation, double& lightness, 
     else
         saturation = (max - lightness) / (std::min(lightness, 1. - lightness));
 
-    hue = clip<double>(hue, 0., 2 * M_PI);
+    hue = clip<double>(hue, 0., 2 * std::numbers::pi);
     saturation = clip<double>(saturation, 0., 1.);
     lightness = clip<double>(lightness, 0., 1.);
 }
@@ -565,7 +566,7 @@ void Utils::convertBGRtoHSL(double& hue, double& saturation, double& lightness, 
 void Utils::convertHSLtoBGR(uchar& blue, uchar& green, uchar& red, double hue, double saturation, double lightness)
 {
     double C = (1. - std::abs(2. * lightness - 1.)) * saturation;
-    double H = hue * 3. / M_PI;
+    double H = hue * 3. / std::numbers::pi;
     double X = C * (1. - std::abs(std::fmod(H, 2.) - 1.));
 
     double B, G, R;
@@ -638,7 +639,7 @@ void Utils::convertBGRtoHSI(double& hue, double& saturation, double& intensity, 
         w = clip<double>(w, -1., 1.);
         hue = acos(w);
         if (B > G)
-            hue = 2 * M_PI - hue;
+            hue = 2 * std::numbers::pi - hue;
         double min;
         if (R <= B && R <= G)
             min = R;
@@ -649,7 +650,7 @@ void Utils::convertBGRtoHSI(double& hue, double& saturation, double& intensity, 
         saturation = 1 - 3 * min / i;
     }
 
-    hue = clip<double>(hue, 0., 2 * M_PI);
+    hue = clip<double>(hue, 0., 2 * std::numbers::pi);
     saturation = clip<double>(saturation, 0., 1.);
     intensity = clip<double>(intensity, 0., 1.);
 }
@@ -662,24 +663,24 @@ void Utils::convertHSItoBGR(uchar& blue, uchar& green, uchar& red, double hue, d
         B = G = R = intensity;
     else
     {
-        if ((hue >= 0.) && (hue < 2. * M_PI / 3.))
+        if ((hue >= 0.) && (hue < 2. * std::numbers::pi / 3.))
         {
             B = (1. - saturation) / 3.;
-            R = (1. + saturation * cos(hue) / cos(M_PI / 3. - hue)) / 3.;
+            R = (1. + saturation * cos(hue) / cos(std::numbers::pi / 3. - hue)) / 3.;
             G = 1. - R - B;
         }
-        else if ((hue >= 2. * M_PI / 3.) && (hue < 4. * M_PI / 3.))
+        else if ((hue >= 2. * std::numbers::pi / 3.) && (hue < 4. * std::numbers::pi / 3.))
         {
-            hue = hue - 2. * M_PI / 3.;
+            hue = hue - 2. * std::numbers::pi / 3.;
             R = (1. - saturation) / 3.;
-            G = (1. + saturation * cos(hue) / cos(M_PI / 3. - hue)) / 3.;
+            G = (1. + saturation * cos(hue) / cos(std::numbers::pi / 3. - hue)) / 3.;
             B = 1. - R - G;
         }
-        else if ((hue >= 4. * M_PI / 3.) && (hue < 2. * M_PI))
+        else if ((hue >= 4. * std::numbers::pi / 3.) && (hue < 2. * std::numbers::pi))
         {
-            hue = hue - 4. * M_PI / 3.;
+            hue = hue - 4. * std::numbers::pi / 3.;
             G = (1. - saturation) / 3.;
-            B = (1. + saturation * cos(hue) / cos(M_PI / 3. - hue)) / 3.;
+            B = (1. + saturation * cos(hue) / cos(std::numbers::pi / 3. - hue)) / 3.;
             R = 1. - B - G;
         }
         else
