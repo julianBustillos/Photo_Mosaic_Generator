@@ -6,7 +6,7 @@
 class MatchSolverImpl : public IMatchSolver
 {
 public:
-    MatchSolverImpl(const Photo& photo, int subdivisions) : IMatchSolver(photo, subdivisions) {}
+    MatchSolverImpl(std::shared_ptr<const Photo> photo, int subdivisions) : IMatchSolver(photo, subdivisions) {}
     virtual ~MatchSolverImpl() {};
     virtual void solve(const ITiles& tiles);
     virtual const std::vector<int>& getMatchingTiles() const;

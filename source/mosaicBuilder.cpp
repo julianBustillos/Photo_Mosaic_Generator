@@ -4,9 +4,9 @@
 #include "Utils.h"
 
 
-void MosaicBuilder::Build(const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver)
+void MosaicBuilder::build(const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver)
 {
-    cv::Size mosaicSize = _photo.getTileSize() * _subdivisions;
+    cv::Size mosaicSize = _photo->getTileSize() * _subdivisions;
     cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
     uchar* mosaicData = mosaic.data;
     const std::vector<int>& matchingTiles = matchSolver.getMatchingTiles();
@@ -18,13 +18,13 @@ void MosaicBuilder::Build(const IPixelAdapter& pixelAdapter, const ITiles& tiles
             int mosaicId = i * _subdivisions + j;
             int tileId = matchingTiles[mosaicId];
             if (tileId >= 0)
-                copyTileOnMosaic(mosaicData, tiles.getTileFilepath(tileId), pixelAdapter, mosaicId, _photo.getFirstPixel(i, j, false), mosaicSize.width);
+                copyTileOnMosaic(mosaicData, tiles.getTileFilepath(tileId), pixelAdapter, mosaicId, _photo->getFirstPixel(i, j, false), mosaicSize.width);
             else
                 throw CustomException("One or several tiles missing from match solver !", CustomException::Level::NORMAL);
         }
     }
 
-    exportMosaic(_photo.getDirectory(), mosaic);
+    exportMosaic(_photo->getDirectory(), mosaic);
 
     printInfo();
 }

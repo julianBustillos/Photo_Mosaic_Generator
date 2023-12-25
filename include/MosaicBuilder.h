@@ -12,9 +12,9 @@
 class MosaicBuilder
 {
 public:
-    MosaicBuilder(const Photo& photo, int subdivisions) : _photo(photo), _subdivisions(subdivisions) {};
-    void Build(const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver);
-    ~MosaicBuilder() {};
+    MosaicBuilder(std::shared_ptr<const Photo> photo, int subdivisions) : _photo(photo), _subdivisions(subdivisions) {};
+    void build(const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver);
+    ~MosaicBuilder() { _photo.reset(); };
 
 private:
     void copyTileOnMosaic(uchar* mosaicData, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Point firstPixel, int step);
@@ -22,7 +22,7 @@ private:
     void printInfo() const;
 
 private:
-    const Photo& _photo;
+    std::shared_ptr<const Photo> _photo;
     const int _subdivisions;
 };
 

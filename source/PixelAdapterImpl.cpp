@@ -13,7 +13,7 @@ void PixelAdapterImpl::compute()
         for (int j = 0; j < _subdivisions; j++)
         {
             int mosaicId = i * _subdivisions + j;
-            computeAdapterData(_tileCorrection[mosaicId], _photo.getData(), _photo.getFirstPixel(i, j, true), _photo.getTileSize(), _photo.getStep());
+            computeAdapterData(_tileCorrection[mosaicId], _photo->getData(), _photo->getFirstPixel(i, j, true), _photo->getTileSize(), _photo->getStep());
         }
     }
 }

@@ -39,7 +39,7 @@ void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates
     matchCandidate temp(i, j);
     std::vector<double> squareDistances;
 
-    tiles.computeSquareDistanceVector(squareDistances, _photo, i, j);
+    tiles.computeSquareDistanceVector(squareDistances, *_photo, i, j);
 
     for (unsigned int t = 0; t < squareDistances.size(); t++)
     {

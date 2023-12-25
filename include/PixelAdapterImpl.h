@@ -6,7 +6,7 @@
 class PixelAdapterImpl : public IPixelAdapter
 {
 public:
-    PixelAdapterImpl(const Photo& photo, int subdivisions) : IPixelAdapter(photo, subdivisions) {};
+    PixelAdapterImpl(std::shared_ptr<const Photo> photo, int subdivisions) : IPixelAdapter(photo, subdivisions) {};
     virtual ~PixelAdapterImpl() {};
     virtual void compute();
     virtual void applyCorrection(cv::Mat& tile, int mosaicId) const;

@@ -7,6 +7,7 @@
 #include "ITiles.h"
 #include "IMatchSolver.h"
 #include "MosaicBuilder.h"
+#include <memory>
 
 
 class MosaicGenerator
@@ -17,10 +18,10 @@ public:
     void Build();
 
 private:
-    const Photo _photo;
-    IPixelAdapter* _pixelAdapter;
-    IRegionOfInterest* _roi;
-    ITiles* _tiles;
-    IMatchSolver* _matchSolver;
-    MosaicBuilder _mosaicBuilder;
+    std::shared_ptr<const Photo> _photo;
+    std::shared_ptr<IPixelAdapter> _pixelAdapter;
+    std::shared_ptr<IRegionOfInterest> _roi;
+    std::shared_ptr<ITiles> _tiles;
+    std::shared_ptr<IMatchSolver> _matchSolver;
+    std::shared_ptr<MosaicBuilder> _mosaicBuilder;
 };

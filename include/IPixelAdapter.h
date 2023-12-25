@@ -8,10 +8,10 @@ class IPixelAdapter
 {
 public:
     //TODO : ADD COMMENT
-    IPixelAdapter(const Photo& photo, int subdivisions) : _photo(photo), _subdivisions(subdivisions) {};
+    IPixelAdapter(std::shared_ptr<const Photo> photo, int subdivisions) : _photo(photo), _subdivisions(subdivisions) {};
 
     //TODO : ADD COMMENT
-    virtual ~IPixelAdapter() {};
+    virtual ~IPixelAdapter() { _photo.reset(); };
 
     //TODO : ADD COMMENT
     virtual void compute() = 0;
@@ -20,6 +20,6 @@ public:
     virtual void applyCorrection(cv::Mat& tile, int mosaicId) const = 0;
 
 protected:
-    const Photo& _photo;
+    std::shared_ptr<const Photo> _photo;
     const int _subdivisions;
 };

@@ -9,10 +9,10 @@ class IMatchSolver
 {
 public:
     //TODO : ADD COMMENT
-    IMatchSolver(const Photo& photo, int subdivisions) : _photo(photo), _subdivisions(subdivisions) {};
+    IMatchSolver(std::shared_ptr<const Photo> photo, int subdivisions) : _photo(photo), _subdivisions(subdivisions) {};
 
     //TODO : ADD COMMENT
-    virtual ~IMatchSolver() {};
+    virtual ~IMatchSolver() { _photo.reset(); };
 
     //TODO : ADD COMMENT
     virtual void solve(const ITiles& tiles) = 0;
@@ -21,6 +21,6 @@ public:
     virtual const std::vector<int>& getMatchingTiles() const = 0;
 
 protected:
-    const Photo& _photo;
+    std::shared_ptr<const Photo> _photo;
     const int _subdivisions;
 };
