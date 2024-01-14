@@ -5,6 +5,9 @@
 
 class PixelAdapterImpl : public IPixelAdapter
 {
+private:
+    static constexpr double HistogramCorrectionBlending = 0.4;
+
 public:
     PixelAdapterImpl(std::shared_ptr<const Photo> photo, int subdivisions) : IPixelAdapter(photo, subdivisions) {};
     virtual ~PixelAdapterImpl() {};

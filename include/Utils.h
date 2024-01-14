@@ -5,6 +5,8 @@
 
 namespace Utils
 {
+    constexpr int BlurNbBoxes = 3;
+
     template< typename T>
     inline T clip(T val, T min, T max);
 
@@ -12,7 +14,7 @@ namespace Utils
     inline int getClippedDataIndex(int i, int j, int step, const cv::Size& size);
 
     void computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize);
-    void applyGaussianBlur(uchar* image, const cv::Size& size, double sigma, int nbBoxes);
+    void applyGaussianBlur(uchar* image, const cv::Size& size, double sigma);
     void computeImageBGRFeatures(const uchar* image, const cv::Size& size, const cv::Point& firstPos, int step, double* features, int featureDirSubdivision);
     double BGRFeatureDistance(const double* vec1, const double* vec2, int size);
     void convertBGRtoHSV(double& hue, double& saturation, double& value, uchar blue, uchar green, uchar red);

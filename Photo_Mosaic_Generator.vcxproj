@@ -156,7 +156,6 @@
     <ClInclude Include="include\ITiles.h" />
     <ClInclude Include="include\Clock.h" />
     <ClInclude Include="include\TilesImpl.h" />
-    <ClInclude Include="include\variables.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

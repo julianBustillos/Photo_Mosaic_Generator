@@ -1,6 +1,5 @@
 #include "PixelAdapterImpl.h"
 #include "Utils.h"
-#include "variables.h"
 #include "CustomException.h"
 
 
@@ -53,9 +52,9 @@ void PixelAdapterImpl::applyCorrection(cv::Mat& tile, int mosaicId) const
         uchar matchingGreen = BGR_correction_function[1][originalGreen];
         uchar matchingRed = BGR_correction_function[2][originalRed];
 
-        data[k] = (uchar)(HISTOGRAM_CORRECTION_BLENDING * (double)matchingBlue + (1. - HISTOGRAM_CORRECTION_BLENDING) * (double)originalBlue);
-        data[k + 1] = (uchar)(HISTOGRAM_CORRECTION_BLENDING * (double)matchingGreen + (1. - HISTOGRAM_CORRECTION_BLENDING) * (double)originalGreen);
-        data[k + 2] = (uchar)(HISTOGRAM_CORRECTION_BLENDING * (double)matchingRed + (1. - HISTOGRAM_CORRECTION_BLENDING) * (double)originalRed);
+        data[k] = (uchar)(HistogramCorrectionBlending * (double)matchingBlue + (1. - HistogramCorrectionBlending) * (double)originalBlue);
+        data[k + 1] = (uchar)(HistogramCorrectionBlending * (double)matchingGreen + (1. - HistogramCorrectionBlending) * (double)originalGreen);
+        data[k + 2] = (uchar)(HistogramCorrectionBlending * (double)matchingRed + (1. - HistogramCorrectionBlending) * (double)originalRed);
     }
 }
 

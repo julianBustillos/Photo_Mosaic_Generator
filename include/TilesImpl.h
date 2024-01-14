@@ -5,6 +5,9 @@
 
 class TilesImpl : public ITiles
 {
+private:
+    static constexpr int FeatureRootSubdivision = 4;
+
 public:
     TilesImpl(const std::string& path, const cv::Size& tileSize);
     virtual ~TilesImpl();
@@ -16,7 +19,7 @@ private:
     struct Data
     {
         std::string filename;
-        double features[3 * FEATURE_ROOT_SUBDIVISION * FEATURE_ROOT_SUBDIVISION];
+        double features[3 * FeatureRootSubdivision * FeatureRootSubdivision];
     };
 
 private:

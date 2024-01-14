@@ -1,11 +1,6 @@
 #include "SaliencyFilter.h"
 #include "Utils.h"
-#include "variables.h"
 #include <limits>
-
-
-const double SaliencyFilter::uniquenessCoefficient = 1. / (2. * SALIENCY_FILTER_UNIQUENESS_SIGMA * SALIENCY_FILTER_UNIQUENESS_SIGMA);
-const double SaliencyFilter::distributionCoefficient = 1. / (2. * SALIENCY_FILTER_DISTRIBUTION_SIGMA * SALIENCY_FILTER_DISTRIBUTION_SIGMA);
 
 
 void SaliencyFilter::compute(const cv::Mat& image, const std::vector<int>& clusterMapping, int nbClusters, std::vector<double>& saliency, int& iMean, int& jMean, bool& saliencyFound)
@@ -259,7 +254,7 @@ void SaliencyFilter::computeSaliency(std::vector<ClusterPoint>& cluster)
     double maxSaliency = 0.;
     for (int clusterId = 0; clusterId < size; clusterId++)
     {
-        cluster[clusterId]._saliency = cluster[clusterId]._uniqueness * std::exp(-SALIENCY_DISTRIBUTION_INFLUENCE * cluster[clusterId]._distribution);
+        cluster[clusterId]._saliency = cluster[clusterId]._uniqueness * std::exp(-DistributionInfluence * cluster[clusterId]._distribution);
         if (cluster[clusterId]._saliency > maxSaliency)
             maxSaliency = cluster[clusterId]._saliency;
     }
@@ -284,7 +279,7 @@ void SaliencyFilter::findSaliencyThreshold(const std::vector<ClusterPoint>& clus
     std::sort(sortedSaliency.begin(), sortedSaliency.end());
 
     int pixelSum = 0;
-    const int minZeroSaliencyRegionSize = (int)(nbPixel * (1. - SALIENCY_REGION_MAX_SIZE));
+    const int minZeroSaliencyRegionSize = (int)(nbPixel * (1. - RegionMaxSize));
     threshold = 0.;
     for (int clusterId = 0; clusterId < size; clusterId++)
     {
@@ -296,8 +291,8 @@ void SaliencyFilter::findSaliencyThreshold(const std::vector<ClusterPoint>& clus
         }
     }
 
-    if (threshold < SALIENCY_MIN_THRESHOLD)
-        threshold = SALIENCY_MIN_THRESHOLD;
+    if (threshold < MinThreshold)
+        threshold = MinThreshold;
 }
 
 void SaliencyFilter::findMeanClusterPoint(const std::vector<ClusterPoint>& cluster, double threshold, int& iMean, int& jMean)

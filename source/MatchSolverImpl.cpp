@@ -1,5 +1,4 @@
 #include "MatchSolverImpl.h"
-#include "variables.h"
 #include <opencv2/opencv.hpp>
 #include "Utils.h"
 #include "ITiles.h"
@@ -35,7 +34,7 @@ const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
 
 void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const ITiles& tiles)
 {
-    SortedVector<matchCandidate> tileCandidates(_redundancyTilesNumber);
+    SortedVector<matchCandidate> tileCandidates(RedundancyTilesNumber);
     matchCandidate temp(i, j);
     std::vector<double> squareDistances;
 
@@ -61,10 +60,10 @@ void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)
         if (_matchingTiles[candidateId] >= 0)
             continue;
 
-        int iMin = std::max(candidates[k]._i - REDUNDANCY_DISTANCE, 0);
-        int iMax = std::min(candidates[k]._i + REDUNDANCY_DISTANCE, _subdivisions - 1);
-        int jMin = std::max(candidates[k]._j - REDUNDANCY_DISTANCE, 0);
-        int jMax = std::min(candidates[k]._j + REDUNDANCY_DISTANCE, _subdivisions - 1);
+        int iMin = std::max(candidates[k]._i - RedundancyDistance, 0);
+        int iMax = std::min(candidates[k]._i + RedundancyDistance, _subdivisions - 1);
+        int jMin = std::max(candidates[k]._j - RedundancyDistance, 0);
+        int jMax = std::min(candidates[k]._j + RedundancyDistance, _subdivisions - 1);
 
         bool redundancy = false;
         for (int i = iMin; i <= iMax && !redundancy; i++)

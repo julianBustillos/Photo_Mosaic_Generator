@@ -6,6 +6,16 @@
 
 class SaliencyFilter
 {
+private:
+    static constexpr double UniquenessSigma = 300.;
+    static constexpr double DistributionSigma = 2.;
+    static constexpr double DistributionInfluence = 6.;
+    static constexpr double RegionMaxSize = 0.3;
+    static constexpr double MinThreshold = 0.05;
+
+    static constexpr double uniquenessCoefficient = 1. / (2. * UniquenessSigma * UniquenessSigma);
+    static constexpr double distributionCoefficient = 1. / (2. * DistributionSigma * DistributionSigma);
+
 public:
     static void compute(const cv::Mat& image, const std::vector<int>& clusterMapping, int nbClusters, std::vector<double>& saliency, int& iMean, int& jMean, bool& saliencyFound);
 
@@ -39,8 +49,4 @@ private:
 private:
     SaliencyFilter() {};
     ~SaliencyFilter() {};
-
-private:
-    static const double uniquenessCoefficient;
-    static const double distributionCoefficient;
 };

@@ -3,19 +3,11 @@
 #include <stack>
 
 
-const int MeanShift::sqSpatialFilter = MEAN_SHIFT_SPATIAL_FILTER * MEAN_SHIFT_SPATIAL_FILTER;
-const int MeanShift::sqRangeFilter = MEAN_SHIFT_RANGE_FILTER * MEAN_SHIFT_RANGE_FILTER;
-const double MeanShift::sqFirstOptimDist = MEAN_SHIFT_FIRST_OPTIM_DIST * MEAN_SHIFT_FIRST_OPTIM_DIST;
-const double MeanShift::sqSecondOptimDist = MEAN_SHIFT_SECOND_OPTIM_DIST * MEAN_SHIFT_SECOND_OPTIM_DIST;
-const double MeanShift::sqSpatialMergeRatio = MEAN_SHIFT_SPATIAL_MERGE_RATIO * MEAN_SHIFT_SPATIAL_MERGE_RATIO;
-const double MeanShift::sqRangeMergeRatio = MEAN_SHIFT_RANGE_MERGE_RATIO * MEAN_SHIFT_RANGE_MERGE_RATIO;
-
-
 void MeanShift::compute(const cv::Mat& image, std::vector<int>& clusterMapping, int& nbClusters)
 {
     cv::Mat blurredImage;
     image.copyTo(blurredImage);
-    Utils::applyGaussianBlur(blurredImage.data, blurredImage.size(), MEAN_SHIFT_BLUR_SIGMA, BLUR_NB_BOXES);
+    Utils::applyGaussianBlur(blurredImage.data, blurredImage.size(), BlurSigma);
 
     uchar* blurredImageData = blurredImage.data;
     cv::Size size = image.size();
@@ -27,11 +19,11 @@ void MeanShift::compute(const cv::Mat& image, std::vector<int>& clusterMapping, 
         Utils::convertBGRtoLUV(imageLuv[luvId]._L, imageLuv[luvId]._u, imageLuv[luvId]._v, blurredImageData[dataId], blurredImageData[dataId + 1], blurredImageData[dataId + 2]);
 
     std::vector<SpatialOffset> offset;
-    offset.reserve(4 * MEAN_SHIFT_SPATIAL_FILTER * (MEAN_SHIFT_SPATIAL_FILTER + 1) + 1);
+    offset.reserve(4 * SpatialFilter * (SpatialFilter + 1) + 1);
     offset.push_back(SpatialOffset(0, 0, 0.));
-    for (int iWindow = -MEAN_SHIFT_SPATIAL_FILTER; iWindow <= MEAN_SHIFT_SPATIAL_FILTER; iWindow++)
+    for (int iWindow = -SpatialFilter; iWindow <= SpatialFilter; iWindow++)
     {
-        for (int jWindow = -MEAN_SHIFT_SPATIAL_FILTER; jWindow <= MEAN_SHIFT_SPATIAL_FILTER; jWindow++)
+        for (int jWindow = -SpatialFilter; jWindow <= SpatialFilter; jWindow++)
         {
             double sqSpatialDist = computeSqSpatialDistance(0, 0, iWindow, jWindow);
             if (sqSpatialDist <= 1. && (iWindow != 0 || jWindow != 0))

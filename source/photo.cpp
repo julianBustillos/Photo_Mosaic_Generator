@@ -1,7 +1,6 @@
 #include "Photo.h"
 #include "CustomException.h"
 #include "Utils.h"
-#include "variables.h"
 #include <iostream>
 
 

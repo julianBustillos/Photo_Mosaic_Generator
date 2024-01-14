@@ -1,5 +1,4 @@
 #include "Utils.h"
-#include "variables.h"
 #include <numbers>
 
 
@@ -149,9 +148,9 @@ namespace
         }
     }
 
-    void getGaussianApproxBoxRadiuses(double sigma, std::vector<int>& boxRadius)
+    void getGaussianApproxBoxRadiuses(double sigma, int *boxRadius)
     {
-        int n = (int)boxRadius.size();
+        int n = Utils::BlurNbBoxes;
         double wIdeal = sqrt(12. * sigma * sigma / n + 1.);
         int wl = (int)floor(wIdeal);
         if ((wl % 2) == 0)
@@ -353,7 +352,7 @@ void Utils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, c
         {
             //Use blurring only for downscaling
             //double blurSigma = minScale / 3.;
-            //applyGaussianBlur(croppedImage.data, cropSize, blurSigma, BLUR_NB_BOXES);
+            //applyGaussianBlur(croppedImage.data, cropSize, blurSigma);
 
             for (int i = 0; i < targetSize.height; i++)
             {
@@ -372,18 +371,18 @@ void Utils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, c
     }
 }
 
-void Utils::applyGaussianBlur(uchar* image, const cv::Size& size, double sigma, int nbBoxes)
+void Utils::applyGaussianBlur(uchar* image, const cv::Size& size, double sigma)
 {
     uchar* temp = new uchar[3 * size.width * size.height];
     if (!temp)
         return;
 
-    std::vector<int> boxRadius(nbBoxes);
+    int boxRadius[BlurNbBoxes];
     getGaussianApproxBoxRadiuses(sigma, boxRadius);
 
-    if (boxRadius[boxRadius.size() - 1] <= std::min(size.width, size.height) / 2)
+    if (boxRadius[BlurNbBoxes - 1] <= std::min(size.width, size.height) / 2)
     {
-        for (int k = 0; k < boxRadius.size(); k++)
+        for (int k = 0; k < BlurNbBoxes; k++)
             applyBoxBlur(image, temp, size, boxRadius[k]);
     }
 

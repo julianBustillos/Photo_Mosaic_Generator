@@ -5,6 +5,10 @@
 
 class MatchSolverImpl : public IMatchSolver
 {
+private:
+    static constexpr int RedundancyDistance = 4;
+    static constexpr int RedundancyTilesNumber = (RedundancyDistance * 2 + 1) * (RedundancyDistance * 2 + 1);
+
 public:
     MatchSolverImpl(std::shared_ptr<const Photo> photo, int subdivisions) : IMatchSolver(photo, subdivisions) {}
     virtual ~MatchSolverImpl() {};
@@ -31,9 +35,6 @@ private:
     void findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const ITiles& tiles);
     void findBestTiles(std::vector<matchCandidate>& candidates);
     void printInfo() const;
-
-private:
-    static const int _redundancyTilesNumber = (REDUNDANCY_DISTANCE * 2 + 1) * (REDUNDANCY_DISTANCE * 2 + 1);
 
 private:
     std::vector<int> _matchingTiles;

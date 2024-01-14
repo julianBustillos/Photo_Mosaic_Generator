@@ -1,12 +1,27 @@
 #pragma once
 
 #include "opencv2/opencv.hpp"
-#include "variables.h"
 #include <vector>
 
 
 class MeanShift
 {
+private:
+    static constexpr int BlurSigma = 8;
+    static constexpr int SpatialFilter = 64;
+    static constexpr int RangeFilter = 20;
+    static constexpr double FirstOptimDist = 0.5;
+    static constexpr double SecondOptimDist = 0.1;
+    static constexpr double SpatialMergeRatio = 0.5;
+    static constexpr double RangeMergeRatio = 0.5;
+
+    static constexpr int sqSpatialFilter = SpatialFilter * SpatialFilter;
+    static constexpr int sqRangeFilter = RangeFilter * RangeFilter;
+    static constexpr double sqFirstOptimDist = FirstOptimDist * FirstOptimDist;
+    static constexpr double sqSecondOptimDist = SecondOptimDist * SecondOptimDist;
+    static constexpr double sqSpatialMergeRatio = SpatialMergeRatio * SpatialMergeRatio;
+    static constexpr double sqRangeMergeRatio = RangeMergeRatio * RangeMergeRatio;
+
 public:
     static void compute(const cv::Mat& image, std::vector<int>& clusterMapping, int& nbClusters);
 
@@ -97,12 +112,4 @@ private:
     static inline double computeSqRangeDistance(WeightedMean& wm1, WeightedMean& wm2);
     static inline double computeKernel(double distance);
     static inline bool canBeMerged(WeightedMean& wm1, WeightedMean& wm2);
-
-private:
-    static const int sqSpatialFilter;
-    static const int sqRangeFilter;
-    static const double sqFirstOptimDist;
-    static const double sqSecondOptimDist;
-    static const double sqSpatialMergeRatio;
-    static const double sqRangeMergeRatio;
 };
