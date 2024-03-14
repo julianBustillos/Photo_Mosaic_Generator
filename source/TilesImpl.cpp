@@ -72,7 +72,7 @@ void TilesImpl::createTemp() const
     }
     if (!std::filesystem::exists(_tempPath))
     {
-        throw CustomException("Impossible to create directory : " + _tempPath, CustomException::Level::NORMAL);
+        throw CustomException("Impossible to create directory : " + _tempPath, CustomException::Level::ERROR);
     }
 }
 
@@ -127,7 +127,7 @@ void TilesImpl::exportTile(const cv::Mat& tile, const std::string& filename)
     std::string filePath = _tempPath + "\\" + filename;
     cv::imwrite(filePath, tile, image_params);
     if (!std::filesystem::exists(filePath))
-        throw CustomException("Impossible to create temporary tile : " + filePath, CustomException::Level::NORMAL);
+        throw CustomException("Impossible to create temporary tile : " + filePath, CustomException::Level::ERROR);
 }
 
 void TilesImpl::printInfo() const

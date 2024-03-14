@@ -4,28 +4,21 @@
 #include <algorithm>
 
 
-std::string Parameters::getHelp()
+Parameters::Parameters() :
+    _options("Photo_Mosaic_Generator.exe", "Generates an awesome mosaic to match a photo using a photo database.")
 {
-    return
-        "HELP :\n"
-        "Photo_Mosaic_Generator.exe -i C:\\myImage -p C:\\path_to_tiles -d 13 [-s 1.7 -r 3.33]\n\n"
-        "AVAILABLE ARGUMENTS :\n"
-        "-h : help\n"
-        "-p path to tiles image folder\n"
-        "-i path to image\n"
-        "-d image subdivision (height and width)\n"
-        "-s image scale\n"
-        "-r image ratio (width / height)\n";
+    _options.add_options()
+        ("p,photo", "Path to reference photo for mosaic", cxxopts::value<std::string>())
+        ("t,tiles", "Path to tiles image folder", cxxopts::value<std::string>())
+        ("d,subdiv", "Image subdivision (height and width)", cxxopts::value<int>())
+        ("s,scale", "Image scale", cxxopts::value<double>()->default_value("1."))
+        ("r,ratio", "Image ratio (width / height)", cxxopts::value<double>()->default_value("0."))
+        ("h,help", "Print usage");
 }
 
-Parameters::Parameters(int argc, char* argv[])
+void Parameters::initialize(int argc, char* argv[])
 {
-    for (int i = 1; i < argc; i += 2)
-    {
-        char* parameter = argv[i];
-        char* value = ((i + 1) < argc)?argv[i + 1]:NULL;
-        parse(parameter, value);
-    }
+    parse(argc, argv);
     check();
 }
 
@@ -54,78 +47,82 @@ int Parameters::getSubdivision() const
     return _subdivision;
 }
 
-void Parameters::parse(char* parameter, char* value)
+std::string Parameters::getHelp() const
 {
-    if (std::strcmp(parameter, "-h") == 0)
+    return "------- HELP -------\n" + _options.help();
+}
+
+void Parameters::parse(int argc, char* argv[])
+{
+    _options.allow_unrecognised_options();
+    cxxopts::ParseResult result = _options.parse(argc, argv);
+
+    if (result.count("help"))
     {
-        throw CustomException("Help", CustomException::Level::HELP);
+        throw CustomException("", CustomException::Level::HELP);
     }
-    else if (std::strcmp(parameter, "-p") == 0)
+
+    cxxopts::OptionNames unmatched = result.unmatched();
+    if (!unmatched.empty())
     {
-        _tilesPath = value?value:"";
-        std::replace(_tilesPath.begin(), _tilesPath.end(), '/', '\\');
-        if (_tilesPath.back() != '\\')
-            _tilesPath += "\\";
-    }
-    else if (std::strcmp(parameter, "-i") == 0)
-    {
-        _photoPath = value?value:"";
-        std::replace(_photoPath.begin(), _photoPath.end(), '/', '\\');
-    }
-    else if (std::strcmp(parameter, "-d") == 0)
-    {
-        _subdivision = value?std::atoi(value):0;
-    }
-    else if (std::strcmp(parameter, "-s") == 0)
-    {
-        _scale = value?std::atof(value):0;
-    }
-    else if (std::strcmp(parameter, "-r") == 0)
-    {
-        _ratio = value?std::atof(value):0;
-    }
-    else
-    {
-        std::string message = "Invalid parameter : ";
-        message += parameter;
+        std::string message = "Invalid parameters :";
+        for (int p = 0; p < unmatched.size(); p++)
+        {
+            message += " " + unmatched[p];
+        }
         throw CustomException(message, CustomException::Level::NORMAL);
     }
+
+    if (result.count("photo"))
+        _photoPath = result["photo"].as<std::string>();
+    if (result.count("tiles"))
+        _tilesPath = result["tiles"].as<std::string>();
+    if (result.count("subdiv"))
+        int _subdivision = result["subdiv"].as<int>();
+    double _scale = result["scale"].as<double>();
+    double _ratio = result["ratio"].as<double>();
+
+    std::replace(_photoPath.begin(), _photoPath.end(), '/', '\\');
+    std::replace(_tilesPath.begin(), _tilesPath.end(), '/', '\\');
+    if (_tilesPath.back() != '\\')
+        _tilesPath += "\\";
 }
 
 void Parameters::check()
 {
-    if (_tilesPath == "")
-    {
-        throw CustomException("No path defined, use -p option", CustomException::Level::NORMAL);
-    }
-    else if (!std::filesystem::exists(_tilesPath))
-    {
-        std::string message = "Invalid path : ";
-        message += _tilesPath;
-        message += ", use -p option";
-        throw CustomException(message, CustomException::Level::NORMAL);
-    }
+    std::string message = "ARGUMENTS : ";
+
     if (_photoPath == "")
     {
-        throw CustomException("No image defined, use -i option", CustomException::Level::NORMAL);
+        message += "No photo defined";
     }
     else if (!std::filesystem::exists(_photoPath))
     {
-        std::string message = "Invalid file : ";
-        message += _photoPath;
-        message += ", use -i option";
+        message += "Invalid file : " + _photoPath;
+    }
+    else if (_tilesPath == "")
+    {
+        message += "No tiles path defined";
+    }
+    else if (!std::filesystem::exists(_tilesPath))
+    {
+        message += "Invalid path : " + _tilesPath;
+    }
+    else if (_subdivision <= 0)
+    {
+        message += "Invalid subdivision value";
+    }
+    else if (_scale <= 0)
+    {
+        message += "Invalid scale value";
+    }
+    else if (_ratio < 0)
+    {
+        message += "Invalid ratio value";
+    }
+
+    if (!message.empty())
+    {
         throw CustomException(message, CustomException::Level::NORMAL);
-    }
-    if (_subdivision <= 0)
-    {
-        throw CustomException("Invalid subdivision value, use -d option", CustomException::Level::NORMAL);
-    }
-    if (_scale <= 0)
-    {
-        throw CustomException("Invalid scale value, use -s option", CustomException::Level::NORMAL);
-    }
-    if (_ratio < 0)
-    {
-        throw CustomException("Invalid ratio value, use -r option", CustomException::Level::NORMAL);
     }
 }

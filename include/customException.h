@@ -9,18 +9,16 @@ class CustomException : public std::exception
 public:
     enum Level
     {
+        HELP,
         NORMAL,
-        ERROR,
-        HELP
+        ERROR
     };
 
 public:
-    CustomException(std::string message, Level level) : _message(message), _level(level) {};
+    CustomException(std::string message, Level level) : exception(message.c_str()), _level(level) {};
     ~CustomException() {};
-    const char* what() const throw () { return _message.c_str(); };
     Level getLevel() { return _level; };
 
 private:
-    std::string _message;
     Level _level;
 };

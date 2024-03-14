@@ -7,6 +7,8 @@
 
 int main(int argc, char* argv[])
 {
+    Parameters parameters;
+
     try
     {
         std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++ PHOTO MOSAIC GENERATOR ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl << std::endl;
@@ -14,9 +16,8 @@ int main(int argc, char* argv[])
         Clock clock;
         clock.start();
 
-        Parameters parameters(argc, argv);
+        parameters.initialize(argc, argv);
         MosaicGenerator generator(parameters);
-
         generator.Build();
 
         clock.end();
@@ -29,11 +30,11 @@ int main(int argc, char* argv[])
         switch (e.getLevel())
         {
         case CustomException::Level::HELP:
-            std::cout << Parameters::getHelp() << std::endl;
+            std::cout << parameters.getHelp() << std::endl;
             break;
         case CustomException::Level::NORMAL:
             std::cout << e.what() << std::endl << std::endl;
-            std::cout << Parameters::getHelp() << std::endl;
+            std::cout << parameters.getHelp() << std::endl;
             break;
         case CustomException::Level::ERROR:
             std::cerr << "ERROR : " << e.what() << std::endl;
@@ -41,11 +42,11 @@ int main(int argc, char* argv[])
         default:
             std::cerr << "ERROR : we should not be here, you have to debug me !!" << std::endl;
         }
-        std::cin.get();
+        exit(EXIT_SUCCESS);
     }
     catch (std::exception& e)
     {
         std::cerr << "ERROR unhandled exception : " << e.what() << std::endl;
-        std::cin.get();
+        exit(EXIT_FAILURE);
     }
 }

@@ -9,7 +9,7 @@ Photo::Photo(const std::string& path, double scale, double ratio, int subdivisio
 {
     cv::Mat inputImage = cv::imread(path, cv::IMREAD_COLOR);
     if (!inputImage.data)
-        throw CustomException("Impossible to load image : " + path + ", use -i option", CustomException::Level::NORMAL);
+        throw CustomException("Impossible to load image : " + path, CustomException::Level::ERROR);
     _inSize = inputImage.size();
 
     if (scale != 1. && ratio != 0.)
@@ -45,7 +45,7 @@ Photo::Photo(const std::string& path, double scale, double ratio, int subdivisio
 
     int minimumSize = 20; //TODO CONSTANT
     if (_tileSize.width < minimumSize || _tileSize.height < minimumSize)
-        throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(minimumSize) + "*" + std::to_string(minimumSize) + ")", CustomException::Level::NORMAL);
+        throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(minimumSize) + "*" + std::to_string(minimumSize) + ")", CustomException::Level::ERROR);
 
     printInfo();
 }

@@ -1,30 +1,31 @@
 #pragma once
 
 #include <string>
+#include "cxxopts.h"
 
 
 class Parameters 
 {
 public:
-	static std::string getHelp();
-
-public:
-	Parameters(int argc, char *argv[]);
+	Parameters();
 	~Parameters() {};
+	void initialize(int argc, char* argv[]);
 	std::string getPhotoPath() const;
 	std::string getTilesPath() const;
     double getScale() const;
     double getRatio() const;
 	int getSubdivision() const;
+	std::string getHelp() const;
 
 private:
-	void parse(char *parameter, char *value);
+	void parse(int argc, char* argv[]);
 	void check();
 
 private:
+	cxxopts::Options _options;
 	std::string _tilesPath = "";
 	std::string _photoPath = "";
-    double _scale = 1.;
-    double _ratio = 0.;
 	int _subdivision = 0;
+	double _scale = 1.;
+    double _ratio = 0.;
 };

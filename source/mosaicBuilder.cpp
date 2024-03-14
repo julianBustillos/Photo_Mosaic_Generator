@@ -20,7 +20,7 @@ void MosaicBuilder::build(const IPixelAdapter& pixelAdapter, const ITiles& tiles
             if (tileId >= 0)
                 copyTileOnMosaic(mosaicData, tiles.getTileFilepath(tileId), pixelAdapter, mosaicId, _photo->getFirstPixel(i, j, false), mosaicSize.width);
             else
-                throw CustomException("One or several tiles missing from match solver !", CustomException::Level::NORMAL);
+                throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
         }
     }
 
@@ -34,7 +34,7 @@ void MosaicBuilder::copyTileOnMosaic(uchar* mosaicData, const std::string& tileP
     cv::Mat tile = cv::imread(tilePath);
     uchar* tileData = tile.data;
     if (!tileData)
-        throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::NORMAL);
+        throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::ERROR);
 
     pixelAdapter.applyCorrection(tile, mosaicId);
 

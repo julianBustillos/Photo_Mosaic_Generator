@@ -112,6 +112,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(OPENCV4_INCLUDE);$(ProjectDir)\include</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

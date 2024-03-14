@@ -12,8 +12,6 @@ class ITiles
 public:
     //TODO : ADD COMMENT
     ITiles(const std::string& path, const cv::Size& tileSize) : _path(path), _tempPath(path + "PMG_temp"), _tileSize(tileSize) {};
-
-    //TODO : ADD COMMENT
     virtual ~ITiles() {};
 
     //TODO : ADD COMMENT
