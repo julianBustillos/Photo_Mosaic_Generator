@@ -1,6 +1,5 @@
 #include "MatchSolverImpl.h"
 #include <opencv2/opencv.hpp>
-#include "Utils.h"
 #include "ITiles.h"
 #include <vector>
 #include <iostream>
@@ -36,14 +35,11 @@ void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates
 {
     SortedVector<matchCandidate> tileCandidates(RedundancyTilesNumber);
     matchCandidate temp(i, j);
-    std::vector<double> squareDistances;
 
-    tiles.computeSquareDistanceVector(squareDistances, *_photo, i, j);
-
-    for (unsigned int t = 0; t < squareDistances.size(); t++)
+    for (int t = 0; t < tiles.getNbTiles(); t++)
     {
         temp._id = t;
-        temp._squareDistance = squareDistances[t];
+        temp._squareDistance = tiles.computeSquareDistance(*_photo, i, j, t);
         tileCandidates.push_sorted(temp);
     }
 

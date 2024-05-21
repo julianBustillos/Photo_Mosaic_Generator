@@ -1,6 +1,6 @@
 #include "Photo.h"
 #include "CustomException.h"
-#include "Utils.h"
+#include "MathUtils.h"
 #include <iostream>
 
 
@@ -29,7 +29,7 @@ Photo::Photo(const std::string& path, double scale, double ratio, int subdivisio
         }
 
         cv::Size targetSize((double)croppedSize.width * scale, (double)croppedSize.height * scale);
-        Utils::computeImageResampling(_mat, targetSize, inputImage, cv::Point(0, 0), croppedSize);
+        MathUtils::computeImageResampling(_mat, targetSize, inputImage, cv::Point(0, 0), croppedSize);
     }
     else
     {

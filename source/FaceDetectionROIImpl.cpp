@@ -1,6 +1,6 @@
 #include "FaceDetectionROIImpl.h"
 #include "CustomException.h"
-#include "Utils.h"
+#include "MathUtils.h"
 #include <opencv2/core/utils/logger.hpp>
 #include <opencv2/dnn/dnn.hpp>
 #include <Windows.h>
@@ -44,7 +44,7 @@ void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Point& firstPixel, con
         int sWidth = (int)std::round((double)image.size().width * scale);
         int sHeight = (int)std::round((double)image.size().height * scale);
         cv::Mat sImage;
-        Utils::computeImageResampling(sImage, cv::Size(sWidth, sHeight), image, cv::Point(0, 0), image.size());
+        MathUtils::computeImageResampling(sImage, cv::Size(sWidth, sHeight), image, cv::Point(0, 0), image.size());
         _faceDetector->setInputSize(sImage.size());
         _faceDetector->detect(sImage, faces);
 

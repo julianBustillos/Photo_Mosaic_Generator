@@ -1,5 +1,5 @@
 #include "PixelAdapterImpl.h"
-#include "Utils.h"
+#include "MathUtils.h"
 #include "CustomException.h"
 
 
@@ -75,7 +75,7 @@ void PixelAdapterImpl::computeAdapterData(AdapterData& adapterData, const uchar*
     {
         for (int j = 0; j < size.width; j++)
         {
-            int id = Utils::getDataIndex(firstPixel.y + i, firstPixel.x + j, step);
+            int id = MathUtils::getDataIndex(firstPixel.y + i, firstPixel.x + j, step);
             blue = data[id];
             green = data[id + 1];
             red = data[id + 2];

@@ -125,7 +125,7 @@
     <ClCompile Include="source\FaceDetectionROIImpl.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\MatchSolverImpl.cpp" />
-    <ClCompile Include="source\Utils.cpp" />
+    <ClCompile Include="source\MathUtils.cpp" />
     <ClCompile Include="source\MeanShift.cpp" />
     <ClCompile Include="source\MosaicBuilder.cpp" />
     <ClCompile Include="source\MosaicGenerator.cpp" />
@@ -142,7 +142,7 @@
     <ClInclude Include="include\IMatchSolver.h" />
     <ClInclude Include="include\IRegionOfInterest.h" />
     <ClInclude Include="include\MatchSolverImpl.h" />
-    <ClInclude Include="include\Utils.h" />
+    <ClInclude Include="include\MathUtils.h" />
     <ClInclude Include="include\MeanShift.h" />
     <ClInclude Include="include\MosaicBuilder.h" />
     <ClInclude Include="include\MosaicGenerator.h" />

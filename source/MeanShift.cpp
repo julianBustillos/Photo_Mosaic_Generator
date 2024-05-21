@@ -1,5 +1,5 @@
 #include "MeanShift.h"
-#include "Utils.h"
+#include "MathUtils.h"
 #include <stack>
 
 
@@ -7,7 +7,7 @@ void MeanShift::compute(const cv::Mat& image, std::vector<int>& clusterMapping, 
 {
     cv::Mat blurredImage;
     image.copyTo(blurredImage);
-    Utils::applyGaussianBlur(blurredImage.data, blurredImage.size(), BlurSigma);
+    MathUtils::applyGaussianBlur(blurredImage.data, blurredImage.size(), BlurSigma);
 
     uchar* blurredImageData = blurredImage.data;
     cv::Size size = image.size();
@@ -16,7 +16,7 @@ void MeanShift::compute(const cv::Mat& image, std::vector<int>& clusterMapping, 
 
     int luvId = 0, dataId = 0;
     for (luvId; luvId < imageLuv.size(); luvId++, dataId += 3)
-        Utils::convertBGRtoLUV(imageLuv[luvId]._L, imageLuv[luvId]._u, imageLuv[luvId]._v, blurredImageData[dataId], blurredImageData[dataId + 1], blurredImageData[dataId + 2]);
+        MathUtils::convertBGRtoLUV(imageLuv[luvId]._L, imageLuv[luvId]._u, imageLuv[luvId]._v, blurredImageData[dataId], blurredImageData[dataId + 1], blurredImageData[dataId + 2]);
 
     std::vector<SpatialOffset> offset;
     offset.reserve(4 * SpatialFilter * (SpatialFilter + 1) + 1);

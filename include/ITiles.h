@@ -15,10 +15,13 @@ public:
     virtual ~ITiles() {};
 
     //TODO : ADD COMMENT
+    virtual unsigned int getNbTiles() const = 0;
+
+    //TODO : ADD COMMENT
     virtual void compute(const IRegionOfInterest& roi) = 0;
 
     //TODO : ADD COMMENT
-    virtual void computeSquareDistanceVector(std::vector<double>& squareDistances, const Photo& photo, int i, int j) const = 0;
+    virtual double computeSquareDistance(const Photo& photo, int i, int j, int tileID) const = 0;
 
     //TODO : ADD COMMENT
     virtual const std::string getTileFilepath(int tileId) const = 0;

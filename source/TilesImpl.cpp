@@ -2,7 +2,7 @@
 #include <iostream>
 #include <filesystem>
 #include "CustomException.h"
-#include "Utils.h"
+#include "MathUtils.h"
 #include "OutputDisabler.h"
 
 
@@ -14,6 +14,11 @@ TilesImpl::TilesImpl(const std::string& path, const cv::Size& tileSize) :
 TilesImpl::~TilesImpl()
 {
     removeTemp();
+}
+
+unsigned int TilesImpl::getNbTiles() const
+{
+    return _tilesData.size();
 }
 
 void TilesImpl::compute(const IRegionOfInterest& roi)
@@ -46,17 +51,13 @@ void TilesImpl::compute(const IRegionOfInterest& roi)
     printInfo();
 }
 
-void TilesImpl::computeSquareDistanceVector(std::vector<double>& squareDistances, const Photo& photo, int i, int j) const
+double TilesImpl::computeSquareDistance(const Photo& photo, int i, int j, int tileID) const
 {
-    squareDistances.resize(_tilesData.size(), -1);
     double features[3 * FeatureRootSubdivision * FeatureRootSubdivision];
     cv::Point firstPixel = photo.getFirstPixel(i, j, true);
 
-    Utils::computeImageBGRFeatures(photo.getData(), photo.getTileSize(), firstPixel, photo.getStep(), features, FeatureRootSubdivision);
-    for (unsigned int t = 0; t < _tilesData.size(); t++)
-    {
-        squareDistances[t] = Utils::BGRFeatureDistance(features, _tilesData[t].features, FeatureRootSubdivision * FeatureRootSubdivision);
-    }
+    MathUtils::computeImageBGRFeatures(photo.getData(), photo.getTileSize(), firstPixel, photo.getStep(), features, FeatureRootSubdivision);
+    return MathUtils::BGRFeatureDistance(features, _tilesData[tileID].features, FeatureRootSubdivision * FeatureRootSubdivision);
 }
 
 const std::string TilesImpl::getTileFilepath(int tileId) const
@@ -92,8 +93,8 @@ void TilesImpl::computeTileData(const cv::Mat& image, const std::string& filenam
     cv::Mat tileMat;
 
     computeCropInfo(image, firstPixel, cropSize, roi);
-    Utils::computeImageResampling(tileMat, _tileSize, image, firstPixel, cropSize);
-    Utils::computeImageBGRFeatures(tileMat.data, _tileSize, cv::Point(0, 0), _tileSize.width, data.features, FeatureRootSubdivision);
+    MathUtils::computeImageResampling(tileMat, _tileSize, image, firstPixel, cropSize);
+    MathUtils::computeImageBGRFeatures(tileMat.data, _tileSize, cv::Point(0, 0), _tileSize.width, data.features, FeatureRootSubdivision);
     data.filename = filename.substr(0, filename.find_last_of('.')) + ".png";
     _tilesData.push_back(data);
 

@@ -21,7 +21,7 @@
     <ClCompile Include="source\MosaicGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\Utils.cpp">
+    <ClCompile Include="source\MathUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\MeanShift.cpp">
@@ -68,7 +68,7 @@
     <ClInclude Include="include\CustomException.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Utils.h">
+    <ClInclude Include="include\MathUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\MeanShift.h">

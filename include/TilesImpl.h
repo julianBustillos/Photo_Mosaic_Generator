@@ -11,8 +11,9 @@ private:
 public:
     TilesImpl(const std::string& path, const cv::Size& tileSize);
     virtual ~TilesImpl();
+    virtual unsigned int getNbTiles() const;
     virtual void compute(const IRegionOfInterest& roi);
-    virtual void computeSquareDistanceVector(std::vector<double>& squareDistances, const Photo& photo, int i, int j) const;
+    virtual double computeSquareDistance(const Photo& photo, int i, int j, int tileID) const;
     virtual const std::string getTileFilepath(int tileId) const;
 
 private:

@@ -1,9 +1,9 @@
-#include "Utils.h"
+#include "MathUtils.h"
 #include <numbers>
 
 
 /*
-    Unnamed namespace methods called by Utils methods
+    Unnamed namespace methods called by MathUtils methods
 */
 
 namespace
@@ -64,13 +64,13 @@ namespace
                     {
                         rowCoef = yMax - (double)(yMax - 1);
                     }
-                    int dataId = Utils::getClippedDataIndex(row, col, size.width, size);
+                    int dataId = MathUtils::getClippedDataIndex(row, col, size.width, size);
                     colorVal += (double)source[dataId + color] * rowCoef * colCoef;
                     coefSum += rowCoef * colCoef;
                 }
             }
 
-            pixel[color] = (uchar)Utils::clip<int>((int)round(colorVal / coefSum), 0, 255);
+            pixel[color] = (uchar)MathUtils::clip<int>((int)round(colorVal / coefSum), 0, 255);
         }
     }
 
@@ -122,7 +122,7 @@ namespace
         }
         interpolation /= 4.;
 
-        return (uchar)Utils::clip<int>((int)round(interpolation), 0, 255);
+        return (uchar)MathUtils::clip<int>((int)round(interpolation), 0, 255);
     }
 
     void computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv)
@@ -139,7 +139,7 @@ namespace
             {
                 for (int row = 0; row < 4; row++)
                 {
-                    int dataId = Utils::getClippedDataIndex(iFirstGrid + row, jFirstGrid + col, size.width, size);
+                    int dataId = MathUtils::getClippedDataIndex(iFirstGrid + row, jFirstGrid + col, size.width, size);
                     pixelGrid[col * 4 + row] = source[dataId + color];
                 }
             }
@@ -150,7 +150,7 @@ namespace
 
     void getGaussianApproxBoxRadiuses(double sigma, int *boxRadius)
     {
-        int n = Utils::BlurNbBoxes;
+        int n = MathUtils::BlurNbBoxes;
         double wIdeal = sqrt(12. * sigma * sigma / n + 1.);
         int wl = (int)floor(wIdeal);
         if ((wl % 2) == 0)
@@ -305,10 +305,10 @@ namespace
 
 
 /*
-    Utils methods implementation 
+    MathUtils methods implementation 
 */
 
-void Utils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize)
+void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize)
 {
     cv::Mat croppedImage(cropSize, CV_8UC3, cv::Scalar(0, 0, 0));
     if (croppedImage.size() != source.size())
@@ -350,10 +350,6 @@ void Utils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, c
         }
         else //Use bicubic interpolation for image upscaling
         {
-            //Use blurring only for downscaling
-            //double blurSigma = minScale / 3.;
-            //applyGaussianBlur(croppedImage.data, cropSize, blurSigma);
-
             for (int i = 0; i < targetSize.height; i++)
             {
                 for (int j = 0; j < targetSize.width; j++)
@@ -371,7 +367,12 @@ void Utils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, c
     }
 }
 
-void Utils::applyGaussianBlur(uchar* image, const cv::Size& size, double sigma)
+void MathUtils::computeImageDHash(const cv::Mat& image, Hash& hash)
+{
+    //TODO
+}
+
+void MathUtils::applyGaussianBlur(uchar* image, const cv::Size& size, double sigma)
 {
     uchar* temp = new uchar[3 * size.width * size.height];
     if (!temp)
@@ -389,7 +390,7 @@ void Utils::applyGaussianBlur(uchar* image, const cv::Size& size, double sigma)
     delete[] temp;
 }
 
-void Utils::computeImageBGRFeatures(const uchar* image, const cv::Size& size, const cv::Point& firstPos, int step, double* features, int featureDirSubdivision)
+void MathUtils::computeImageBGRFeatures(const uchar* image, const cv::Size& size, const cv::Point& firstPos, int step, double* features, int featureDirSubdivision)
 {
     int blockWidth = (int)ceil(size.width / (double)featureDirSubdivision);
     int blockHeight = (int)ceil(size.height / (double)featureDirSubdivision);
@@ -410,13 +411,13 @@ void Utils::computeImageBGRFeatures(const uchar* image, const cv::Size& size, co
 
     for (int k = 0; k < 3 * featureDirSubdivision * featureDirSubdivision; k++)
     {
-        int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * 3)?blockHeight:size.height - (featureDirSubdivision - 1) * blockHeight;
-        int corrBlockWidth = (((k / 4 + 1) % featureDirSubdivision) != 0)?blockWidth:size.width - (featureDirSubdivision - 1) * blockWidth;
+        int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * 3) ? blockHeight : size.height - (featureDirSubdivision - 1) * blockHeight;
+        int corrBlockWidth = (((k / 4 + 1) % featureDirSubdivision) != 0) ? blockWidth : size.width - (featureDirSubdivision - 1) * blockWidth;
         features[k] /= corrBlockWidth * corrBlockHeight;
     }
 }
 
-double Utils::BGRFeatureDistance(const double* vec1, const double* vec2, int size)
+double MathUtils::BGRFeatureDistance(const double* vec1, const double* vec2, int size)
 {
     //Use deltaE distance
     double sumDist = 0.;
@@ -433,7 +434,7 @@ double Utils::BGRFeatureDistance(const double* vec1, const double* vec2, int siz
     return sumDist;
 }
 
-void Utils::convertBGRtoHSV(double& hue, double& saturation, double& value, uchar blue, uchar green, uchar red)
+void MathUtils::convertBGRtoHSV(double& hue, double& saturation, double& value, uchar blue, uchar green, uchar red)
 {
     double B = blue / 255.;
     double G = green / 255.;
@@ -469,7 +470,7 @@ void Utils::convertBGRtoHSV(double& hue, double& saturation, double& value, ucha
     value = clip<double>(value, 0., 1.);
 }
 
-void Utils::convertHSVtoBGR(uchar& blue, uchar& green, uchar& red, double hue, double saturation, double value)
+void MathUtils::convertHSVtoBGR(uchar& blue, uchar& green, uchar& red, double hue, double saturation, double value)
 {
     double C = value * saturation;
     double H = hue * 3. / std::numbers::pi;
@@ -526,7 +527,7 @@ void Utils::convertHSVtoBGR(uchar& blue, uchar& green, uchar& red, double hue, d
     red = (uchar)clip<int>((int)round((R + m) * 255.), 0, 255);
 }
 
-void Utils::convertBGRtoHSL(double& hue, double& saturation, double& lightness, uchar blue, uchar green, uchar red)
+void MathUtils::convertBGRtoHSL(double& hue, double& saturation, double& lightness, uchar blue, uchar green, uchar red)
 {
     double B = blue / 255.;
     double G = green / 255.;
@@ -562,7 +563,7 @@ void Utils::convertBGRtoHSL(double& hue, double& saturation, double& lightness, 
     lightness = clip<double>(lightness, 0., 1.);
 }
 
-void Utils::convertHSLtoBGR(uchar& blue, uchar& green, uchar& red, double hue, double saturation, double lightness)
+void MathUtils::convertHSLtoBGR(uchar& blue, uchar& green, uchar& red, double hue, double saturation, double lightness)
 {
     double C = (1. - std::abs(2. * lightness - 1.)) * saturation;
     double H = hue * 3. / std::numbers::pi;
@@ -619,7 +620,7 @@ void Utils::convertHSLtoBGR(uchar& blue, uchar& green, uchar& red, double hue, d
     red = (uchar)clip<int>((int)round((R + m) * 255.), 0, 255);
 }
 
-void Utils::convertBGRtoHSI(double& hue, double& saturation, double& intensity, uchar blue, uchar green, uchar red)
+void MathUtils::convertBGRtoHSI(double& hue, double& saturation, double& intensity, uchar blue, uchar green, uchar red)
 {
     double B = blue / 255.;
     double G = green / 255.;
@@ -654,7 +655,7 @@ void Utils::convertBGRtoHSI(double& hue, double& saturation, double& intensity, 
     intensity = clip<double>(intensity, 0., 1.);
 }
 
-void Utils::convertHSItoBGR(uchar& blue, uchar& green, uchar& red, double hue, double saturation, double intensity)
+void MathUtils::convertHSItoBGR(uchar& blue, uchar& green, uchar& red, double hue, double saturation, double intensity)
 {
     double B, G, R;
 
@@ -697,7 +698,7 @@ void Utils::convertHSItoBGR(uchar& blue, uchar& green, uchar& red, double hue, d
     red = (uchar)clip<int>((int)round(R * 255.), 0, 255);
 }
 
-void Utils::convertBGRtoLUV(double& L, double& u, double& v, uchar blue, uchar green, uchar red)
+void MathUtils::convertBGRtoLUV(double& L, double& u, double& v, uchar blue, uchar green, uchar red)
 {
     //Using illuminant D65 as white reference
 
@@ -735,7 +736,7 @@ void Utils::convertBGRtoLUV(double& L, double& u, double& v, uchar blue, uchar g
     v = clip<double>(v, -100., 100.);
 }
 
-void Utils::convertLUVtoBGR(uchar& blue, uchar& green, uchar& red, double L, double u, double v)
+void MathUtils::convertLUVtoBGR(uchar& blue, uchar& green, uchar& red, double L, double u, double v)
 {
     //Using illuminant D65 as white reference
 
@@ -764,7 +765,7 @@ void Utils::convertLUVtoBGR(uchar& blue, uchar& green, uchar& red, double L, dou
     blue = (uchar)clip<int>((int)round((0.0009209 * X - 0.0025498 * Y + 0.1786 * Z) * 255.), 0, 255);
 }
 
-void Utils::convertBGRtoLAB(double& L, double& a, double& b, uchar blue, uchar green, uchar red)
+void MathUtils::convertBGRtoLAB(double& L, double& a, double& b, uchar blue, uchar green, uchar red)
 {
     //Using illuminant D65 as white reference
 
@@ -810,7 +811,7 @@ void Utils::convertBGRtoLAB(double& L, double& a, double& b, uchar blue, uchar g
     b = clip<double>(b, -100., 100.);
 }
 
-void Utils::convertLABtoBGR(uchar& blue, uchar& green, uchar& red, double L, double a, double b)
+void MathUtils::convertLABtoBGR(uchar& blue, uchar& green, uchar& red, double L, double a, double b)
 {
     //Using illuminant D65 as white reference
 
