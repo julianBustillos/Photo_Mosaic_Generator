@@ -53,12 +53,12 @@ private:
     {
     public:
         UniqueCoordVector(int width, std::vector<bool>& alreadyExist) : _width(width), _alreadyExist(alreadyExist) { _vector.reserve(width); };
-        void push_back(const Coordinates& coord)
+        void emplace_back(const Coordinates& coord)
         {
             int index = coord._i * _width + coord._j;
             if (!_alreadyExist[index])
             {
-                _vector.push_back(coord);
+                _vector.emplace_back(coord);
                 _alreadyExist[index] = true;
             }
         };
@@ -97,7 +97,7 @@ private:
         int getValue(int key) { return _map[key]; };
         void setValue(int key, int value) { _map[key] = value; };
         WeightedMean& getWeightedMean(int key) { return _weightedMean[_map[key]]; };
-        int addWeightedMean(WeightedMean& weightedMean) { _weightedMean.push_back(weightedMean); return (int)_weightedMean.size() - 1; };
+        int addWeightedMean(WeightedMean& weightedMean) { _weightedMean.emplace_back(weightedMean); return (int)_weightedMean.size() - 1; };
         void buildClusterMap(std::vector<int>& clusterMapping, int& nbClusters);
 
     private:

@@ -15,7 +15,13 @@ public:
     virtual ~ITiles() {};
 
     //TODO : ADD COMMENT
+    virtual void initialize() = 0;
+
+    //TODO : ADD COMMENT
     virtual unsigned int getNbTiles() const = 0;
+
+    //TODO : ADD COMMENT
+    virtual void remove(std::vector<unsigned int>& toRemove) = 0;
 
     //TODO : ADD COMMENT
     virtual void compute(const IRegionOfInterest& roi) = 0;

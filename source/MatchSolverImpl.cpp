@@ -40,11 +40,11 @@ void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates
     {
         temp._id = t;
         temp._squareDistance = tiles.computeSquareDistance(*_photo, i, j, t);
-        tileCandidates.push_sorted(temp);
+        tileCandidates.emplace_sorted(temp);
     }
 
     for (int k = 0; k < tileCandidates.size(); k++)
-        candidates.push_back(tileCandidates[k]);
+        candidates.emplace_back(tileCandidates[k]);
 }
 
 void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)

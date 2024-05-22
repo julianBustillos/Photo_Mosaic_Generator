@@ -5,6 +5,7 @@
 #include "IPixelAdapter.h"
 #include "IRegionOfInterest.h"
 #include "ITiles.h"
+#include "ITilesCleaner.h"
 #include "IMatchSolver.h"
 #include "MosaicBuilder.h"
 #include <memory>
@@ -22,6 +23,7 @@ private:
     std::shared_ptr<IPixelAdapter> _pixelAdapter;
     std::shared_ptr<IRegionOfInterest> _roi;
     std::shared_ptr<ITiles> _tiles;
+    std::shared_ptr<ITilesCleaner> _tilesCleaner;
     std::shared_ptr<IMatchSolver> _matchSolver;
     std::shared_ptr<MosaicBuilder> _mosaicBuilder;
 };

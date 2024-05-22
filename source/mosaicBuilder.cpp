@@ -56,8 +56,8 @@ void MosaicBuilder::copyTileOnMosaic(uchar* mosaicData, const std::string& tileP
 void MosaicBuilder::exportMosaic(const std::string& path, const cv::Mat mosaic)
 {
     std::vector<int> image_params;
-    image_params.push_back(cv::IMWRITE_JPEG_QUALITY);
-    image_params.push_back(100);
+    image_params.emplace_back(cv::IMWRITE_JPEG_QUALITY);
+    image_params.emplace_back(100);
     cv::imwrite(path + "\\mosaic.jpg", mosaic, image_params);
 }
 

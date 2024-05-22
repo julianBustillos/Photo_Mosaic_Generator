@@ -16,17 +16,9 @@ TilesImpl::~TilesImpl()
     removeTemp();
 }
 
-unsigned int TilesImpl::getNbTiles() const
+void TilesImpl::initialize()
 {
-    return _tilesData.size();
-}
-
-void TilesImpl::compute(const IRegionOfInterest& roi)
-{
-    OutputDisabler disabler;
-    removeTemp();
-    createTemp();
-
+    Data data;
     for (auto it = std::filesystem::recursive_directory_iterator(_path); it != std::filesystem::recursive_directory_iterator(); it++)
     {
         if (is_directory(it->path()))
@@ -38,15 +30,63 @@ void TilesImpl::compute(const IRegionOfInterest& roi)
         }
         else
         {
-            disabler.start();
-            cv::Mat image = cv::imread(it->path().string(), cv::IMREAD_COLOR);
-             disabler.end();
-             if (!image.data)
-             {
-                 continue;
-             }
-            computeTileData(image, it->path().filename().string(), roi);
+            if (checkExtension(it->path().extension().string()))
+            {
+                data._imagePath = it->path().string();
+                std::string filename = it->path().filename().string();
+                data._tileName = filename.substr(0, filename.find_last_of('.')) + ".png";
+                _tilesData.emplace_back(data);
+            }
         }
+    }
+}
+
+unsigned int TilesImpl::getNbTiles() const
+{
+    return _tilesData.size();
+}
+
+void TilesImpl::remove(std::vector<unsigned int>& toRemove)
+{
+    std::sort(toRemove.begin(), toRemove.end());
+
+    int t1 = 0, t2 = 0, r = 0;
+    for (; t2 < _tilesData.size(); t1++, t2++)
+    {
+        while (r < toRemove.size() && t2 >= toRemove[r])
+        {
+            if (t2 == toRemove[r])
+                t2++;
+            r++;
+        }
+        if (t2 >= _tilesData.size())
+        {
+            break;
+        }
+        if (t2 > t1)
+        {
+            _tilesData[t1] = _tilesData[t2];
+        }
+    }
+    _tilesData.resize(_tilesData.size() - (t2 - t1));
+}
+
+void TilesImpl::compute(const IRegionOfInterest& roi)
+{
+    OutputDisabler disabler;
+    removeTemp();
+    createTemp();
+
+    for (Data& data : _tilesData)
+    {
+        disabler.start();
+        cv::Mat image = cv::imread(data._imagePath, cv::IMREAD_COLOR);
+        disabler.end();
+        if (!image.data)
+        {
+            continue;
+        }
+        computeTileFeatures(image, roi, data);
     }
     printInfo();
 }
@@ -57,12 +97,32 @@ double TilesImpl::computeSquareDistance(const Photo& photo, int i, int j, int ti
     cv::Point firstPixel = photo.getFirstPixel(i, j, true);
 
     MathUtils::computeImageBGRFeatures(photo.getData(), photo.getTileSize(), firstPixel, photo.getStep(), features, FeatureRootSubdivision);
-    return MathUtils::BGRFeatureDistance(features, _tilesData[tileID].features, FeatureRootSubdivision * FeatureRootSubdivision);
+    return MathUtils::BGRFeatureDistance(features, _tilesData[tileID]._features, FeatureRootSubdivision * FeatureRootSubdivision);
 }
 
 const std::string TilesImpl::getTileFilepath(int tileId) const
 {
-    return _tempPath + "\\" + _tilesData[tileId].filename;
+    return _tempPath + "\\" + _tilesData[tileId]._tileName;
+}
+
+bool TilesImpl::checkExtension(const std::string& extension) const
+{
+    if (extension == ".bmp") return true;
+    if (extension == ".dib") return true;
+    if (extension == ".jpeg") return true;
+    if (extension == ".jpg") return true;
+    if (extension == ".jpe") return true;
+    if (extension == ".jp2") return true;
+    if (extension == ".png") return true;
+    if (extension == ".webp") return true;
+    if (extension == ".pbm") return true;
+    if (extension == ".pgm") return true;
+    if (extension == ".ppm") return true;
+    if (extension == ".pxm") return true;
+    if (extension == ".pnm") return true;
+    if (extension == ".tiff") return true;
+    if (extension == ".tif") return true;
+    return false;
 }
 
 void TilesImpl::createTemp() const
@@ -85,20 +145,16 @@ void TilesImpl::removeTemp() const
     }
 }
 
-void TilesImpl::computeTileData(const cv::Mat& image, const std::string& filename, const IRegionOfInterest& roi)
+void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, Data& data)
 {
-    Data data;
     cv::Point firstPixel;
     cv::Size cropSize;
     cv::Mat tileMat;
 
     computeCropInfo(image, firstPixel, cropSize, roi);
     MathUtils::computeImageResampling(tileMat, _tileSize, image, firstPixel, cropSize);
-    MathUtils::computeImageBGRFeatures(tileMat.data, _tileSize, cv::Point(0, 0), _tileSize.width, data.features, FeatureRootSubdivision);
-    data.filename = filename.substr(0, filename.find_last_of('.')) + ".png";
-    _tilesData.push_back(data);
-
-    exportTile(tileMat, data.filename);
+    MathUtils::computeImageBGRFeatures(tileMat.data, _tileSize, cv::Point(0, 0), _tileSize.width, data._features, FeatureRootSubdivision);
+    exportTile(tileMat, data._tileName);
 }
 
 void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Point& firstPixel, cv::Size& cropSize, const IRegionOfInterest& roi)
@@ -123,8 +179,8 @@ void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Point& firstPixel, cv:
 void TilesImpl::exportTile(const cv::Mat& tile, const std::string& filename)
 {
     std::vector<int> image_params;
-    image_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
-    image_params.push_back(0);
+    image_params.emplace_back(cv::IMWRITE_PNG_COMPRESSION);
+    image_params.emplace_back(0);
     std::string filePath = _tempPath + "\\" + filename;
     cv::imwrite(filePath, tile, image_params);
     if (!std::filesystem::exists(filePath))

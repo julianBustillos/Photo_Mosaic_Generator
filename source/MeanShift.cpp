@@ -20,7 +20,7 @@ void MeanShift::compute(const cv::Mat& image, std::vector<int>& clusterMapping, 
 
     std::vector<SpatialOffset> offset;
     offset.reserve(4 * SpatialFilter * (SpatialFilter + 1) + 1);
-    offset.push_back(SpatialOffset(0, 0, 0.));
+    offset.emplace_back(SpatialOffset(0, 0, 0.));
     for (int iWindow = -SpatialFilter; iWindow <= SpatialFilter; iWindow++)
     {
         for (int jWindow = -SpatialFilter; jWindow <= SpatialFilter; jWindow++)
@@ -28,7 +28,7 @@ void MeanShift::compute(const cv::Mat& image, std::vector<int>& clusterMapping, 
             double sqSpatialDist = computeSqSpatialDistance(0, 0, iWindow, jWindow);
             if (sqSpatialDist <= 1. && (iWindow != 0 || jWindow != 0))
             {
-                offset.push_back(SpatialOffset(iWindow, jWindow, sqSpatialDist));
+                offset.emplace_back(SpatialOffset(iWindow, jWindow, sqSpatialDist));
             }
         }
     }
@@ -84,7 +84,7 @@ void MeanShift::compute(const cv::Mat& image, std::vector<int>& clusterMapping, 
                         if (!processed[meanShiftId])
                         {
                             if (sqRangeDist < sqFirstOptimDist)
-                                convergencePath.push_back(Coordinates(iWindow, jWindow));
+                                convergencePath.emplace_back(Coordinates(iWindow, jWindow));
                         }
                         else
                         {
@@ -104,7 +104,7 @@ void MeanShift::compute(const cv::Mat& image, std::vector<int>& clusterMapping, 
                         if (!processed[meanShiftId])
                         {
                             if (sqRangeDist < sqSecondOptimDist)
-                                convergencePath.push_back(Coordinates(iWindow, jWindow));
+                                convergencePath.emplace_back(Coordinates(iWindow, jWindow));
                         }
                         else
                         {

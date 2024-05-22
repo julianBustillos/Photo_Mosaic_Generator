@@ -96,15 +96,15 @@ void SaliencyFilter::compute(const cv::Mat& image, const std::vector<int>& clust
 
     std::cout << "Nb CLUSTERS : " << nbClusters << std::endl;
     std::vector<int> image_params;
-    image_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
-    image_params.push_back(0);
+    image_params.emplace_back(cv::IMWRITE_PNG_COMPRESSION);
+    image_params.emplace_back(0);
     cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\DEBUG_0_Original.png", image, image_params);
     cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\DEBUG_1_Cluster.png", clusterImage, image_params);
     cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\DEBUG_2_Uniqueness.png", uniquenessImage, image_params);
     cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\DEBUG_3_Distribution.png", distributionImage, image_params);
     cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\DEBUG_4_Saliency.png", saliencyImage, image_params);
     cv::imwrite("C:\\Users\\Julian Bustillos\\Downloads\\MOSAIC_TEST\\DEBUG_5_Saliency_kept.png", saliencyKeptImage, image_params);
-    image_params.push_back(13);
+    image_params.emplace_back(13);
     std::exit(EXIT_SUCCESS);*/
     //DEBUG
 }
