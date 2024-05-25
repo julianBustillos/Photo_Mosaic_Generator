@@ -34,13 +34,13 @@ const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
 void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const ITiles& tiles)
 {
     SortedVector<matchCandidate> tileCandidates(RedundancyTilesNumber);
-    matchCandidate temp(i, j);
+    matchCandidate candidate(i, j);
 
     for (int t = 0; t < tiles.getNbTiles(); t++)
     {
-        temp._id = t;
-        temp._squareDistance = tiles.computeSquareDistance(*_photo, i, j, t);
-        tileCandidates.emplace_sorted(temp);
+        candidate._id = t;
+        candidate._squareDistance = tiles.computeSquareDistance(*_photo, i, j, t);
+        tileCandidates.emplace_sorted(candidate);
     }
 
     for (int k = 0; k < tileCandidates.size(); k++)

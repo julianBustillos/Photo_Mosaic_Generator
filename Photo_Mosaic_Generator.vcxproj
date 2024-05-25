@@ -148,7 +148,6 @@
     <ClInclude Include="include\MeanShift.h" />
     <ClInclude Include="include\MosaicBuilder.h" />
     <ClInclude Include="include\MosaicGenerator.h" />
-    <ClInclude Include="include\OutputDisabler.h" />
     <ClInclude Include="include\Parameters.h" />
     <ClInclude Include="include\Photo.h" />
     <ClInclude Include="include\IPixelAdapter.h" />

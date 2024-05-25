@@ -3,7 +3,6 @@
 #include <filesystem>
 #include "CustomException.h"
 #include "MathUtils.h"
-#include "OutputDisabler.h"
 
 
 TilesImpl::TilesImpl(const std::string& path, const cv::Size& tileSize) :
@@ -46,6 +45,11 @@ unsigned int TilesImpl::getNbTiles() const
     return _tilesData.size();
 }
 
+void TilesImpl::getImage(int tileID, cv::Mat& image) const
+{
+    image = cv::imread(_tilesData[tileID]._imagePath, cv::IMREAD_COLOR);
+}
+
 void TilesImpl::remove(std::vector<unsigned int>& toRemove)
 {
     std::sort(toRemove.begin(), toRemove.end());
@@ -73,20 +77,18 @@ void TilesImpl::remove(std::vector<unsigned int>& toRemove)
 
 void TilesImpl::compute(const IRegionOfInterest& roi)
 {
-    OutputDisabler disabler;
+    cv::Mat image;
     removeTemp();
     createTemp();
 
-    for (Data& data : _tilesData)
+    for (int t = 0; t < _tilesData.size(); t++)
     {
-        disabler.start();
-        cv::Mat image = cv::imread(data._imagePath, cv::IMREAD_COLOR);
-        disabler.end();
+        getImage(t, image);
         if (!image.data)
         {
             continue;
         }
-        computeTileFeatures(image, roi, data);
+        computeTileFeatures(image, roi, _tilesData[t]);
     }
     printInfo();
 }

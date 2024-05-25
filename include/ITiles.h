@@ -18,6 +18,9 @@ public:
     virtual void initialize() = 0;
 
     //TODO : ADD COMMENT
+    virtual void getImage(int tileID, cv::Mat& image) const = 0;
+
+    //TODO : ADD COMMENT
     virtual unsigned int getNbTiles() const = 0;
 
     //TODO : ADD COMMENT

@@ -296,10 +296,10 @@ namespace
         }
     }
 
-    void applyBoxBlur(uchar* image, uchar* temp, const cv::Size& size, int boxRadius)
+    void applyBoxBlur(uchar* image, uchar* buffer, const cv::Size& size, int boxRadius)
     {
-        applyRowBlur(image, temp, size, boxRadius);
-        applyColBlur(temp, image, size, boxRadius);
+        applyRowBlur(image, buffer, size, boxRadius);
+        applyColBlur(buffer, image, size, boxRadius);
     }
 }
 
@@ -308,9 +308,23 @@ namespace
     MathUtils methods implementation 
 */
 
+void MathUtils::computeGrayscale(cv::Mat& target, const cv::Mat& source)
+{
+    target = cv::Mat(source.size(), CV_8UC1, cv::Scalar(0));
+    for (int i = 0; i < source.size().height; i++)
+    {
+        for (int j = 0; j < source.size().width; j++)
+        {
+            int targetId = getDataIndex(i, j, target.channels(), source.size().width);
+            int sourceId = getDataIndex(i, j, source.channels(), source.size().width);
+            target.data[targetId] = source.data[sourceId] * 0.114 + source.data[sourceId + 1] * 0.587 + source.data[sourceId + 2] * 0.299;
+        }
+    }
+}
+
 void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize)
 {
-    cv::Mat croppedImage(cropSize, CV_8UC3, cv::Scalar(0, 0, 0));
+    cv::Mat croppedImage(cropSize, source.type());
     if (croppedImage.size() != source.size())
     {
         int step = source.size().width;
@@ -318,9 +332,9 @@ void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSiz
         {
             for (int j = 0; j < cropSize.width; j++)
             {
-                int imageId = getDataIndex(cropFirstPixel.y + i, cropFirstPixel.x + j, step);
-                int imageToProcessId = getDataIndex(i, j, cropSize.width);
-                for (int c = 0; c < 3; c++)
+                int imageId = getDataIndex(cropFirstPixel.y + i, cropFirstPixel.x + j, source.channels(), step);
+                int imageToProcessId = getDataIndex(i, j, source.channels(), cropSize.width);
+                for (int c = 0; c < source.channels(); c++)
                     croppedImage.data[imageToProcessId + c] = source.data[imageId + c];
             }
         }
@@ -330,7 +344,7 @@ void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSiz
         croppedImage = source;
     }
 
-    target = cv::Mat(targetSize, CV_8UC3, cv::Scalar(0, 0, 0));
+    target = cv::Mat(targetSize, source.type());
     double wScaleInv = (double)cropSize.width / (double)targetSize.width;
     double hScaleInv = (double)cropSize.height / (double)targetSize.height;
     double minScaleInv = std::min(wScaleInv, hScaleInv);
@@ -343,7 +357,7 @@ void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSiz
             {
                 for (int j = 0; j < targetSize.width; j++)
                 {
-                    int dataId = getDataIndex(i, j, targetSize.width);
+                    int dataId = getDataIndex(i, j, target.channels(), targetSize.width);
                     computeAreaInterpolationPixel(&target.data[dataId], croppedImage.data, cropSize, i, j, minScaleInv);
                 }
             }
@@ -354,7 +368,7 @@ void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSiz
             {
                 for (int j = 0; j < targetSize.width; j++)
                 {
-                    int dataId = getDataIndex(i, j, targetSize.width);
+                    int dataId = getDataIndex(i, j, target.channels(), targetSize.width);
                     computeBicubicInterpolationPixel(&target.data[dataId], croppedImage.data, cropSize, i, j, minScaleInv);
                 }
             }
@@ -369,13 +383,46 @@ void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSiz
 
 void MathUtils::computeImageDHash(const cv::Mat& image, Hash& hash)
 {
-    //TODO
+    cv::Mat grayscaleImage, hashImage;
+    cv::Size dhashHSize(HashSize + 1, HashSize);
+    cv::Size dhashVSize(HashSize, HashSize + 1);
+
+    computeGrayscale(grayscaleImage, image);
+
+    computeImageResampling(hashImage, dhashHSize, grayscaleImage, cv::Point(0,0), grayscaleImage.size());
+    int hashId = 0;
+    for (int i = 0; i < dhashHSize.height; i++)
+    {
+        for (int j = 0; j < dhashHSize.width - 1; j++, hashId++)
+        {
+            int index0 = getDataIndex(i, j, hashImage.channels(), dhashHSize.width);
+            int index1 = getDataIndex(i, j + 1, hashImage.channels(), dhashHSize.width);
+            if (hashImage.data[index0] < hashImage.data[index1])
+            {
+                hash.set(hashId);
+            }
+        }
+    }
+
+    computeImageResampling(hashImage, dhashVSize, grayscaleImage, cv::Point(0, 0), grayscaleImage.size());
+    for (int i = 0; i < dhashVSize.height - 1; i++)
+    {
+        for (int j = 0; j < dhashVSize.width; j++, hashId++)
+        {
+            int index0 = getDataIndex(i, j, hashImage.channels(), dhashHSize.width);
+            int index1 = getDataIndex(i + 1, j, hashImage.channels(), dhashHSize.width);
+            if (hashImage.data[index0] < hashImage.data[index1])
+            {
+                hash.set(hashId);
+            }
+        }
+    }
 }
 
 void MathUtils::applyGaussianBlur(uchar* image, const cv::Size& size, double sigma)
 {
-    uchar* temp = new uchar[3 * size.width * size.height];
-    if (!temp)
+    uchar* buffer = new uchar[3 * size.width * size.height];
+    if (!buffer)
         return;
 
     int boxRadius[BlurNbBoxes];
@@ -384,10 +431,10 @@ void MathUtils::applyGaussianBlur(uchar* image, const cv::Size& size, double sig
     if (boxRadius[BlurNbBoxes - 1] <= std::min(size.width, size.height) / 2)
     {
         for (int k = 0; k < BlurNbBoxes; k++)
-            applyBoxBlur(image, temp, size, boxRadius[k]);
+            applyBoxBlur(image, buffer, size, boxRadius[k]);
     }
 
-    delete[] temp;
+    delete[] buffer;
 }
 
 void MathUtils::computeImageBGRFeatures(const uchar* image, const cv::Size& size, const cv::Point& firstPos, int step, double* features, int featureDirSubdivision)
@@ -403,7 +450,7 @@ void MathUtils::computeImageBGRFeatures(const uchar* image, const cv::Size& size
         for (int j = 0; j < size.width; j++)
         {
             int blockId = featureDirSubdivision * (i / blockHeight) + j / blockWidth;
-            int imageId = getDataIndex(firstPos.y + i, firstPos.x + j, step);
+            int imageId = getDataIndex(firstPos.y + i, firstPos.x + j, 3, step);
             for (int c = 0; c < 3; c++)
                 features[3 * blockId + c] += image[imageId + c];
         }

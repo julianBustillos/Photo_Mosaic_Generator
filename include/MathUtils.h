@@ -6,16 +6,20 @@
 
 namespace MathUtils
 {
-    using Hash = std::bitset<64>;
-
     constexpr int BlurNbBoxes = 3;
+    constexpr int HashSize = 8;
+    constexpr int HashBits = 2 * HashSize * 8;
+
+    using Hash = std::bitset<HashBits>;
+
 
     template< typename T>
     inline T clip(T val, T min, T max);
 
-    inline int getDataIndex(int i, int j, int step);
+    inline int getDataIndex(int i, int j, int c, int step);
     inline int getClippedDataIndex(int i, int j, int step, const cv::Size& size);
 
+    void computeGrayscale(cv::Mat& target, const cv::Mat& source);
     void computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize);
     void computeImageDHash(const cv::Mat& image, Hash& hash);
     void applyGaussianBlur(uchar* image, const cv::Size& size, double sigma);
@@ -40,9 +44,9 @@ inline T MathUtils::clip(T val, T min, T max)
 }
 
 
-inline int MathUtils::getDataIndex(int i, int j, int step)
+inline int MathUtils::getDataIndex(int i, int j, int c, int step)
 {
-    return 3 * (i * step + j);
+    return c * (i * step + j);
 }
 
 inline int MathUtils::getClippedDataIndex(int i, int j, int step, const cv::Size& size)

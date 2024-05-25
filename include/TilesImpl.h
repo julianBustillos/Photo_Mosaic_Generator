@@ -14,6 +14,7 @@ public:
     virtual ~TilesImpl();
     virtual void initialize();
     virtual unsigned int getNbTiles() const;
+    virtual void getImage(int tileID, cv::Mat& image) const;
     virtual void remove(std::vector<unsigned int>& toRemove);
     virtual void compute(const IRegionOfInterest& roi);
     virtual double computeSquareDistance(const Photo& photo, int i, int j, int tileID) const;

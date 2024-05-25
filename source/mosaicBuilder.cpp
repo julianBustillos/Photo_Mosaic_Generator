@@ -43,9 +43,9 @@ void MosaicBuilder::copyTileOnMosaic(uchar* mosaicData, const std::string& tileP
     {
         for (int j = 0; j < tileSize.width; j++)
         {
-            int mosaicId = MathUtils::getDataIndex(firstPixel.y + i, firstPixel.x + j, step);
-            int tileId = MathUtils::getDataIndex(i, j, tileSize.width);
-            for (int c = 0; c < 3; c++)
+            int mosaicId = MathUtils::getDataIndex(firstPixel.y + i, firstPixel.x + j, tile.channels(), step);
+            int tileId = MathUtils::getDataIndex(i, j, tile.channels(), tileSize.width);
+            for (int c = 0; c < tile.channels(); c++)
             {
                 mosaicData[mosaicId + c] = tileData[tileId + c];
             }

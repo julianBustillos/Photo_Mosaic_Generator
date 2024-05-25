@@ -62,9 +62,6 @@
     <ClInclude Include="include\Clock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\OutputDisabler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\MosaicGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
