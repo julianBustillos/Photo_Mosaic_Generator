@@ -78,9 +78,9 @@ void Parameters::parse(int argc, char* argv[])
     if (result.count("tiles"))
         _tilesPath = result["tiles"].as<std::string>();
     if (result.count("subdiv"))
-        int _subdivision = result["subdiv"].as<int>();
-    double _scale = result["scale"].as<double>();
-    double _ratio = result["ratio"].as<double>();
+        _subdivision = result["subdiv"].as<int>();
+    _scale = result["scale"].as<double>();
+    _ratio = result["ratio"].as<double>();
 
     std::replace(_photoPath.begin(), _photoPath.end(), '/', '\\');
     std::replace(_tilesPath.begin(), _tilesPath.end(), '/', '\\');
@@ -91,37 +91,45 @@ void Parameters::parse(int argc, char* argv[])
 void Parameters::check()
 {
     std::string message = "ARGUMENTS : ";
+    unsigned int errorCount = 0;
 
     if (_photoPath == "")
     {
-        message += "No photo defined";
+        message += "\nNo photo defined";
+        errorCount++;
     }
     else if (!std::filesystem::exists(_photoPath))
     {
-        message += "Invalid file : " + _photoPath;
+        message += "\nInvalid file : " + _photoPath;
+        errorCount++;
     }
     else if (_tilesPath == "")
     {
-        message += "No tiles path defined";
+        message += "\nNo tiles path defined";
+        errorCount++;
     }
     else if (!std::filesystem::exists(_tilesPath))
     {
-        message += "Invalid path : " + _tilesPath;
+        message += "\nInvalid path : " + _tilesPath;
+        errorCount++;
     }
     else if (_subdivision <= 0)
     {
-        message += "Invalid subdivision value";
+        message += "\nInvalid subdivision value";
+        errorCount++;
     }
     else if (_scale <= 0)
     {
-        message += "Invalid scale value";
+        message += "\nInvalid scale value";
+        errorCount++;
     }
     else if (_ratio < 0)
     {
-        message += "Invalid ratio value";
+        message += "\nInvalid ratio value";
+        errorCount++;
     }
 
-    if (!message.empty())
+    if (errorCount > 0)
     {
         throw CustomException(message, CustomException::Level::NORMAL);
     }
