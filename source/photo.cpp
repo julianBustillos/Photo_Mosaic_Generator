@@ -43,9 +43,8 @@ Photo::Photo(const std::string& path, double scale, double ratio, int subdivisio
     _tileSize = cv::Size(_mat.size().width / subdivision, _mat.size().height / subdivision);
     _lostSize = cv::Size(_mat.size().width - subdivision * _tileSize.width, _mat.size().height - subdivision * _tileSize.height);
 
-    int minimumSize = 20; //TODO CONSTANT
-    if (_tileSize.width < minimumSize || _tileSize.height < minimumSize)
-        throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(minimumSize) + "*" + std::to_string(minimumSize) + ")", CustomException::Level::ERROR);
+    if (_tileSize.width < MinTileSize || _tileSize.height < MinTileSize)
+        throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(MinTileSize) + "*" + std::to_string(MinTileSize) + ")", CustomException::Level::ERROR);
 
     printInfo();
 }

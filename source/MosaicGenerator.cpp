@@ -10,8 +10,8 @@
 MosaicGenerator::MosaicGenerator(const Parameters& parameters)
 {
     _photo = std::make_shared<const Photo>(parameters.getPhotoPath(), parameters.getScale(), parameters.getRatio(), parameters.getSubdivision());
-    if (!_matchSolver)
-        throw CustomException("Bad allocation for _matchSolver in MosaicGenerator constructor.", CustomException::Level::ERROR);
+    if (!_photo)
+        throw CustomException("Bad allocation for _photo in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
     _pixelAdapter = std::make_shared<PixelAdapterImpl>(_photo, parameters.getSubdivision());
     if (!_pixelAdapter)
@@ -51,8 +51,8 @@ MosaicGenerator::~MosaicGenerator()
 void MosaicGenerator::Build()
 {
     _tiles->initialize();
-    _tiles->compute(*_roi);
     _tilesCleaner->clean(*_tiles);
+    _tiles->compute(*_roi);
     _pixelAdapter->compute();
     _matchSolver->solve(*_tiles);
     _mosaicBuilder->build(*_pixelAdapter, *_tiles, *_matchSolver);

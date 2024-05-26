@@ -6,6 +6,9 @@
 
 class Photo
 {
+private:
+    static constexpr int MinTileSize = 32;
+
 public:
     Photo(const std::string& path, double scale, double ratio, int subdivision);
     ~Photo() {};
