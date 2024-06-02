@@ -5,7 +5,7 @@
 
 void TilesCleanerImpl::clean(ITiles& tiles) const
 {
-    cleanBlurries(tiles);
+    //cleanBlurries(tiles);
     cleanDuplicates(tiles);
 }
 
@@ -55,33 +55,34 @@ void TilesCleanerImpl::cleanDuplicates(ITiles& tiles) const
 
     int currGroup = -1;
     std::vector<int> duplicateGroup(tiles.getNbTiles(), -1);
-    std::stack<unsigned int> groupStack;
-    for (int i = 0; i < similarityGraph.size(); i++)
+    std::stack<unsigned int> nodeStack;
+    for (int startNode = 0; startNode < similarityGraph.size(); startNode++)
     {
-        if (!similarityGraph[i].empty())
+        if (!similarityGraph[startNode].empty())
         {
             currGroup++;
-            groupStack.emplace(i);
+            nodeStack.emplace(startNode);
 
-            while (!groupStack.empty())
+            while (!nodeStack.empty())
             {
-                int j = groupStack.top();
-                groupStack.pop();
-                if (!similarityGraph[j].empty())
+                int currNode = nodeStack.top();
+                nodeStack.pop();
+
+                if (!similarityGraph[currNode].empty())
                 {
-                    duplicateGroup[j] = currGroup;
-                    for (int k = 0; k < similarityGraph[j].size(); k++)
+                    duplicateGroup[currNode] = currGroup;
+                    for (int newNode : similarityGraph[currNode])
                     {
-                        groupStack.emplace(similarityGraph[j][k]);
+                        nodeStack.emplace(newNode);
                     }
-                    similarityGraph[j].clear();
+                    similarityGraph[currNode].clear();
                 }
             }
         }
     }
 
     std::vector<unsigned int> toRemove;
-    std::vector<bool> isNewGroup(currGroup, true);
+    std::vector<bool> isNewGroup(currGroup + 1, true);
     for (int i = 0; i < duplicateGroup.size(); i++)
     {
         if (duplicateGroup[i] >= 0)
@@ -89,7 +90,6 @@ void TilesCleanerImpl::cleanDuplicates(ITiles& tiles) const
             if (isNewGroup[duplicateGroup[i]])
             {
                 isNewGroup[duplicateGroup[i]] = false;
-
             }
             else
             {

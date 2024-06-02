@@ -21,7 +21,7 @@ private:
     };
 
 private:
-    void computeAdapterData(AdapterData& adapterData, const uchar* data, const cv::Point& firstPixel, const cv::Size& size, int step) const;
+    void computeAdapterData(AdapterData& adapterData, const cv::Mat& image, const cv::Rect& box) const;
 private:
     std::vector<AdapterData> _tileCorrection;
 };

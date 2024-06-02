@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
             std::cerr << "ERROR : " << e.what() << std::endl;
             break;
         default:
-            std::cerr << "ERROR : we should not be here, you have to debug me !!" << std::endl;
+            std::cerr << "ERROR : we should not be here, you have to DEBUG me !!" << std::endl;
         }
         exit(EXIT_SUCCESS);
     }

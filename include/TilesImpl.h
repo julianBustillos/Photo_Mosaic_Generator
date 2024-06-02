@@ -33,7 +33,7 @@ private:
     void createTemp() const;
     void removeTemp() const;
     void computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, Data& data);
-    void computeCropInfo(const cv::Mat& image, cv::Point& firstPixel, cv::Size& cropSize, const IRegionOfInterest& roi);
+    void computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi);
     void exportTile(const cv::Mat& tile, const std::string& filename);
     void printInfo() const;
 

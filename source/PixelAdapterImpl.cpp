@@ -12,7 +12,7 @@ void PixelAdapterImpl::compute()
         for (int j = 0; j < _subdivisions; j++)
         {
             int mosaicId = i * _subdivisions + j;
-            computeAdapterData(_tileCorrection[mosaicId], _photo->getData(), _photo->getFirstPixel(i, j, true), _photo->getTileSize(), _photo->getStep());
+            computeAdapterData(_tileCorrection[mosaicId], _photo->getImage(), _photo->getTileBox(i, j, true));
         }
     }
 }
@@ -22,12 +22,11 @@ void PixelAdapterImpl::applyCorrection(cv::Mat& tile, int mosaicId) const
     if (_tileCorrection.empty())
         throw CustomException("PixelAdapterImpl::compute() has not generated data !", CustomException::Level::ERROR);
 
-    uchar* data = tile.data;
-    cv::Size size = tile.size();
+    cv::Rect box(0, 0, tile.size().width, tile.size().height);
     AdapterData originalTile;
-    computeAdapterData(originalTile, data, cv::Point(0, 0), size, size.width);
+    computeAdapterData(originalTile, tile, box);
 
-    int tileDataSize = 3 * size.width * size.height;
+    int tileDataSize = 3 * box.width * box.height;
 
     int BGR_correction_function[3][256];
     for (int c = 0; c < 3; c++)
@@ -41,6 +40,8 @@ void PixelAdapterImpl::applyCorrection(cv::Mat& tile, int mosaicId) const
             BGR_correction_function[c][k] = matchingValue;
         }
     }
+
+    uchar* data = tile.data;
 
     for (int k = 0; k < tileDataSize; k += 3)
     {
@@ -58,7 +59,7 @@ void PixelAdapterImpl::applyCorrection(cv::Mat& tile, int mosaicId) const
     }
 }
 
-void PixelAdapterImpl::computeAdapterData(AdapterData& adapterData, const uchar* data, const cv::Point& firstPixel, const cv::Size& size, int step) const
+void PixelAdapterImpl::computeAdapterData(AdapterData& adapterData, const cv::Mat& image, const cv::Rect& box) const
 {
     uchar blue, green, red;
 
@@ -71,14 +72,13 @@ void PixelAdapterImpl::computeAdapterData(AdapterData& adapterData, const uchar*
         }
     }
 
-    for (int i = 0; i < size.height; i++)
+    for (int i = 0; i < box.height; i++)
     {
-        for (int j = 0; j < size.width; j++)
+        for (int j = 0; j < box.width; j++)
         {
-            int id = MathUtils::getDataIndex(firstPixel.y + i, firstPixel.x + j, 3, step);
-            blue = data[id];
-            green = data[id + 1];
-            red = data[id + 2];
+            blue = image.ptr(box.y + i, box.x + j)[0];
+            green = image.ptr(box.y + i, box.x + j)[1];
+            red = image.ptr(box.y + i, box.x + j)[2];
 
             adapterData._BGR_cdf[0][blue] += 1.;
             adapterData._BGR_cdf[1][green] += 1.;
@@ -86,7 +86,7 @@ void PixelAdapterImpl::computeAdapterData(AdapterData& adapterData, const uchar*
         }
     }
 
-    int nbPixel = size.width * size.height;
+    int nbPixel = box.width * box.height;
     for (int c = 0; c < 3; c++)
     {
         for (int k = 1; k < 256; k++)

@@ -29,12 +29,12 @@ FaceDetectionROIImpl::~FaceDetectionROIImpl()
     _faceDetector.reset();
 }
 
-void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Point& firstPixel, const cv::Size& cropSize, bool rowDirSearch) const
+void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch) const
 {
     //Test if face search is needed
-    double croppedRatio = rowDirSearch ? (double)cropSize.height / (double)image.size().height :(double)cropSize.width / (double)image.size().width;
+    double croppedRatio = rowDirSearch ? (double)box.height / (double)image.size().height : (double)box.width / (double)image.size().width;
 
-    if (croppedRatio < 0.9) //TODO variable
+    if (croppedRatio < minCroppedRatio)
     {
         //Deep learning based face detection using YuNet
         cv::Mat faces;
@@ -44,18 +44,18 @@ void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Point& firstPixel, con
         int sWidth = (int)std::round((double)image.size().width * scale);
         int sHeight = (int)std::round((double)image.size().height * scale);
         cv::Mat sImage;
-        MathUtils::computeImageResampling(sImage, cv::Size(sWidth, sHeight), image, cv::Point(0, 0), image.size());
+        MathUtils::computeImageResampling(sImage, cv::Size(sWidth, sHeight), image, MathUtils::AREA);
         _faceDetector->setInputSize(sImage.size());
         _faceDetector->detect(sImage, faces);
 
         if (!faces.empty())
         {
-            getDetectionROI(image.size(), faces, firstPixel, cropSize, scaleInv, rowDirSearch);
+            getDetectionROI(image.size(), faces, box, scaleInv, rowDirSearch);
             return;
         }
     }
 
-    getDefaultROI(image.size(), firstPixel, cropSize, rowDirSearch);
+    getDefaultROI(image.size(), box, rowDirSearch);
 }
 
 std::string FaceDetectionROIImpl::getCurrentProcessDirectory()
@@ -65,7 +65,7 @@ std::string FaceDetectionROIImpl::getCurrentProcessDirectory()
     return std::filesystem::path(buffer).parent_path().string();
 }
 
-void FaceDetectionROIImpl::getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Point& firstPixel, const cv::Size& cropSize, double scaleInv, bool rowDirSearch) const
+void FaceDetectionROIImpl::getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Rect& box, double scaleInv, bool rowDirSearch) const
 {
     double minConfidence = (faces.at<float>(0, 14) >= 0.8) ? 0.8 : 0.5; // If there is no face detected with high confidence, try other detected faces ! //TODO VARIABLE ?
     cv::Point min(imageSize.width, imageSize.height);
@@ -106,42 +106,42 @@ void FaceDetectionROIImpl::getDetectionROI(const cv::Size& imageSize, const cv::
     //Center ROI in cropped image
     if (rowDirSearch)
     {
-        firstPixel.x = 0;
-        firstPixel.y = (max.y + min.y - cropSize.height) / 2;
-        if (firstPixel.y < 0)
+        box.x = 0;
+        box.y = (max.y + min.y - box.height) / 2;
+        if (box.y < 0)
         {
-            firstPixel.y = 0;
+            box.y = 0;
         }
-        else if (firstPixel.y + cropSize.height > imageSize.height)
+        else if (box.y + box.height > imageSize.height)
         {
-            firstPixel.y = imageSize.height - cropSize.height;
+            box.y = imageSize.height - box.height;
         }
     }
     else
     {
-        firstPixel.x = (max.x + min.x - cropSize.width) / 2;
-        firstPixel.y = 0;
-        if (firstPixel.x < 0)
+        box.x = (max.x + min.x - box.width) / 2;
+        box.y = 0;
+        if (box.x < 0)
         {
-            firstPixel.x = 0;
+            box.x = 0;
         }
-        else if (firstPixel.x + cropSize.width > imageSize.width)
+        else if (box.x + box.width > imageSize.width)
         {
-            firstPixel.x = imageSize.width - cropSize.width;
+            box.x = imageSize.width - box.width;
         }
     }
 }
 
-void FaceDetectionROIImpl::getDefaultROI(const cv::Size& imageSize, cv::Point& firstPixel, const cv::Size& cropSize, bool rowDirSearch) const
+void FaceDetectionROIImpl::getDefaultROI(const cv::Size& imageSize, cv::Rect& box, bool rowDirSearch) const
 {
-    firstPixel.x = (int)(floor((imageSize.width - cropSize.width) / 2.));
+    box.x = (int)(floor((imageSize.width - box.width) / 2.));
     if (rowDirSearch)
     {
-        firstPixel.y = (int)(floor((imageSize.height - cropSize.height) / 2.));
+        box.y = (int)(floor((imageSize.height - box.height) / 2.));
     }
     else
     {
-        firstPixel.y = (int)(floor((imageSize.height - cropSize.height) / 3.));
+        box.y = (int)(floor((imageSize.height - box.height) / 3.));
     }
 }
 

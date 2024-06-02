@@ -17,7 +17,7 @@ public:
     ~MosaicBuilder() { _photo.reset(); };
 
 private:
-    void copyTileOnMosaic(uchar* mosaicData, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Point firstPixel, int step);
+    void copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Rect& box);
     void exportMosaic(const std::string& path, cv::Mat mosaic);
     void printInfo() const;
 

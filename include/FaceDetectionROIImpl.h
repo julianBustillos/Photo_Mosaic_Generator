@@ -7,15 +7,18 @@
 
 class FaceDetectionROIImpl : public IRegionOfInterest
 {
+private:
+    static constexpr double minCroppedRatio = 0.9;
+
 public:
     FaceDetectionROIImpl();
     ~FaceDetectionROIImpl();
-    virtual void find(const cv::Mat& image, cv::Point& firstPixel, const cv::Size& cropSize, bool rowDirSearch) const;
+    virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch) const;
 
 private:
     std::string getCurrentProcessDirectory();
-    void getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Point& firstPixel, const cv::Size& cropSize, double scaleInv, bool rowDirSearch) const;
-    void getDefaultROI(const cv::Size& imageSize, cv::Point& firstPixel, const cv::Size& cropSize, bool rowDirSearch) const;
+    void getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Rect& box, double scaleInv, bool rowDirSearch) const;
+    void getDefaultROI(const cv::Size& imageSize, cv::Rect& box, bool rowDirSearch) const;
 
 private:
     void dumpDetection(std::string path, const cv::Mat& image, const cv::Mat& faces, double scaleInv, bool confidence) const;

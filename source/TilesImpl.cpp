@@ -96,9 +96,7 @@ void TilesImpl::compute(const IRegionOfInterest& roi)
 double TilesImpl::computeSquareDistance(const Photo& photo, int i, int j, int tileID) const
 {
     double features[3 * FeatureRootSubdivision * FeatureRootSubdivision];
-    cv::Point firstPixel = photo.getFirstPixel(i, j, true);
-
-    MathUtils::computeImageBGRFeatures(photo.getData(), photo.getTileSize(), firstPixel, photo.getStep(), features, FeatureRootSubdivision);
+    MathUtils::computeImageBGRFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureRootSubdivision);
     return MathUtils::BGRFeatureDistance(features, _tilesData[tileID]._features, FeatureRootSubdivision * FeatureRootSubdivision);
 }
 
@@ -149,22 +147,22 @@ void TilesImpl::removeTemp() const
 
 void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, Data& data)
 {
-    cv::Point firstPixel;
-    cv::Size cropSize;
+    cv::Rect box;
     cv::Mat tileMat;
 
-    computeCropInfo(image, firstPixel, cropSize, roi);
-    MathUtils::computeImageResampling(tileMat, _tileSize, image, firstPixel, cropSize);
-    MathUtils::computeImageBGRFeatures(tileMat.data, _tileSize, cv::Point(0, 0), _tileSize.width, data._features, FeatureRootSubdivision);
+    computeCropInfo(image, box, roi);
+    MathUtils::computeImageResampling(tileMat, _tileSize, image, box, MathUtils::AREA);
+    MathUtils::computeImageBGRFeatures(tileMat, cv::Rect(), data._features, FeatureRootSubdivision);
     exportTile(tileMat, data._tileName);
 }
 
-void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Point& firstPixel, cv::Size& cropSize, const IRegionOfInterest& roi)
+void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi)
 {
     if (image.size() == _tileSize)
     {
-        firstPixel = cv::Point(0, 0);
-        cropSize = image.size();
+        box.x = box.y = 0;
+        box.width = image.size().width;
+        box.height = image.size().height;
         return;
     }
 
@@ -172,10 +170,10 @@ void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Point& firstPixel, cv:
     double hScaleInv = (double)image.size().height / (double)_tileSize.height;
     double scaleInv = std::min(wScaleInv, hScaleInv);
 
-    cropSize.width = (int)ceil(_tileSize.width * scaleInv);
-    cropSize.height = (int)ceil(_tileSize.height * scaleInv);
+    box.width = (int)ceil(_tileSize.width * scaleInv);
+    box.height = (int)ceil(_tileSize.height * scaleInv);
 
-    roi.find(image, firstPixel, cropSize, wScaleInv < hScaleInv);
+    roi.find(image, box, wScaleInv < hScaleInv);
 }
 
 void TilesImpl::exportTile(const cv::Mat& tile, const std::string& filename)

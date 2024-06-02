@@ -12,29 +12,22 @@ Photo::Photo(const std::string& path, double scale, double ratio, int subdivisio
         throw CustomException("Impossible to load image : " + path, CustomException::Level::ERROR);
     _inSize = inputImage.size();
 
-    if (scale != 1. && ratio != 0.)
+    double inputRatio = (double)_inSize.width / (double)_inSize.height;
+    cv::Size croppedSize = _inSize;
+    if (ratio > 0.)
     {
-        double inputRatio = (double)_inSize.width / (double)_inSize.height;
-        cv::Size croppedSize = _inSize;
-        if (ratio > 0.)
+        if (inputRatio < ratio)
         {
-            if (inputRatio < ratio)
-            {
-                croppedSize.height = (double)_inSize.width / ratio;
-            }
-            else if (inputRatio > ratio)
-            {
-                croppedSize.width = (double)_inSize.height * ratio;
-            }
+            croppedSize.height = (double)_inSize.width / ratio;
         }
+        else if (inputRatio > ratio)
+        {
+            croppedSize.width = (double)_inSize.height * ratio;
+        }
+    }
 
-        cv::Size targetSize((double)croppedSize.width * scale, (double)croppedSize.height * scale);
-        MathUtils::computeImageResampling(_mat, targetSize, inputImage, cv::Point(0, 0), croppedSize);
-    }
-    else
-    {
-        _mat = inputImage;
-    }
+    cv::Size targetSize((double)croppedSize.width * scale, (double)croppedSize.height * scale);
+    MathUtils::computeImageResampling(_mat, targetSize, inputImage, MathUtils::LANCZOS);
 
     int filenameIndex = (int)path.find_last_of('\\');
     if (filenameIndex >= 0)
@@ -49,18 +42,20 @@ Photo::Photo(const std::string& path, double scale, double ratio, int subdivisio
     printInfo();
 }
 
-cv::Point Photo::getFirstPixel(int i, int j, bool offset) const
+cv::Rect Photo::getTileBox(int i, int j, bool doShift) const
 {
-    cv::Point position;
-    position.y = i * _tileSize.height;
-    position.x = j * _tileSize.width;
-    if (offset)
+    cv::Rect box;
+    box.y = i * _tileSize.height;
+    box.x = j * _tileSize.width;
+    if (doShift)
     {
-        position.y += _lostSize.height / 2;
-        position.x += _lostSize.width / 2;
+        box.y += _lostSize.height / 2;
+        box.x += _lostSize.width / 2;
     }
+    box.width = _tileSize.width;
+    box.height = _tileSize.height;
 
-    return position;
+    return box;
 }
 
 cv::Size Photo::getTileSize() const
@@ -68,14 +63,9 @@ cv::Size Photo::getTileSize() const
     return _tileSize;
 }
 
-const uchar* Photo::getData() const
+const cv::Mat& Photo::getImage() const
 {
-    return _mat.data;
-}
-
-int Photo::getStep() const
-{
-    return _mat.size().width;
+    return _mat;
 }
 
 std::string Photo::getDirectory() const

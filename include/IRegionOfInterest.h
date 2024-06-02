@@ -13,5 +13,5 @@ public:
     virtual ~IRegionOfInterest() {};
 
     //TODO : ADD COMMENT
-    virtual void find(const cv::Mat& image, cv::Point& firstPixel, const cv::Size& cropSize, bool rowDirSearch) const = 0;
+    virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch) const = 0;
 };

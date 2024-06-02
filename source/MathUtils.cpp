@@ -21,130 +21,234 @@ namespace
         return root;
     }
 
-    void computeAreaInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv)
+    class SamplingFilter
     {
-        /*
-        Compute area interpolation :
-        Compute convolution matrix representing pixel weights area based on original image subdivision according to new size.
-        */
+    public:
+        SamplingFilter(double support) : _support(support) {};
+        void setScale(double scale) { _scale = scale > 1. ? scale : 1.; _invScale = 1. / _scale; };
+        double getSupport() const { return _support * _scale; };
+        virtual double compute(double xPos, double center) const = 0;
 
-        double xMin = (double)j * scaleInv;
-        double xMax = (double)(j + 1) * scaleInv;
-        double yMin = (double)i * scaleInv;
-        double yMax = (double)(i + 1) * scaleInv;
+    protected:
+        const double _support;
+        double _scale;
+        double _invScale;
+    };
 
-        int xLoBound = (int)std::floor(xMin);
-        int xUpBound = (int)std::ceil(xMax);
-        int yLoBound = (int)std::floor(yMin);
-        int yUpBound = (int)std::ceil(yMax);
-
-        for (int color = 0; color < 3; color++)
+    double sinc(double x)
+    {
+        if (x == 0.0)
         {
-            double colorVal = 0.;
-            double coefSum = 0.;
-            for (int col = xLoBound; col <= xUpBound; col++)
+            return 1.0;
+        }
+        x = x * std::numbers::pi;
+        return sin(x) / x;
+    }
+
+    class AreaFilter : public SamplingFilter
+    {
+    public:
+        AreaFilter() : SamplingFilter(1.) {};
+        virtual double compute(double xPos, double center) const
+        {
+            double minVal = center - _scale * 0.5;
+            double maxVal = center + _scale * 0.5;
+            double minPos = std::ceil(minVal);
+            double maxPos = std::floor(maxVal);
+
+            if (minPos <= xPos && xPos <= maxPos)
             {
-                double colCoef = 1.;
-                if (col == xLoBound)
+                return 1.0;
+            }
+            else if (minPos - 1. <= xPos && xPos <= minPos)
+            {
+                return minPos - minVal;
+            }
+            else if (maxPos <= xPos && xPos <= maxPos + 1.)
+            {
+                return maxVal - maxPos;
+            }
+            return 0.0;
+        }
+    };
+
+    class BicubicFilter : public SamplingFilter
+    {
+    public:
+        BicubicFilter() : SamplingFilter(2.) {};
+        virtual double compute(double xPos, double center) const
+        {
+            constexpr double a = -0.5;
+            
+            double x = (xPos - center) * _invScale;
+            if (x < 0.0)
+            {
+                x = -x;
+            }
+            if (x < 1.0)
+            {
+                return ((a + 2.0) * x - (a + 3.0)) * x * x + 1;
+            }
+            if (x < 2.0)
+            {
+                return (((x - 5) * x + 8) * x - 4) * a;
+            }
+            return 0.0;
+        }
+    };
+
+    class LanczosFilter : public SamplingFilter
+    {
+    public:
+        LanczosFilter() : SamplingFilter(3.) {};
+        virtual double compute(double xPos, double center) const
+        {
+            constexpr double lanczos_a_param = 3.0;
+
+            double x = (xPos - center) * _invScale;
+            if (-lanczos_a_param <= x && x < lanczos_a_param)
+            {
+                return sinc(x) * sinc(x / lanczos_a_param);
+            }
+            return 0.0;
+        }
+    };
+
+    void computeCoefficients(int inSize, int outSize, int min, int max, int& nbCoeffs, std::vector<double>& coeffs, std::vector<int>& bounds, SamplingFilter* filter)
+    {
+        const double scale = (double)(max - min) / (double)outSize;
+        filter->setScale(scale);
+        const double support = filter->getSupport();
+        nbCoeffs = (int)std::ceil(support) * 2 + 1;
+
+        coeffs.resize(outSize * nbCoeffs);
+        bounds.resize(outSize * 2);
+
+        constexpr double halfPixel = 0.5;
+        for (int xOut = 0; xOut < outSize; xOut++)
+        {
+            double center = min + (xOut + halfPixel) * scale;
+            
+            int xMin = (int)(center - support + halfPixel);
+            if (xMin < 0)
+                xMin = 0;
+
+            int xMax = (int)(center + support + halfPixel);
+            if (xMax > inSize)
+                xMax = inSize;
+
+            double* coeff = &coeffs[xOut * nbCoeffs];
+
+            int xSize = xMax - xMin;
+            double sum = 0.;
+            for (int x = 0; x < xSize; x++)
+            {
+                coeff[x] = filter->compute(x + xMin + halfPixel, center);
+                sum += coeff[x];
+            }
+
+            if (sum != 0.)
+            {
+                double invSum = 1. / sum;
+                for (int x = 0; x < xSize; x++)
                 {
-                    colCoef = (double)(xLoBound + 1) - xMin;
-                }
-                else if (col == xUpBound)
-                {
-                    colCoef = xMax - (double)(xMax - 1);
-                }
-                for (int row = yLoBound; row <= yUpBound; row++)
-                {
-                    double rowCoef = 1.;
-                    if (row == yLoBound)
-                    {
-                        rowCoef = (double)(yLoBound + 1) - yMin;
-                    }
-                    else if (row == yUpBound)
-                    {
-                        rowCoef = yMax - (double)(yMax - 1);
-                    }
-                    int dataId = MathUtils::getClippedDataIndex(row, col, size.width, size);
-                    colorVal += (double)source[dataId + color] * rowCoef * colCoef;
-                    coefSum += rowCoef * colCoef;
+                    coeff[x] *= invSum;
                 }
             }
 
-            pixel[color] = (uchar)MathUtils::clip<int>((int)round(colorVal / coefSum), 0, 255);
+            for (int x = xSize; x < nbCoeffs; x++)
+            {
+                coeff[x] = 0;
+            }
+
+            bounds[xOut * 2 + 0] = xMin;
+            bounds[xOut * 2 + 1] = xSize;
         }
     }
 
-    uchar biCubicInterpolation(double x, double y, const uchar* pixelGrid)
+    void resampleHorizontal(cv::Mat& output, const cv::Mat& input, int offset, int nbCoeffs, const std::vector<double>& coeffs, const std::vector<int> bounds)
     {
-        /*
-        Compute bicubic interpolation :
-        vx = [x^3, x^2, x, 1]
-        vy = [y^3, y^2, y, 1]
-        B : 4*4 bicubic coeff matrix
-        P : 4*4 pixel grid value matrix
-        interpolation = 1/4 * vx * B * P^t * B^t * vy
-        */
-        static const double biCubicCoeffs[16] = {-1,  2, -1,  0,
-                                                  3, -5,  0,  2,
-                                                 -3,  4,  1,  0,
-                                                  1, -1,  0,  0};
+        constexpr unsigned int PrecisionBits = 32 - 8 - 2;
+        constexpr double PrecisionShift = (double)(1U << PrecisionBits);
+        constexpr double PixelInit = 1U << (PrecisionBits - 1U);
 
+        std::vector<double> shiftedCoeffs;
+        shiftedCoeffs.reserve(coeffs.size());
 
-        double vx[4], vy[4], vxCoeffsMult[4], vyCoeffsMult[4];
-
-        vx[3] = vy[3] = 1.;
-        for (int i = 2; i > -1; i--)
+        for (double c : coeffs)
         {
-            vx[i] = vx[i + 1] * x;
-            vy[i] = vy[i + 1] * y;
+            shiftedCoeffs.emplace_back(std::round(c * PrecisionShift));
         }
 
-        double xTemp, yTemp;
-        for (int j = 0; j < 4; j++)
+        for (int yOut = 0; yOut < output.size().height; yOut++)
         {
-            xTemp = yTemp = 0;
-            for (int i = 0; i < 4; i++)
+            for (int xOut = 0; xOut < output.size().width; xOut++)
             {
-                xTemp += vx[i] * biCubicCoeffs[j * 4 + i];
-                yTemp += vy[i] * biCubicCoeffs[j * 4 + i];
-            }
-            vxCoeffsMult[j] = xTemp;
-            vyCoeffsMult[j] = yTemp;
-        }
-
-        double interpolation = 0;
-        for (int i = 0; i < 4; i++)
-        {
-            for (int j = 0; j < 4; j++)
-            {
-                interpolation += vxCoeffsMult[i] * pixelGrid[i * 4 + j] * vyCoeffsMult[j];
-            }
-        }
-        interpolation /= 4.;
-
-        return (uchar)MathUtils::clip<int>((int)round(interpolation), 0, 255);
-    }
-
-    void computeBicubicInterpolationPixel(uchar* pixel, const uchar* source, const cv::Size& size, int i, int j, double scaleInv)
-    {
-        uchar pixelGrid[16];
-        double x = (double)j * scaleInv;
-        double y = (double)i * scaleInv;
-        int iFirstGrid = (int)round(y) - 2;
-        int jFirstGrid = (int)round(x) - 2;
-
-        for (int color = 0; color < 3; color++)
-        {
-            for (int col = 0; col < 4; col++)
-            {
-                for (int row = 0; row < 4; row++)
+                const int xMin = bounds[xOut * 2 + 0];
+                const int xSize = bounds[xOut * 2 + 1];
+                const double* coeff = &shiftedCoeffs[xOut * nbCoeffs];
+                for (int c = 0; c < input.channels(); c++)
                 {
-                    int dataId = MathUtils::getClippedDataIndex(iFirstGrid + row, jFirstGrid + col, size.width, size);
-                    pixelGrid[col * 4 + row] = source[dataId + color];
+                    double pixel = PixelInit;
+                    for (int x = 0; x < xSize; x++)
+                    {
+                        pixel += (double)(input.ptr<uchar>(yOut + offset, x + xMin)[c]) * coeff[x];
+                    }
+                    output.ptr<uchar>(yOut, xOut)[c] = (uchar)MathUtils::clip<int>((int)pixel >> PrecisionBits, 0, 255);
                 }
             }
+        }
+    }
 
-            pixel[color] = biCubicInterpolation(x - round(x) + 1, y - round(y) + 1, pixelGrid);
+    void resampleVertical(cv::Mat& output, const cv::Mat& input, int nbCoeffs, const std::vector<double>& coeffs, const std::vector<int> bounds)
+    {
+        output = output.t();
+        resampleHorizontal(output, input.t(), 0, nbCoeffs, coeffs, bounds);
+        output = output.t();
+    }
+
+    void resample(cv::Mat& target, const cv::Size& targetSize, const cv::Mat& source, const cv::Rect& box, SamplingFilter* filter)
+    {
+        cv::Mat temp;
+        const bool doHoriSampling = targetSize.width != box.width;
+        const bool doVertSampling = targetSize.height != box.height;
+
+        cv::Vec4i limits(box.x, box.y, box.x + box.width, box.y + box.height);
+
+        int nbCoeffsHori = 0, nbCoeffsVert = 0;
+        std::vector<double> coeffsHori, coeffsVert;
+        std::vector<int> boundsHori, boundsVert;
+
+        if (doHoriSampling)
+            computeCoefficients(source.size().width, targetSize.width, limits[0], limits[2], nbCoeffsHori, coeffsHori, boundsHori, filter);
+
+        if (doVertSampling)
+            computeCoefficients(source.size().height, targetSize.height, limits[1], limits[3], nbCoeffsVert, coeffsVert, boundsVert, filter);
+
+        if (doHoriSampling)
+        {
+            const int yLowBound = boundsVert[0];
+            const int yHighBound = boundsVert[targetSize.height * 2 - 2] + boundsVert[targetSize.height * 2 - 1];
+
+            for (int i = 0; i < targetSize.height; ++i)
+                boundsVert[i * 2] -= yLowBound;
+
+            cv::Mat& output = doVertSampling ? temp : target;
+            output.create(yHighBound - yLowBound, targetSize.width, source.type());
+            resampleHorizontal(output, source, yLowBound, nbCoeffsHori, coeffsHori, boundsHori);
+        }
+
+        if (doVertSampling)
+        {
+            const cv::Mat& input = doHoriSampling ? temp : source;
+            target.create(targetSize, source.type());
+            resampleVertical(target, input, nbCoeffsVert, coeffsVert, boundsVert);
+        }
+
+        if (!doHoriSampling && !doVertSampling)
+        {
+            target.create(targetSize, source.type());
+            //TODO no sampling MODE = copy box!!!
         }
     }
 
@@ -310,108 +414,74 @@ namespace
 
 void MathUtils::computeGrayscale(cv::Mat& target, const cv::Mat& source)
 {
-    target = cv::Mat(source.size(), CV_8UC1, cv::Scalar(0));
+    target.create(source.size(), CV_8UC1);
     for (int i = 0; i < source.size().height; i++)
     {
         for (int j = 0; j < source.size().width; j++)
         {
-            int targetId = getDataIndex(i, j, target.channels(), source.size().width);
-            int sourceId = getDataIndex(i, j, source.channels(), source.size().width);
-            target.data[targetId] = source.data[sourceId] * 0.114 + source.data[sourceId + 1] * 0.587 + source.data[sourceId + 2] * 0.299;
+            target.ptr(i, j)[0] = (uchar)std::round(source.ptr(i, j)[0] * 0.114 + source.ptr(i, j)[1] * 0.587 + source.ptr(i, j)[2] * 0.299);
         }
     }
 }
 
-void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize)
+void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, Filter filter)
 {
-    cv::Mat croppedImage(cropSize, source.type());
-    if (croppedImage.size() != source.size())
+    cv::Rect box(0, 0, source.size().width, source.size().height);
+    computeImageResampling(target, targetSize, source, box, filter);
+}
+
+void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Rect& box, Filter filter)
+{
+    SamplingFilter* samplingFilter = nullptr;
+
+    if (filter == MathUtils::AREA)
     {
-        int step = source.size().width;
-        for (int i = 0; i < cropSize.height; i++)
-        {
-            for (int j = 0; j < cropSize.width; j++)
-            {
-                int imageId = getDataIndex(cropFirstPixel.y + i, cropFirstPixel.x + j, source.channels(), step);
-                int imageToProcessId = getDataIndex(i, j, source.channels(), cropSize.width);
-                for (int c = 0; c < source.channels(); c++)
-                    croppedImage.data[imageToProcessId + c] = source.data[imageId + c];
-            }
-        }
+        samplingFilter = new AreaFilter();
     }
-    else
+    else if (filter == MathUtils::BICUBIC)
     {
-        croppedImage = source;
+        samplingFilter = new BicubicFilter();
+    }
+    else if (filter == MathUtils::LANCZOS)
+    {
+        samplingFilter = new LanczosFilter();
     }
 
-    target = cv::Mat(targetSize, source.type());
-    double wScaleInv = (double)cropSize.width / (double)targetSize.width;
-    double hScaleInv = (double)cropSize.height / (double)targetSize.height;
-    double minScaleInv = std::min(wScaleInv, hScaleInv);
-
-    if (minScaleInv != 1.)
+    if (filter)
     {
-        if (minScaleInv > 1.) //Use area interpolation for image downscaling
-        {
-            for (int i = 0; i < targetSize.height; i++)
-            {
-                for (int j = 0; j < targetSize.width; j++)
-                {
-                    int dataId = getDataIndex(i, j, target.channels(), targetSize.width);
-                    computeAreaInterpolationPixel(&target.data[dataId], croppedImage.data, cropSize, i, j, minScaleInv);
-                }
-            }
-        }
-        else //Use bicubic interpolation for image upscaling
-        {
-            for (int i = 0; i < targetSize.height; i++)
-            {
-                for (int j = 0; j < targetSize.width; j++)
-                {
-                    int dataId = getDataIndex(i, j, target.channels(), targetSize.width);
-                    computeBicubicInterpolationPixel(&target.data[dataId], croppedImage.data, cropSize, i, j, minScaleInv);
-                }
-            }
-        }
-    }
-    else
-    {
-        for (int k = 0; k < 3 * targetSize.width * targetSize.height; k++)
-            target.data[k] = croppedImage.data[k];
+        resample(target, targetSize, source, box, samplingFilter);
+        delete samplingFilter;
+        samplingFilter = nullptr;
     }
 }
 
 void MathUtils::computeImageDHash(const cv::Mat& image, Hash& hash)
 {
+    int hashId = 0;
     cv::Mat grayscaleImage, hashImage;
-    cv::Size dhashHSize(HashSize + 1, HashSize);
-    cv::Size dhashVSize(HashSize, HashSize + 1);
+    cv::Size dhashHoriSize(HashSize + 1, HashSize);
+    cv::Size dhashVertSize(HashSize, HashSize + 1);
 
     computeGrayscale(grayscaleImage, image);
 
-    computeImageResampling(hashImage, dhashHSize, grayscaleImage, cv::Point(0,0), grayscaleImage.size());
-    int hashId = 0;
-    for (int i = 0; i < dhashHSize.height; i++)
+    computeImageResampling(hashImage, dhashHoriSize, grayscaleImage, LANCZOS);
+    for (int i = 0; i < dhashHoriSize.height; i++)
     {
-        for (int j = 0; j < dhashHSize.width - 1; j++, hashId++)
+        for (int j = 0; j < dhashHoriSize.width - 1; j++, hashId++)
         {
-            int index0 = getDataIndex(i, j, hashImage.channels(), dhashHSize.width);
-            int index1 = getDataIndex(i, j + 1, hashImage.channels(), dhashHSize.width);
-            if (hashImage.data[index0] < hashImage.data[index1])
+            if (hashImage.ptr(i, j)[0] < hashImage.ptr(i, j + 1)[0])
             {
                 hash.set(hashId);
             }
         }
     }
 
-    computeImageResampling(hashImage, dhashVSize, grayscaleImage, cv::Point(0, 0), grayscaleImage.size());
-    for (int i = 0; i < dhashVSize.height - 1; i++)
+    computeImageResampling(hashImage, dhashVertSize, grayscaleImage, LANCZOS);
+    for (int i = 0; i < dhashVertSize.height - 1; i++)
     {
-        for (int j = 0; j < dhashVSize.width; j++, hashId++)
+        for (int j = 0; j < dhashVertSize.width; j++, hashId++)
         {
-            int index0 = getDataIndex(i, j, hashImage.channels(), dhashHSize.width);
-            int index1 = getDataIndex(i + 1, j, hashImage.channels(), dhashHSize.width);
-            if (hashImage.data[index0] < hashImage.data[index1])
+            if (hashImage.ptr(i, j)[0] < hashImage.ptr(i + 1, j)[0])
             {
                 hash.set(hashId);
             }
@@ -437,29 +507,28 @@ void MathUtils::applyGaussianBlur(uchar* image, const cv::Size& size, double sig
     delete[] buffer;
 }
 
-void MathUtils::computeImageBGRFeatures(const uchar* image, const cv::Size& size, const cv::Point& firstPos, int step, double* features, int featureDirSubdivision)
+void MathUtils::computeImageBGRFeatures(const cv::Mat& image, const cv::Rect& box, double* features, int featureDirSubdivision)
 {
-    int blockWidth = (int)ceil(size.width / (double)featureDirSubdivision);
-    int blockHeight = (int)ceil(size.height / (double)featureDirSubdivision);
+    int blockWidth = (int)ceil(box.width / (double)featureDirSubdivision);
+    int blockHeight = (int)ceil(box.height / (double)featureDirSubdivision);
 
     for (int k = 0; k < 3 * featureDirSubdivision * featureDirSubdivision; k++)
         features[k] = 0;
 
-    for (int i = 0; i < size.height; i++)
+    for (int i = 0; i < box.height; i++)
     {
-        for (int j = 0; j < size.width; j++)
+        for (int j = 0; j < box.width; j++)
         {
             int blockId = featureDirSubdivision * (i / blockHeight) + j / blockWidth;
-            int imageId = getDataIndex(firstPos.y + i, firstPos.x + j, 3, step);
             for (int c = 0; c < 3; c++)
-                features[3 * blockId + c] += image[imageId + c];
+                features[3 * blockId + c] += image.ptr(box.y + i, box.x + j)[c];
         }
     }
 
     for (int k = 0; k < 3 * featureDirSubdivision * featureDirSubdivision; k++)
     {
-        int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * 3) ? blockHeight : size.height - (featureDirSubdivision - 1) * blockHeight;
-        int corrBlockWidth = (((k / 4 + 1) % featureDirSubdivision) != 0) ? blockWidth : size.width - (featureDirSubdivision - 1) * blockWidth;
+        int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * 3) ? blockHeight : box.height - (featureDirSubdivision - 1) * blockHeight;
+        int corrBlockWidth = (((k / 4 + 1) % featureDirSubdivision) != 0) ? blockWidth : box.width - (featureDirSubdivision - 1) * blockWidth;
         features[k] /= corrBlockWidth * corrBlockHeight;
     }
 }

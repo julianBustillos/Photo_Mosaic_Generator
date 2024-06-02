@@ -8,7 +8,6 @@ void MosaicBuilder::build(const IPixelAdapter& pixelAdapter, const ITiles& tiles
 {
     cv::Size mosaicSize = _photo->getTileSize() * _subdivisions;
     cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
-    uchar* mosaicData = mosaic.data;
     const std::vector<int>& matchingTiles = matchSolver.getMatchingTiles();
 
     for (int i = 0; i < _subdivisions; i++)
@@ -18,7 +17,7 @@ void MosaicBuilder::build(const IPixelAdapter& pixelAdapter, const ITiles& tiles
             int mosaicId = i * _subdivisions + j;
             int tileId = matchingTiles[mosaicId];
             if (tileId >= 0)
-                copyTileOnMosaic(mosaicData, tiles.getTileFilepath(tileId), pixelAdapter, mosaicId, _photo->getFirstPixel(i, j, false), mosaicSize.width);
+                copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), pixelAdapter, mosaicId, _photo->getTileBox(i, j, false));
             else
                 throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
         }
@@ -29,11 +28,10 @@ void MosaicBuilder::build(const IPixelAdapter& pixelAdapter, const ITiles& tiles
     printInfo();
 }
 
-void MosaicBuilder::copyTileOnMosaic(uchar* mosaicData, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Point firstPixel, int step)
+void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Rect& box)
 {
     cv::Mat tile = cv::imread(tilePath);
-    uchar* tileData = tile.data;
-    if (!tileData)
+    if (tile.empty())
         throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::ERROR);
 
     pixelAdapter.applyCorrection(tile, mosaicId);
@@ -43,11 +41,9 @@ void MosaicBuilder::copyTileOnMosaic(uchar* mosaicData, const std::string& tileP
     {
         for (int j = 0; j < tileSize.width; j++)
         {
-            int mosaicId = MathUtils::getDataIndex(firstPixel.y + i, firstPixel.x + j, tile.channels(), step);
-            int tileId = MathUtils::getDataIndex(i, j, tile.channels(), tileSize.width);
             for (int c = 0; c < tile.channels(); c++)
             {
-                mosaicData[mosaicId + c] = tileData[tileId + c];
+                mosaic.ptr(box.y + i, box.x + j)[c] = tile.ptr(i, j)[c];
             }
         }
     }

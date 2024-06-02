@@ -12,19 +12,28 @@ namespace MathUtils
 
     using Hash = std::bitset<HashBits>;
 
+    enum Filter
+    {
+        AREA,
+        BICUBIC,
+        LANCZOS
+    };
 
     template< typename T>
-    inline T clip(T val, T min, T max);
-
-    inline int getDataIndex(int i, int j, int c, int step);
-    inline int getClippedDataIndex(int i, int j, int step, const cv::Size& size);
+    inline T clip(T val, T min, T max) { return (val < min) ? min : (val > max) ? max : val; };
 
     void computeGrayscale(cv::Mat& target, const cv::Mat& source);
-    void computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Point& cropFirstPixel, const cv::Size& cropSize);
+
+    void computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, Filter filter);
+    void computeImageResampling(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Rect& box, Filter filter);
+
     void computeImageDHash(const cv::Mat& image, Hash& hash);
+
     void applyGaussianBlur(uchar* image, const cv::Size& size, double sigma);
-    void computeImageBGRFeatures(const uchar* image, const cv::Size& size, const cv::Point& firstPos, int step, double* features, int featureDirSubdivision);
+
+    void computeImageBGRFeatures(const cv::Mat& image, const cv::Rect& box, double* features, int featureDirSubdivision);
     double BGRFeatureDistance(const double* vec1, const double* vec2, int size);
+
     void convertBGRtoHSV(double& hue, double& saturation, double& value, uchar blue, uchar green, uchar red);
     void convertHSVtoBGR(uchar& blue, uchar& green, uchar& red, double hue, double saturation, double value);
     void convertBGRtoHSL(double& hue, double& saturation, double& lightness, uchar blue, uchar green, uchar red);
@@ -37,21 +46,3 @@ namespace MathUtils
     void convertLABtoBGR(uchar& blue, uchar& green, uchar& red, double L, double a, double b);
 };
 
-template<typename T>
-inline T MathUtils::clip(T val, T min, T max)
-{
-    return (val < min)?min:(val > max)?max:val;
-}
-
-
-inline int MathUtils::getDataIndex(int i, int j, int c, int step)
-{
-    return c * (i * step + j);
-}
-
-inline int MathUtils::getClippedDataIndex(int i, int j, int step, const cv::Size& size)
-{
-    int iSafe = MathUtils::clip<int>(i, 0, size.height - 1);
-    int jSafe = MathUtils::clip<int>(j, 0, size.width - 1);
-    return 3 * (iSafe * (step?step:size.width) + jSafe);
-}

@@ -12,10 +12,9 @@ private:
 public:
     Photo(const std::string& path, double scale, double ratio, int subdivision);
     ~Photo() {};
-    cv::Point getFirstPixel(int i, int j, bool offset) const;
+    cv::Rect getTileBox(int i, int j, bool doShift) const;
     cv::Size getTileSize() const;
-    const uchar* getData() const;
-    int getStep() const;
+    const cv::Mat& getImage() const;
     std::string getDirectory() const;
 
 private:
