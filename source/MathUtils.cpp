@@ -207,6 +207,20 @@ namespace
         output = output.t();
     }
 
+    void copy(cv::Mat& output, const cv::Mat& input, const cv::Vec4i& limits)
+    {
+        for (int y = 0; y < output.size().height; y++)
+        {
+            for (int x = 0; x < output.size().width; x++)
+            {
+                for (int c = 0; c < output.channels(); c++)
+                {
+                    output.ptr(x, y)[c] = output.ptr(x + limits[0], y + limits[1])[c];
+                }
+            }
+        }
+    }
+
     void resample(cv::Mat& target, const cv::Size& targetSize, const cv::Mat& source, const cv::Rect& box, SamplingFilter* filter)
     {
         cv::Mat temp;
@@ -248,7 +262,7 @@ namespace
         if (!doHoriSampling && !doVertSampling)
         {
             target.create(targetSize, source.type());
-            //TODO no sampling MODE = copy box!!!
+            copy(target, source, limits);
         }
     }
 
