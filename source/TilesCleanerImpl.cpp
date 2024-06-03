@@ -5,7 +5,7 @@
 
 void TilesCleanerImpl::clean(ITiles& tiles) const
 {
-    //cleanBlurries(tiles);
+    //cleanBlurries(tiles); //TODO MERGE WITH dup for PERFORMANCES
     cleanDuplicates(tiles);
 }
 
@@ -29,7 +29,6 @@ void TilesCleanerImpl::cleanDuplicates(ITiles& tiles) const
 {
     const unsigned int maxBitDist = MathUtils::HashBits * DistanceTolerance;
     cv::Mat image;
-    MathUtils::Hash hash;
     std::vector<MathUtils::Hash> hashes(tiles.getNbTiles());
 
     for (int t = 0; t < tiles.getNbTiles(); t++)
@@ -38,62 +37,14 @@ void TilesCleanerImpl::cleanDuplicates(ITiles& tiles) const
         MathUtils::computeImageDHash(image, hashes[t]);
     }
 
-    std::vector<std::vector<unsigned int>> similarityGraph(tiles.getNbTiles());
+    std::vector<unsigned int> toRemove;
     for (int t1 = 0; t1 < tiles.getNbTiles() - 1; t1++)
     {
         for (int t2 = t1 + 1; t2 < tiles.getNbTiles(); t2++)
         {
-            hash = hashes[t1];
-            hash ^= hashes[t2];
-            if (hash.count() <= maxBitDist)
+            if ((hashes[t1] ^ hashes[t2]).count() <= maxBitDist)
             {
-                similarityGraph[t1].emplace_back(t2);
-                similarityGraph[t2].emplace_back(t1);
-            }
-        }
-    }
-
-    int currGroup = -1;
-    std::vector<int> duplicateGroup(tiles.getNbTiles(), -1);
-    std::stack<unsigned int> nodeStack;
-    for (int startNode = 0; startNode < similarityGraph.size(); startNode++)
-    {
-        if (!similarityGraph[startNode].empty())
-        {
-            currGroup++;
-            nodeStack.emplace(startNode);
-
-            while (!nodeStack.empty())
-            {
-                int currNode = nodeStack.top();
-                nodeStack.pop();
-
-                if (!similarityGraph[currNode].empty())
-                {
-                    duplicateGroup[currNode] = currGroup;
-                    for (int newNode : similarityGraph[currNode])
-                    {
-                        nodeStack.emplace(newNode);
-                    }
-                    similarityGraph[currNode].clear();
-                }
-            }
-        }
-    }
-
-    std::vector<unsigned int> toRemove;
-    std::vector<bool> isNewGroup(currGroup + 1, true);
-    for (int i = 0; i < duplicateGroup.size(); i++)
-    {
-        if (duplicateGroup[i] >= 0)
-        {
-            if (isNewGroup[duplicateGroup[i]])
-            {
-                isNewGroup[duplicateGroup[i]] = false;
-            }
-            else
-            {
-                toRemove.emplace_back(i);
+                toRemove.emplace_back(t2);
             }
         }
     }
