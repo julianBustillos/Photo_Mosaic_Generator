@@ -4,6 +4,16 @@
 #include "MathUtils.h"
 
 
+MosaicBuilder::MosaicBuilder(std::shared_ptr<const Photo> photo, int subdivisions) : 
+    _photo(photo), _subdivisions(subdivisions)
+{
+}
+
+MosaicBuilder::~MosaicBuilder()
+{
+    _photo.reset();
+}
+
 void MosaicBuilder::build(const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver)
 {
     cv::Size mosaicSize = _photo->getTileSize() * _subdivisions;
@@ -36,14 +46,18 @@ void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePat
 
     pixelAdapter.applyCorrection(tile, mosaicId);
 
-    cv::Size tileSize = tile.size();
-    for (int i = 0; i < tileSize.height; i++)
+    const cv::Size tileSize = tile.size();
+    const int channels = tile.channels();
+    int pt = 0;
+    const int step = 3 * (mosaic.size().width - box.width);
+    int pm = channels * (box.y * mosaic.size().width + box.x);
+    for (int i = 0; i < tileSize.height; i++, pm += step)
     {
         for (int j = 0; j < tileSize.width; j++)
         {
-            for (int c = 0; c < tile.channels(); c++)
+            for (int c = 0; c < channels; c++, pt++, pm++)
             {
-                mosaic.ptr(box.y + i, box.x + j)[c] = tile.ptr(i, j)[c];
+                mosaic.data[pm] = tile.data[pt];
             }
         }
     }

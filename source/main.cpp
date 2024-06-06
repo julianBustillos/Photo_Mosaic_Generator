@@ -23,7 +23,6 @@ int main(int argc, char* argv[])
         clock.end();
 
         std::cout << std::endl << "++++++++++++++++++++++++++++++++++++++++++++++++           END          ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-        std::cin.get();
     }
     catch (CustomException& e)
     {

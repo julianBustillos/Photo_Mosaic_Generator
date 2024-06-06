@@ -27,10 +27,10 @@ public:
     virtual void remove(std::vector<unsigned int>& toRemove) = 0;
 
     //TODO : ADD COMMENT
-    virtual void compute(const IRegionOfInterest& roi) = 0;
+    virtual void compute(const IRegionOfInterest& roi, const Photo& photo) = 0;
 
     //TODO : ADD COMMENT
-    virtual double computeSquareDistance(const Photo& photo, int i, int j, int tileID) const = 0;
+    virtual double computeSquareDistance(int i, int j, int tileID) const = 0;
 
     //TODO : ADD COMMENT
     virtual const std::string getTileFilepath(int tileId) const = 0;

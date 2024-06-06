@@ -103,12 +103,12 @@ namespace
         LanczosFilter() : SamplingFilter(3.) {};
         virtual double compute(double xPos, double center) const
         {
-            constexpr double lanczos_a_param = 3.0;
+            constexpr double a = 3.0;
 
             double x = (xPos - center) * _invScale;
-            if (-lanczos_a_param <= x && x < lanczos_a_param)
+            if (-a <= x && x < a)
             {
-                return sinc(x) * sinc(x / lanczos_a_param);
+                return sinc(x) * sinc(x / a);
             }
             return 0.0;
         }
@@ -124,16 +124,16 @@ namespace
         coeffs.resize(outSize * nbCoeffs);
         bounds.resize(outSize * 2);
 
-        constexpr double halfPixel = 0.5;
+        constexpr double HalfPixel = 0.5;
         for (int xOut = 0; xOut < outSize; xOut++)
         {
-            double center = min + (xOut + halfPixel) * scale;
+            double center = min + (xOut + HalfPixel) * scale;
             
-            int xMin = (int)(center - support + halfPixel);
+            int xMin = (int)(center - support + HalfPixel);
             if (xMin < 0)
                 xMin = 0;
 
-            int xMax = (int)(center + support + halfPixel);
+            int xMax = (int)(center + support + HalfPixel);
             if (xMax > inSize)
                 xMax = inSize;
 
@@ -143,7 +143,7 @@ namespace
             double sum = 0.;
             for (int x = 0; x < xSize; x++)
             {
-                coeff[x] = filter->compute(x + xMin + halfPixel, center);
+                coeff[x] = filter->compute(x + xMin + HalfPixel, center);
                 sum += coeff[x];
             }
 
@@ -172,29 +172,37 @@ namespace
         constexpr double PrecisionShift = (double)(1U << PrecisionBits);
         constexpr double PixelInit = 1U << (PrecisionBits - 1U);
 
+        const int coeffsSize = coeffs.size();
         std::vector<double> shiftedCoeffs;
-        shiftedCoeffs.reserve(coeffs.size());
+        shiftedCoeffs.resize(coeffsSize);
 
-        for (double c : coeffs)
+        for (int c = 0; c < coeffsSize; c++)
         {
-            shiftedCoeffs.emplace_back(std::round(c * PrecisionShift));
+            shiftedCoeffs[c] = std::round(coeffs[c] * PrecisionShift);
         }
 
-        for (int yOut = 0; yOut < output.size().height; yOut++)
+        const int outWidth = output.size().width;
+        const int outHeight = output.size().height;
+        const int inWidth = input.size().width;
+        const int channels = input.channels();
+
+        int pOut = 0;
+        for (int yOut = 0; yOut < outHeight; yOut++)
         {
-            for (int xOut = 0; xOut < output.size().width; xOut++)
+            for (int xOut = 0; xOut < outWidth; xOut++, pOut += channels)
             {
                 const int xMin = bounds[xOut * 2 + 0];
                 const int xSize = bounds[xOut * 2 + 1];
                 const double* coeff = &shiftedCoeffs[xOut * nbCoeffs];
-                for (int c = 0; c < input.channels(); c++)
+                int pIn = ((yOut + offset) * inWidth + xMin) * channels;
+                for (int c = 0; c < channels; c++)
                 {
                     double pixel = PixelInit;
-                    for (int x = 0; x < xSize; x++)
+                    for (int x = 0, p = pIn + c; x < xSize; x++, p += channels)
                     {
-                        pixel += (double)(input.ptr<uchar>(yOut + offset, x + xMin)[c]) * coeff[x];
+                        pixel += (double)input.data[p] * coeff[x];
                     }
-                    output.ptr<uchar>(yOut, xOut)[c] = (uchar)MathUtils::clip<int>((int)pixel >> PrecisionBits, 0, 255);
+                    output.data[pOut + c] = (uchar)MathUtils::clip<int>((int)pixel >> PrecisionBits, 0, 255);
                 }
             }
         }
@@ -209,13 +217,21 @@ namespace
 
     void copy(cv::Mat& output, const cv::Mat& input, const cv::Vec4i& limits)
     {
-        for (int y = 0; y < output.size().height; y++)
+        const int height = output.size().height;
+        const int width = output.size().width;
+        const int channels = output.channels();
+        const int step = input.size().width;
+        const int offset = (step - limits[2] - 1 + limits[0]) * channels;
+
+        int pOut = 0;
+        int pIn = (limits[1] * step + limits[0]) * channels;
+        for (int y = 0; y < height; y++, pIn += offset)
         {
-            for (int x = 0; x < output.size().width; x++)
+            for (int x = 0; x < width; x++)
             {
-                for (int c = 0; c < output.channels(); c++)
+                for (int c = 0; c < channels; c++, pOut++, pIn++)
                 {
-                    output.ptr(x, y)[c] = output.ptr(x + limits[0], y + limits[1])[c];
+                    output.data[pOut] = input.data[pIn];
                 }
             }
         }
@@ -419,6 +435,27 @@ namespace
         applyRowBlur(image, buffer, size, boxRadius);
         applyColBlur(buffer, image, size, boxRadius);
     }
+
+    void computeLaplacian(std::vector<double>& laplacian, const cv::Mat& input)
+    {
+        const int height = input.size().height;
+        const int width = input.size().width;
+        const int channels = input.channels();
+        laplacian.resize((height - 2) * (width - 2) * channels);
+
+        int p = (width + 1) * channels;
+        int v = 0;
+        for (int i = 1; i < height - 1; i++, p += 2 * channels)
+        {
+            for (int j = 1; j < width - 1; j++)
+            {
+                for (int c = 0; c < channels; c++, p++, v++)
+                {
+                    laplacian[v] = 4 * input.data[p + c] - input.data[p - channels + c] - input.data[p + channels + c] - input.data[p - width * channels + c] - input.data[p + width * channels + c];
+                }
+            }
+        }
+    }
 }
 
 
@@ -428,13 +465,13 @@ namespace
 
 void MathUtils::computeGrayscale(cv::Mat& target, const cv::Mat& source)
 {
+    constexpr double HalfPixel = 0.5;
+    const int nbPixels = source.size().width * source.size().height;
     target.create(source.size(), CV_8UC1);
-    for (int i = 0; i < source.size().height; i++)
+
+    for (int pt = 0, ps = 0; pt < nbPixels; pt++, ps += 3)
     {
-        for (int j = 0; j < source.size().width; j++)
-        {
-            target.ptr(i, j)[0] = (uchar)std::round(source.ptr(i, j)[0] * 0.114 + source.ptr(i, j)[1] * 0.587 + source.ptr(i, j)[2] * 0.299);
-        }
+        target.data[pt] = (uchar)(source.data[ps] * 0.114 + source.data[ps + 1] * 0.587 + source.data[ps + 2] * 0.299 + HalfPixel);
     }
 }
 
@@ -461,7 +498,7 @@ void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSiz
         samplingFilter = new LanczosFilter();
     }
 
-    if (filter)
+    if (samplingFilter)
     {
         resample(target, targetSize, source, box, samplingFilter);
         delete samplingFilter;
@@ -472,35 +509,59 @@ void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSiz
 void MathUtils::computeImageDHash(const cv::Mat& image, Hash& hash)
 {
     int hashId = 0;
-    cv::Mat grayscaleImage, hashImage;
+    cv::Mat hashImage;
     cv::Size dhashHoriSize(HashSize + 1, HashSize);
     cv::Size dhashVertSize(HashSize, HashSize + 1);
 
-    computeGrayscale(grayscaleImage, image);
-
-    computeImageResampling(hashImage, dhashHoriSize, grayscaleImage, LANCZOS);
-    for (int i = 0; i < dhashHoriSize.height; i++)
+    computeImageResampling(hashImage, dhashHoriSize, image, LANCZOS);
+    int pH = 0;
+    for (int i = 0; i < dhashHoriSize.height; i++, pH++)
     {
-        for (int j = 0; j < dhashHoriSize.width - 1; j++, hashId++)
+        for (int j = 0; j < dhashHoriSize.width - 1; j++, hashId++, pH++)
         {
-            if (hashImage.ptr(i, j)[0] < hashImage.ptr(i, j + 1)[0])
+            if (hashImage.data[pH] < hashImage.data[pH + 1])
             {
                 hash.set(hashId);
             }
         }
     }
 
-    computeImageResampling(hashImage, dhashVertSize, grayscaleImage, LANCZOS);
+    computeImageResampling(hashImage, dhashVertSize, image, LANCZOS);
+    int pV = 0;
     for (int i = 0; i < dhashVertSize.height - 1; i++)
     {
-        for (int j = 0; j < dhashVertSize.width; j++, hashId++)
+        for (int j = 0; j < dhashVertSize.width; j++, hashId++, pV++)
         {
-            if (hashImage.ptr(i, j)[0] < hashImage.ptr(i + 1, j)[0])
+            if (hashImage.data[pV] < hashImage.data[pV + dhashVertSize.width])
             {
                 hash.set(hashId);
             }
         }
     }
+}
+
+double MathUtils::computeVarianceOfLaplacian(const cv::Mat& image)
+{
+    std::vector<double> laplacian;
+    computeLaplacian(laplacian, image);
+    
+    const int nbPixels = laplacian.size();
+    double mean = 0;
+    for (int p = 0; p < nbPixels; p++)
+    {
+        mean += laplacian[p];
+    }
+    mean /= nbPixels;
+
+    double variance = 0;
+    for (int p = 0; p < nbPixels; p++)
+    {
+        double error = laplacian[p] - mean;
+        variance += error * error;
+    }
+    variance /= nbPixels;
+
+    return variance;
 }
 
 void MathUtils::applyGaussianBlur(uchar* image, const cv::Size& size, double sigma)
@@ -521,28 +582,33 @@ void MathUtils::applyGaussianBlur(uchar* image, const cv::Size& size, double sig
     delete[] buffer;
 }
 
-void MathUtils::computeImageBGRFeatures(const cv::Mat& image, const cv::Rect& box, double* features, int featureDirSubdivision)
+void MathUtils::computeImageBGRFeatures(const cv::Mat& image, const cv::Rect& box, double* features, int featureDiv, int nbFeatures)
 {
-    int blockWidth = (int)ceil(box.width / (double)featureDirSubdivision);
-    int blockHeight = (int)ceil(box.height / (double)featureDirSubdivision);
+    const int width = image.size().width;
+    int blockWidth = (int)ceil(box.width / (double)featureDiv);
+    int blockHeight = (int)ceil(box.height / (double)featureDiv);
 
-    for (int k = 0; k < 3 * featureDirSubdivision * featureDirSubdivision; k++)
+    for (int k = 0; k < nbFeatures; k++)
         features[k] = 0;
 
-    for (int i = 0; i < box.height; i++)
+    const int step = 3 * (width - box.width);
+    int p = 3 * (box.y * width + box.x);
+    for (int i = 0; i < box.height; i++, p += step)
     {
         for (int j = 0; j < box.width; j++)
         {
-            int blockId = featureDirSubdivision * (i / blockHeight) + j / blockWidth;
-            for (int c = 0; c < 3; c++)
-                features[3 * blockId + c] += image.ptr(box.y + i, box.x + j)[c];
+            int blockPos = 3 * (featureDiv * (i / blockHeight) + j / blockWidth);
+            for (int c = 0; c < 3; c++, p++)
+            {
+                features[blockPos + c] += image.data[p];
+            }
         }
     }
 
-    for (int k = 0; k < 3 * featureDirSubdivision * featureDirSubdivision; k++)
+    for (int k = 0; k < nbFeatures; k++)
     {
-        int corrBlockHeight = (k < featureDirSubdivision * (featureDirSubdivision - 1) * 3) ? blockHeight : box.height - (featureDirSubdivision - 1) * blockHeight;
-        int corrBlockWidth = (((k / 4 + 1) % featureDirSubdivision) != 0) ? blockWidth : box.width - (featureDirSubdivision - 1) * blockWidth;
+        int corrBlockHeight = (k < featureDiv * (featureDiv - 1) * 3) ? blockHeight : box.height - (featureDiv - 1) * blockHeight;
+        int corrBlockWidth = (((k / 4 + 1) % featureDiv) != 0) ? blockWidth : box.width - (featureDiv - 1) * blockWidth;
         features[k] /= corrBlockWidth * corrBlockHeight;
     }
 }

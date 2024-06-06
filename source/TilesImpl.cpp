@@ -5,8 +5,8 @@
 #include "MathUtils.h"
 
 
-TilesImpl::TilesImpl(const std::string& path, const cv::Size& tileSize) :
-    ITiles(path, tileSize)
+TilesImpl::TilesImpl(const std::string& path, const cv::Size& tileSize, int subdivisions) :
+    ITiles(path, tileSize), _subdivisions(subdivisions)
 {
 }
 
@@ -75,7 +75,7 @@ void TilesImpl::remove(std::vector<unsigned int>& toRemove)
     _tilesData.resize(_tilesData.size() - (t2 - t1));
 }
 
-void TilesImpl::compute(const IRegionOfInterest& roi)
+void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
 {
     cv::Mat image;
     removeTemp();
@@ -84,20 +84,29 @@ void TilesImpl::compute(const IRegionOfInterest& roi)
     for (int t = 0; t < _tilesData.size(); t++)
     {
         getImage(t, image);
-        if (!image.data)
-        {
+        if (image.empty())
             continue;
-        }
         computeTileFeatures(image, roi, _tilesData[t]);
     }
+
+    _photoFeatures.resize(_subdivisions * _subdivisions * NbFeatures);
+    int f = 0;
+    for (int i = 0; i < _subdivisions; i++)
+    {
+        for (int j = 0; j < _subdivisions; j++, f++)
+        {
+            double* features = &_photoFeatures[f * NbFeatures];
+            MathUtils::computeImageBGRFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureDiv, NbFeatures);
+        }
+    }
+
     printInfo();
 }
 
-double TilesImpl::computeSquareDistance(const Photo& photo, int i, int j, int tileID) const
+double TilesImpl::computeSquareDistance(int i, int j, int tileID) const
 {
-    double features[3 * FeatureRootSubdivision * FeatureRootSubdivision];
-    MathUtils::computeImageBGRFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureRootSubdivision);
-    return MathUtils::BGRFeatureDistance(features, _tilesData[tileID]._features, FeatureRootSubdivision * FeatureRootSubdivision);
+    const double* features = &_photoFeatures[(i * _subdivisions + j) * NbFeatures];
+    return MathUtils::BGRFeatureDistance(features, _tilesData[tileID]._features, NbFeatures);
 }
 
 const std::string TilesImpl::getTileFilepath(int tileId) const
@@ -151,8 +160,8 @@ void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInteres
     cv::Mat tileMat;
 
     computeCropInfo(image, box, roi);
-    MathUtils::computeImageResampling(tileMat, _tileSize, image, box, MathUtils::AREA);
-    MathUtils::computeImageBGRFeatures(tileMat, cv::Rect(), data._features, FeatureRootSubdivision);
+    MathUtils::computeImageResampling(tileMat, _tileSize, image, box, MathUtils::LANCZOS);
+    MathUtils::computeImageBGRFeatures(tileMat, cv::Rect(0, 0, _tileSize.width, _tileSize.height), data._features, FeatureDiv, NbFeatures);
     exportTile(tileMat, data._tileName);
 }
 

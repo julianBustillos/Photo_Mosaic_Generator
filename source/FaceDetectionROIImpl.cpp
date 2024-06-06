@@ -17,8 +17,8 @@ const int FaceDetectionROIImpl::_detectionSize = 640;
 
 FaceDetectionROIImpl::FaceDetectionROIImpl()
 {
-    cv::utils::logging::setLogLevel(cv::utils::logging::LogLevel::LOG_LEVEL_SILENT);
-    std::string processPath = getCurrentProcessDirectory();
+    cv::utils::logging::setLogLevel(cv::utils::logging::LogLevel::LOG_LEVEL_SILENT); //TODO move out
+    std::string processPath = getCurrentProcessDirectory(); //TODO move to init
     _faceDetector = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5, 0.3, 5000);
     if (!_faceDetector)
         throw CustomException("Bad allocation for _faceDetector in FaceDetectionROIImpl constructor.", CustomException::Level::ERROR);
@@ -34,7 +34,7 @@ void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDir
     //Test if face search is needed
     double croppedRatio = rowDirSearch ? (double)box.height / (double)image.size().height : (double)box.width / (double)image.size().width;
 
-    if (croppedRatio < minCroppedRatio)
+    if (croppedRatio < MinCroppedRatio)
     {
         //Deep learning based face detection using YuNet
         cv::Mat faces;
@@ -67,7 +67,7 @@ std::string FaceDetectionROIImpl::getCurrentProcessDirectory()
 
 void FaceDetectionROIImpl::getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Rect& box, double scaleInv, bool rowDirSearch) const
 {
-    double minConfidence = (faces.at<float>(0, 14) >= 0.8) ? 0.8 : 0.5; // If there is no face detected with high confidence, try other detected faces ! //TODO VARIABLE ?
+    double minConfidence = (faces.at<float>(0, 14) >= HighFaceConfidence) ? HighFaceConfidence : LowFaceConfidence; // If there is no face detected with high confidence, try other detected faces !
     cv::Point min(imageSize.width, imageSize.height);
     cv::Point max(0, 0);
 

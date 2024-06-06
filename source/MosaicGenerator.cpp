@@ -21,7 +21,7 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_roi)
         throw CustomException("Bad allocation for _roi in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _tiles = std::make_shared<TilesImpl>(parameters.getTilesPath(), _photo->getTileSize());
+    _tiles = std::make_shared<TilesImpl>(parameters.getTilesPath(), _photo->getTileSize(), parameters.getSubdivision());
     if (!_tiles)
         throw CustomException("Bad allocation for _tiles in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
@@ -52,7 +52,7 @@ void MosaicGenerator::Build()
 {
     _tiles->initialize();
     _tilesCleaner->clean(*_tiles);
-    _tiles->compute(*_roi);
+    _tiles->compute(*_roi, *_photo);
     _pixelAdapter->compute();
     _matchSolver->solve(*_tiles);
     _mosaicBuilder->build(*_pixelAdapter, *_tiles, *_matchSolver);

@@ -29,9 +29,11 @@ namespace MathUtils
 
     void computeImageDHash(const cv::Mat& image, Hash& hash);
 
+    double computeVarianceOfLaplacian(const cv::Mat& image);
+
     void applyGaussianBlur(uchar* image, const cv::Size& size, double sigma);
 
-    void computeImageBGRFeatures(const cv::Mat& image, const cv::Rect& box, double* features, int featureDirSubdivision);
+    void computeImageBGRFeatures(const cv::Mat& image, const cv::Rect& box, double* features, int featureDiv, int nbFeatures);
     double BGRFeatureDistance(const double* vec1, const double* vec2, int size);
 
     void convertBGRtoHSV(double& hue, double& saturation, double& value, uchar blue, uchar green, uchar red);

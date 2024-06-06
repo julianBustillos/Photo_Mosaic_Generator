@@ -3,6 +3,15 @@
 #include "CustomException.h"
 
 
+PixelAdapterImpl::PixelAdapterImpl(std::shared_ptr<const Photo> photo, int subdivisions) :
+    IPixelAdapter(photo, subdivisions)
+{
+}
+
+PixelAdapterImpl::~PixelAdapterImpl()
+{
+}
+
 void PixelAdapterImpl::compute()
 {
     _tileCorrection.resize(_subdivisions * _subdivisions);
@@ -72,17 +81,17 @@ void PixelAdapterImpl::computeAdapterData(AdapterData& adapterData, const cv::Ma
         }
     }
 
-    for (int i = 0; i < box.height; i++)
+    const int width = image.size().width;
+    const int step = 3 * (width - box.width);
+    int p = 3 * (box.y * width + box.x);
+    for (int i = 0; i < box.height; i++, p += step)
     {
         for (int j = 0; j < box.width; j++)
         {
-            blue = image.ptr(box.y + i, box.x + j)[0];
-            green = image.ptr(box.y + i, box.x + j)[1];
-            red = image.ptr(box.y + i, box.x + j)[2];
-
-            adapterData._BGR_cdf[0][blue] += 1.;
-            adapterData._BGR_cdf[1][green] += 1.;
-            adapterData._BGR_cdf[2][red] += 1.;
+            for (int c = 0; c < 3; c++, p++)
+            {
+                adapterData._BGR_cdf[c][image.data[p]] += 1.;
+            }
         }
     }
 

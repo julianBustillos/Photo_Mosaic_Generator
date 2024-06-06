@@ -8,7 +8,9 @@
 class FaceDetectionROIImpl : public IRegionOfInterest
 {
 private:
-    static constexpr double minCroppedRatio = 0.9;
+    static constexpr double MinCroppedRatio = 0.9;
+    static constexpr double HighFaceConfidence = 0.8;
+    static constexpr double LowFaceConfidence = 0.5;
 
 public:
     FaceDetectionROIImpl();

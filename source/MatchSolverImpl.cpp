@@ -7,6 +7,15 @@
 #include "SortedVector.h"
 
 
+MatchSolverImpl::MatchSolverImpl(std::shared_ptr<const Photo> photo, int subdivisions) : 
+    IMatchSolver(photo, subdivisions)
+{
+}
+
+MatchSolverImpl::~MatchSolverImpl()
+{
+}
+
 void MatchSolverImpl::solve(const ITiles& tiles)
 {
     _matchingTiles.resize(_subdivisions * _subdivisions, -1);
@@ -39,7 +48,7 @@ void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates
     for (int t = 0; t < tiles.getNbTiles(); t++)
     {
         candidate._id = t;
-        candidate._squareDistance = tiles.computeSquareDistance(*_photo, i, j, t);
+        candidate._squareDistance = tiles.computeSquareDistance(i, j, t);
         tileCandidates.emplace_sorted(candidate);
     }
 

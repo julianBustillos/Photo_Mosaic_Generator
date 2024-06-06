@@ -9,8 +9,8 @@ private:
     static constexpr double HistogramCorrectionBlending = 0.4;
 
 public:
-    PixelAdapterImpl(std::shared_ptr<const Photo> photo, int subdivisions) : IPixelAdapter(photo, subdivisions) {};
-    virtual ~PixelAdapterImpl() {};
+    PixelAdapterImpl(std::shared_ptr<const Photo> photo, int subdivisions);
+    virtual ~PixelAdapterImpl();
     virtual void compute();
     virtual void applyCorrection(cv::Mat& tile, int mosaicId) const;
 

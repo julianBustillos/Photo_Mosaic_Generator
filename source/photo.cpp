@@ -7,7 +7,7 @@
 Photo::Photo(const std::string& path, double scale, double ratio, int subdivision) :
     _directory("")
 {
-    cv::Mat inputImage = cv::imread(path, cv::IMREAD_COLOR);
+    cv::Mat inputImage = cv::imread(path, cv::IMREAD_COLOR); //TODO move to init
     if (!inputImage.data)
         throw CustomException("Impossible to load image : " + path, CustomException::Level::ERROR);
     _inSize = inputImage.size();

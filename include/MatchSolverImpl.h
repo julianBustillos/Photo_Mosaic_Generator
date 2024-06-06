@@ -10,20 +10,20 @@ private:
     static constexpr int RedundancyTilesNumber = (RedundancyDistance * 2 + 1) * (RedundancyDistance * 2 + 1);
 
 public:
-    MatchSolverImpl(std::shared_ptr<const Photo> photo, int subdivisions) : IMatchSolver(photo, subdivisions) {}
-    virtual ~MatchSolverImpl() {};
+    MatchSolverImpl(std::shared_ptr<const Photo> photo, int subdivisions);
+    virtual ~MatchSolverImpl();
     virtual void solve(const ITiles& tiles);
     virtual const std::vector<int>& getMatchingTiles() const;
 
 private:
     struct matchCandidate
     {
-        int _id = -1;
-        int _i = -1;
-        int _j = -1;
+        int _id;
+        int _i;
+        int _j;
         double _squareDistance;
 
-        matchCandidate(int i, int j) : _i(i), _j(j) {};
+        matchCandidate(int i, int j) : _i(i), _j(j), _squareDistance(0) {};
 
         bool operator<(const matchCandidate& rhs) const
         {
