@@ -42,7 +42,7 @@ const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
 
 void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const ITiles& tiles)
 {
-    SortedVector<matchCandidate> tileCandidates(RedundancyTilesNumber);
+    SortedVector<matchCandidate> tileCandidates(RedundancyTilesNumber); //TODO replace with normal vector ??
     matchCandidate candidate(i, j);
 
     for (int t = 0; t < tiles.getNbTiles(); t++)

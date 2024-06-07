@@ -6,7 +6,7 @@
 class MatchSolverImpl : public IMatchSolver
 {
 private:
-    static constexpr int RedundancyDistance = 4;
+    static constexpr int RedundancyDistance = 4; //TODO OPTION ??
     static constexpr int RedundancyTilesNumber = (RedundancyDistance * 2 + 1) * (RedundancyDistance * 2 + 1);
 
 public:

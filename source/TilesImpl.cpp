@@ -6,7 +6,7 @@
 
 
 TilesImpl::TilesImpl(const std::string& path, const cv::Size& tileSize, int subdivisions) :
-    ITiles(path, tileSize), _subdivisions(subdivisions)
+    ITiles(path, tileSize), _tileParam({cv::IMWRITE_PNG_COMPRESSION, 0}), _subdivisions(subdivisions)
 {
 }
 
@@ -32,8 +32,6 @@ void TilesImpl::initialize()
             if (checkExtension(it->path().extension().string()))
             {
                 data._imagePath = it->path().string();
-                std::string filename = it->path().filename().string();
-                data._tileName = filename.substr(0, filename.find_last_of('.')) + ".png";
                 _tilesData.emplace_back(data);
             }
         }
@@ -81,11 +79,13 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
     removeTemp();
     createTemp();
 
+    const int padding = std::to_string(_tilesData.size()).length();
     for (int t = 0; t < _tilesData.size(); t++)
     {
         getImage(t, image);
-        if (image.empty())
-            continue;
+        std::string index = std::to_string(t);
+        index = std::string(padding - index.length(), '0') + index;
+        _tilesData[t]._tilePath = _tempPath + "\\tile_" + index + ".png";
         computeTileFeatures(image, roi, _tilesData[t]);
     }
 
@@ -111,7 +111,7 @@ double TilesImpl::computeSquareDistance(int i, int j, int tileID) const
 
 const std::string TilesImpl::getTileFilepath(int tileId) const
 {
-    return _tempPath + "\\" + _tilesData[tileId]._tileName;
+    return _tilesData[tileId]._tilePath;
 }
 
 bool TilesImpl::checkExtension(const std::string& extension) const
@@ -162,7 +162,7 @@ void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInteres
     computeCropInfo(image, box, roi);
     MathUtils::computeImageResampling(tileMat, _tileSize, image, box, MathUtils::LANCZOS);
     MathUtils::computeImageBGRFeatures(tileMat, cv::Rect(0, 0, _tileSize.width, _tileSize.height), data._features, FeatureDiv, NbFeatures);
-    exportTile(tileMat, data._tileName);
+    exportTile(tileMat, data._tilePath);
 }
 
 void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi)
@@ -185,15 +185,11 @@ void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegi
     roi.find(image, box, wScaleInv < hScaleInv);
 }
 
-void TilesImpl::exportTile(const cv::Mat& tile, const std::string& filename)
+void TilesImpl::exportTile(const cv::Mat& tile, const std::string& tilePath)
 {
-    std::vector<int> image_params;
-    image_params.emplace_back(cv::IMWRITE_PNG_COMPRESSION);
-    image_params.emplace_back(0);
-    std::string filePath = _tempPath + "\\" + filename;
-    cv::imwrite(filePath, tile, image_params);
-    if (!std::filesystem::exists(filePath))
-        throw CustomException("Impossible to create temporary tile : " + filePath, CustomException::Level::ERROR);
+    cv::imwrite(tilePath, tile, _tileParam);
+    if (!std::filesystem::exists(tilePath))
+        throw CustomException("Impossible to create temporary tile : " + tilePath, CustomException::Level::ERROR);
 }
 
 void TilesImpl::printInfo() const

@@ -215,17 +215,16 @@ namespace
         output = output.t();
     }
 
-    void copy(cv::Mat& output, const cv::Mat& input, const cv::Vec4i& limits)
+    void copy(cv::Mat& output, const cv::Mat& input, const cv::Rect& box)
     {
         const int height = output.size().height;
         const int width = output.size().width;
         const int channels = output.channels();
-        const int step = input.size().width;
-        const int offset = (step - limits[2] - 1 + limits[0]) * channels;
+        const int step = (input.size().width - box.width) * channels;
 
         int pOut = 0;
-        int pIn = (limits[1] * step + limits[0]) * channels;
-        for (int y = 0; y < height; y++, pIn += offset)
+        int pIn = (box.y * input.size().width + box.x) * channels;
+        for (int y = 0; y < height; y++, pIn += step)
         {
             for (int x = 0; x < width; x++)
             {
@@ -278,7 +277,7 @@ namespace
         if (!doHoriSampling && !doVertSampling)
         {
             target.create(targetSize, source.type());
-            copy(target, source, limits);
+            copy(target, source, box);
         }
     }
 

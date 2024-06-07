@@ -25,7 +25,7 @@ private:
     struct Data
     {
         std::string _imagePath = "";
-        std::string _tileName = "";
+        std::string _tilePath = "";
         double _features[NbFeatures] = { 0 };
     };
 
@@ -35,10 +35,11 @@ private:
     void removeTemp() const;
     void computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, Data& data);
     void computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi);
-    void exportTile(const cv::Mat& tile, const std::string& filename);
+    void exportTile(const cv::Mat& tile, const std::string& tilePath);
     void printInfo() const;
 
 private:
+    const std::vector<int> _tileParam;
     const int _subdivisions;
     std::vector<Data> _tilesData;
     std::vector<double> _photoFeatures;

@@ -70,8 +70,6 @@ void PixelAdapterImpl::applyCorrection(cv::Mat& tile, int mosaicId) const
 
 void PixelAdapterImpl::computeAdapterData(AdapterData& adapterData, const cv::Mat& image, const cv::Rect& box) const
 {
-    uchar blue, green, red;
-
     //Compute cumulative distribution function for BGR colors
     for (int c = 0; c < 3; c++)
     {
