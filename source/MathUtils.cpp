@@ -440,6 +440,7 @@ namespace
         const int height = input.size().height;
         const int width = input.size().width;
         const int channels = input.channels();
+        const int wChannels = width * channels;
         laplacian.resize((height - 2) * (width - 2) * channels);
 
         int p = (width + 1) * channels;
@@ -450,7 +451,7 @@ namespace
             {
                 for (int c = 0; c < channels; c++, p++, v++)
                 {
-                    laplacian[v] = 4 * input.data[p + c] - input.data[p - channels + c] - input.data[p + channels + c] - input.data[p - width * channels + c] - input.data[p + width * channels + c];
+                    laplacian[v] = 4 * input.data[p] - input.data[p - channels] - input.data[p + channels] - input.data[p - wChannels] - input.data[p + wChannels];
                 }
             }
         }
