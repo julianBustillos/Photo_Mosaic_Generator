@@ -16,7 +16,7 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
         tiles.getImage(t, tile);
         if (tile.empty())
         {
-            firstPass[t] = true;//TODO rename this is not a blurry image removal !
+            firstPass[t] = true;
             continue;
         }
         MathUtils::computeGrayscale(grayscale, tile);

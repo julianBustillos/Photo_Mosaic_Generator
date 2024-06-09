@@ -613,16 +613,16 @@ void MathUtils::computeImageBGRFeatures(const cv::Mat& image, const cv::Rect& bo
     }
 }
 
-double MathUtils::BGRFeatureDistance(const double* vec1, const double* vec2, int size)
+double MathUtils::BGRFeatureDistance(const double* features1, const double* features2, int nbFeatures)
 {
     //Use deltaE distance
     double sumDist = 0.;
-    for (int i = 0; i < 3 * size; i += 3)
+    for (int i = 0; i < nbFeatures; i += 3)
     {
-        double dB = vec1[i] - vec2[i];
-        double dG = vec1[i + 1] - vec2[i + 1];
-        double dR = vec1[i + 2] - vec2[i + 2];
-        double mR = (vec1[i + 2] + vec2[i + 2]) / 2.;
+        double dB = features1[i] - features2[i];
+        double dG = features1[i + 1] - features2[i + 1];
+        double dR = features1[i + 2] - features2[i + 2];
+        double mR = (features1[i + 2] + features2[i + 2]) * 0.5;
         double sqDist = (2. + mR / 256.) * dR * dR + 4 * dG * dG + (2. + (255. - mR) / 256.) * dB * dB;
         sumDist += sqrt(sqDist);
     }
