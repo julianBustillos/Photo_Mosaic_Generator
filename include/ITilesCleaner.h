@@ -6,7 +6,10 @@
 class ITilesCleaner
 {
 public:
-    //TODO : ADD COMMENT
+    ITilesCleaner() {};
+    ~ITilesCleaner() {};
+
+public:
     virtual void clean(ITiles& tiles) const = 0;
 };
 

@@ -11,6 +11,8 @@ private:
 public:
     PixelAdapterImpl(std::shared_ptr<const Photo> photo, int subdivisions);
     virtual ~PixelAdapterImpl();
+
+public:
     virtual void compute();
     virtual void applyCorrection(cv::Mat& tile, int mosaicId) const;
 

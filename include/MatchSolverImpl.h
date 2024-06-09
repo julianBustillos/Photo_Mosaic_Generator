@@ -12,6 +12,8 @@ private:
 public:
     MatchSolverImpl(std::shared_ptr<const Photo> photo, int subdivisions);
     virtual ~MatchSolverImpl();
+
+public:
     virtual void solve(const ITiles& tiles);
     virtual const std::vector<int>& getMatchingTiles() const;
 
@@ -23,7 +25,7 @@ private:
         int _j;
         double _squareDistance;
 
-        matchCandidate(int i, int j) : _i(i), _j(j), _squareDistance(0) {};
+        matchCandidate(int i, int j) : _i(i), _j(j), _id(-1), _squareDistance(0) {};
 
         bool operator<(const matchCandidate& rhs) const
         {

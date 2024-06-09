@@ -15,7 +15,10 @@ private:
 public:
     FaceDetectionROIImpl();
     ~FaceDetectionROIImpl();
+
+public:
     virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch) const;
+    virtual void initialize();
 
 private:
     std::string getCurrentProcessDirectory();

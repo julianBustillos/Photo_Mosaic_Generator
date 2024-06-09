@@ -19,7 +19,7 @@ public:
     void Build();
 
 private:
-    std::shared_ptr<const Photo> _photo;
+    std::shared_ptr<Photo> _photo;
     std::shared_ptr<IPixelAdapter> _pixelAdapter;
     std::shared_ptr<IRegionOfInterest> _roi;
     std::shared_ptr<ITiles> _tiles;

@@ -1,7 +1,6 @@
 #include "FaceDetectionROIImpl.h"
 #include "CustomException.h"
 #include "MathUtils.h"
-#include <opencv2/core/utils/logger.hpp>
 #include <opencv2/dnn/dnn.hpp>
 #include <Windows.h>
 #include <filesystem>
@@ -17,11 +16,6 @@ const int FaceDetectionROIImpl::_detectionSize = 640;
 
 FaceDetectionROIImpl::FaceDetectionROIImpl()
 {
-    cv::utils::logging::setLogLevel(cv::utils::logging::LogLevel::LOG_LEVEL_SILENT); //TODO move out
-    std::string processPath = getCurrentProcessDirectory(); //TODO move to init
-    _faceDetector = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5, 0.3, 5000);
-    if (!_faceDetector)
-        throw CustomException("Bad allocation for _faceDetector in FaceDetectionROIImpl constructor.", CustomException::Level::ERROR);
 }
 
 FaceDetectionROIImpl::~FaceDetectionROIImpl()
@@ -56,6 +50,14 @@ void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDir
     }
 
     getDefaultROI(image.size(), box, rowDirSearch);
+}
+
+void FaceDetectionROIImpl::initialize()
+{
+    std::string processPath = getCurrentProcessDirectory();
+    _faceDetector = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5, 0.3, 5000);
+    if (!_faceDetector)
+        throw CustomException("Bad allocation for _faceDetector in FaceDetectionROIImpl.", CustomException::Level::ERROR);
 }
 
 std::string FaceDetectionROIImpl::getCurrentProcessDirectory()

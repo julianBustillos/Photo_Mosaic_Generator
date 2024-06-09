@@ -5,36 +5,36 @@
 
 
 Photo::Photo(const std::string& path, double scale, double ratio, int subdivision) :
-    _directory("")
+    _filePath(path), _scale(scale), _ratio(ratio), _subdivision(subdivision)
 {
-    cv::Mat inputImage = cv::imread(path, cv::IMREAD_COLOR); //TODO move to init
-    if (!inputImage.data)
-        throw CustomException("Impossible to load image : " + path, CustomException::Level::ERROR);
-    _inSize = inputImage.size();
+}
 
+void Photo::initialize()
+{
+    cv::Mat inputImage = cv::imread(_filePath, cv::IMREAD_COLOR);
+    if (!inputImage.data)
+        throw CustomException("Impossible to load image : " + _filePath, CustomException::Level::ERROR);
+
+    _inSize = inputImage.size();
     double inputRatio = (double)_inSize.width / (double)_inSize.height;
     cv::Size croppedSize = _inSize;
-    if (ratio > 0.)
+    if (_ratio > 0.)
     {
-        if (inputRatio < ratio)
+        if (inputRatio < _ratio)
         {
-            croppedSize.height = (double)_inSize.width / ratio;
+            croppedSize.height = (double)_inSize.width / _ratio;
         }
-        else if (inputRatio > ratio)
+        else if (inputRatio > _ratio)
         {
-            croppedSize.width = (double)_inSize.height * ratio;
+            croppedSize.width = (double)_inSize.height * _ratio;
         }
     }
 
-    cv::Size targetSize((double)croppedSize.width * scale, (double)croppedSize.height * scale);
+    cv::Size targetSize((double)croppedSize.width * _scale, (double)croppedSize.height * _scale);
     MathUtils::computeImageResampling(_mat, targetSize, inputImage, MathUtils::LANCZOS);
 
-    int filenameIndex = (int)path.find_last_of('\\');
-    if (filenameIndex >= 0)
-        _directory = path.substr(0, filenameIndex);
-
-    _tileSize = cv::Size(_mat.size().width / subdivision, _mat.size().height / subdivision);
-    _lostSize = cv::Size(_mat.size().width - subdivision * _tileSize.width, _mat.size().height - subdivision * _tileSize.height);
+    _tileSize = cv::Size(_mat.size().width / _subdivision, _mat.size().height / _subdivision);
+    _lostSize = cv::Size(_mat.size().width - _subdivision * _tileSize.width, _mat.size().height - _subdivision * _tileSize.height);
 
     if (_tileSize.width < MinTileSize || _tileSize.height < MinTileSize)
         throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(MinTileSize) + "*" + std::to_string(MinTileSize) + ")", CustomException::Level::ERROR);
@@ -70,7 +70,10 @@ const cv::Mat& Photo::getImage() const
 
 std::string Photo::getDirectory() const
 {
-    return _directory;
+    int filenameIndex = (int)_filePath.find_last_of('\\');
+    if (filenameIndex >= 0)
+        return _filePath.substr(0, filenameIndex);
+    return "";
 }
 
 void Photo::printInfo() const

@@ -12,6 +12,9 @@ private:
 public:
     Photo(const std::string& path, double scale, double ratio, int subdivision);
     ~Photo() {};
+
+public:
+    void initialize();
     cv::Rect getTileBox(int i, int j, bool doShift) const;
     cv::Size getTileSize() const;
     const cv::Mat& getImage() const;
@@ -21,7 +24,10 @@ private:
     void printInfo() const;
 
 private:
-    std::string _directory;
+    const std::string _filePath;
+    const double _scale;
+    const double _ratio;
+    const int _subdivision;
     cv::Mat _mat;
     cv::Size _tileSize;
     cv::Size _lostSize;

@@ -13,6 +13,8 @@ private:
 public:
     TilesImpl(const std::string& path, const cv::Size& tileSize, int subdivisions);
     virtual ~TilesImpl();
+
+public:
     virtual void initialize();
     virtual unsigned int getNbTiles() const;
     virtual void getImage(int tileID, cv::Mat& image) const;
