@@ -509,11 +509,13 @@ void MathUtils::computeImageResampling(cv::Mat& target, const cv::Size targetSiz
 void MathUtils::computeImageDHash(const cv::Mat& image, Hash& hash)
 {
     int hashId = 0;
-    cv::Mat hashImage;
+    cv::Mat grayscale, hashImage;
     cv::Size dhashHoriSize(HashSize + 1, HashSize);
     cv::Size dhashVertSize(HashSize, HashSize + 1);
 
-    computeImageResampling(hashImage, dhashHoriSize, image, LANCZOS);
+    MathUtils::computeGrayscale(grayscale, image);
+
+    computeImageResampling(hashImage, dhashHoriSize, grayscale, LANCZOS);
     int pH = 0;
     for (int i = 0; i < dhashHoriSize.height; i++, pH++)
     {
@@ -526,7 +528,7 @@ void MathUtils::computeImageDHash(const cv::Mat& image, Hash& hash)
         }
     }
 
-    computeImageResampling(hashImage, dhashVertSize, image, LANCZOS);
+    computeImageResampling(hashImage, dhashVertSize, grayscale, LANCZOS);
     int pV = 0;
     for (int i = 0; i < dhashVertSize.height - 1; i++)
     {
