@@ -125,5 +125,8 @@
     <ClInclude Include="include\OutputManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\termcolor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

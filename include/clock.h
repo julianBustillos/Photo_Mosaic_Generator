@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <iostream>
+#include "termcolor.h"
 
 
 class Clock
@@ -20,7 +21,8 @@ public:
         int min = count / 60000; 
         int sec = (count - min * 60000) / 1000; 
         int ms = count - min * 60000 - sec * 1000;
-        std::cout << "Execution time : " << min << "min " << sec << "s " << ms << "ms" << std::endl << std::endl;
+        std::cout << termcolor::bright_blue;
+        std::cout << std::endl << "Execution time : " << min << "min " << sec << "s " << ms << "ms" << std::endl << std::endl;
     }
 
 private:

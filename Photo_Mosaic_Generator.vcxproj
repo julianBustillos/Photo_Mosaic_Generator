@@ -158,6 +158,7 @@
     <ClInclude Include="include\SortedVector.h" />
     <ClInclude Include="include\ITiles.h" />
     <ClInclude Include="include\Clock.h" />
+    <ClInclude Include="include\termcolor.h" />
     <ClInclude Include="include\TilesCleanerImpl.h" />
     <ClInclude Include="include\TilesImpl.h" />
   </ItemGroup>

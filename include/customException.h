@@ -1,5 +1,6 @@
 #pragma once
 
+#undef ERROR
 #include <exception>
 #include <string>
 
