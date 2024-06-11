@@ -28,6 +28,7 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
         }
         else
         {
+            MathUtils::computeImageDHash(grayscale, hashes[t]);
         }
     }
     OutputManager::getInstance().cstderr_restore();
@@ -58,4 +59,5 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
 
 bool TilesCleanerImpl::isBlurry(const cv::Mat& image) const
 {
+    return MathUtils::computeVarianceOfLaplacian(image) < BlurinessThreashold;
 }

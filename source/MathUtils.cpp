@@ -551,7 +551,7 @@ double MathUtils::computeVarianceOfLaplacian(const cv::Mat& image)
     {
         mean += laplacian[p];
     }
-    mean /= nbPixels;
+    mean /= (double)nbPixels;
 
     double variance = 0;
     for (int p = 0; p < nbPixels; p++)
