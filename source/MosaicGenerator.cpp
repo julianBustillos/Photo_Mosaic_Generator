@@ -5,13 +5,10 @@
 #include "TilesCleanerImpl.h"
 #include "MatchSolverImpl.h"
 #include "CustomException.h"
-#include <opencv2/core/utils/logger.hpp>
 
 
 MosaicGenerator::MosaicGenerator(const Parameters& parameters)
 {
-    cv::utils::logging::setLogLevel(cv::utils::logging::LogLevel::LOG_LEVEL_SILENT);
-
     _photo = std::make_shared<Photo>(parameters.getPhotoPath(), parameters.getScale(), parameters.getRatio(), parameters.getSubdivision());
     if (!_photo)
         throw CustomException("Bad allocation for _photo in MosaicGenerator constructor.", CustomException::Level::ERROR);

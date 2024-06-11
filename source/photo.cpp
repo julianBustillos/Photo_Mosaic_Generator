@@ -1,5 +1,6 @@
 #include "Photo.h"
 #include "CustomException.h"
+#include "OutputManager.h"
 #include "MathUtils.h"
 #include <iostream>
 
@@ -11,7 +12,9 @@ Photo::Photo(const std::string& path, double scale, double ratio, int subdivisio
 
 void Photo::initialize()
 {
+    OutputManager::getInstance().cstderr_silent();
     cv::Mat inputImage = cv::imread(_filePath, cv::IMREAD_COLOR);
+    OutputManager::getInstance().cstderr_restore();
     if (!inputImage.data)
         throw CustomException("Impossible to load image : " + _filePath, CustomException::Level::ERROR);
 

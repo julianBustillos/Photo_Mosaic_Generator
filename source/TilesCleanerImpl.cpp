@@ -1,5 +1,6 @@
 #include "TilesCleanerImpl.h"
 #include "MathUtils.h"
+#include "OutputManager.h"
 #include <stack>
 
 
@@ -11,6 +12,7 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
     std::vector<bool> firstPass(tiles.getNbTiles(), false); // Empty and blurry images
     std::vector<bool> secondPass(tiles.getNbTiles(), false); // duplicate images
 
+    OutputManager::getInstance().cstderr_silent();
     for (int t = 0; t < tiles.getNbTiles(); t++)
     {
         tiles.getImage(t, tile);
@@ -26,9 +28,9 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
         }
         else
         {
-            MathUtils::computeImageDHash(grayscale, hashes[t]);
         }
     }
+    OutputManager::getInstance().cstderr_restore();
 
     for (int t1 = 0; t1 < tiles.getNbTiles() - 1; t1++)
     {
@@ -56,5 +58,4 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
 
 bool TilesCleanerImpl::isBlurry(const cv::Mat& image) const
 {
-    return MathUtils::computeVarianceOfLaplacian(image) < BlurinessThreashold;
 }

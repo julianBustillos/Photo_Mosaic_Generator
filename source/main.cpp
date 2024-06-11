@@ -1,4 +1,5 @@
 #include <iostream>
+#include <opencv2/core/utils/logger.hpp>
 #include "Clock.h"
 #include "CustomException.h"
 #include "Parameters.h"
@@ -7,13 +8,15 @@
 
 int main(int argc, char* argv[])
 {
+    cv::utils::logging::setLogLevel(cv::utils::logging::LogLevel::LOG_LEVEL_SILENT);
+
     Parameters parameters;
+    Clock clock;
 
     try
     {
         std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++ PHOTO MOSAIC GENERATOR ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl << std::endl;
 
-        Clock clock;
         clock.start();
 
         parameters.initialize(argc, argv);

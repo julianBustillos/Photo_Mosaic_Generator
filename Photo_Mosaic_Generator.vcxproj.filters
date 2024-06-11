@@ -122,5 +122,8 @@
     <ClInclude Include="include\TilesCleanerImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\OutputManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

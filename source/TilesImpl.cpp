@@ -2,6 +2,7 @@
 #include <iostream>
 #include <filesystem>
 #include "CustomException.h"
+#include "OutputManager.h"
 #include "MathUtils.h"
 
 
@@ -79,6 +80,7 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
     removeTemp();
     createTemp();
 
+    OutputManager::getInstance().cstderr_silent();
     const int padding = std::to_string(_tilesData.size()).length();
     for (int t = 0; t < _tilesData.size(); t++)
     {
@@ -88,6 +90,7 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
         _tilesData[t]._tilePath = _tempPath + "\\tile_" + index + ".png";
         computeTileFeatures(image, roi, _tilesData[t]);
     }
+    OutputManager::getInstance().cstderr_restore();
 
     _photoFeatures.resize(_subdivisions * _subdivisions * NbFeatures);
     int f = 0;
