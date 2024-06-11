@@ -3,8 +3,8 @@
 #include "CustomException.h"
 
 
-PixelAdapterImpl::PixelAdapterImpl(std::shared_ptr<const Photo> photo, int subdivisions) :
-    IPixelAdapter(photo, subdivisions)
+PixelAdapterImpl::PixelAdapterImpl(int subdivisions) :
+    IPixelAdapter(subdivisions)
 {
 }
 
@@ -12,7 +12,7 @@ PixelAdapterImpl::~PixelAdapterImpl()
 {
 }
 
-void PixelAdapterImpl::compute()
+void PixelAdapterImpl::compute(const Photo& photo)
 {
     _tileCorrection.resize(_subdivisions * _subdivisions);
 
@@ -21,7 +21,7 @@ void PixelAdapterImpl::compute()
         for (int j = 0; j < _subdivisions; j++)
         {
             int mosaicId = i * _subdivisions + j;
-            computeAdapterData(_tileCorrection[mosaicId], _photo->getImage(), _photo->getTileBox(i, j, true));
+            computeAdapterData(_tileCorrection[mosaicId], photo.getImage(), photo.getTileBox(i, j, true));
         }
     }
 }

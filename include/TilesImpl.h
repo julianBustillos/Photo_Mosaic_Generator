@@ -11,7 +11,7 @@ private:
     static constexpr int NbFeatures = 3 * FeatureDiv * FeatureDiv;
 
 public:
-    TilesImpl(const std::string& path, const cv::Size& tileSize, int subdivisions);
+    TilesImpl(const std::string& path, int subdivisions);
     virtual ~TilesImpl();
 
 public:
@@ -35,8 +35,8 @@ private:
     bool checkExtension(const std::string& extension) const;
     void createTemp() const;
     void removeTemp() const;
-    void computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, Data& data);
-    void computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi);
+    void computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data);
+    void computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize);
     void exportTile(const cv::Mat& tile, const std::string& tilePath);
     void printInfo() const;
 

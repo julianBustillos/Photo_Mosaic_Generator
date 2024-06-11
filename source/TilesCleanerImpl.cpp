@@ -1,7 +1,9 @@
 #include "TilesCleanerImpl.h"
 #include "MathUtils.h"
 #include "OutputManager.h"
+#include "ProgressBar.h"
 #include <stack>
+#include <thread>//TODO DEBUG
 
 
 void TilesCleanerImpl::clean(ITiles& tiles) const
@@ -12,16 +14,23 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
     std::vector<bool> isEmpty(tiles.getNbTiles(), false);
     std::vector<bool> isDuplicate(tiles.getNbTiles(), false);
 
+    ProgressBar progressBar("Detect image duplicates ", 60);//TODO DEBUG
+    progressBar.setNbSteps(tiles.getNbTiles() + 2);
+    std::thread barThread(&ProgressBar::threadExecution, &progressBar);//TODO DEBUG
+
     OutputManager::getInstance().cstderr_silent();
     for (int t = 0; t < tiles.getNbTiles(); t++)
     {
         tiles.getImage(t, tile);
-        if (tile.empty())
+        if (!tile.empty())
+        {
+            MathUtils::computeImageDHash(tile, hashes[t]);
+        }   
+        else
         {
             isEmpty[t] = true;
-            continue;
-        }   
-        MathUtils::computeImageDHash(tile, hashes[t]);
+        }
+        progressBar.addSteps(1);
     }
     OutputManager::getInstance().cstderr_restore();
 
@@ -39,6 +48,7 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
             }
         }
     }
+    progressBar.addSteps(1);
 
     std::vector<unsigned int> toRemove;
     for (int t = 0; t < tiles.getNbTiles(); t++)
@@ -47,5 +57,8 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
             toRemove.emplace_back(t);
     }
     tiles.remove(toRemove);
+    progressBar.addSteps(1);
+
+    barThread.join();
 }
 

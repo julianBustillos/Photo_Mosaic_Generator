@@ -12,9 +12,9 @@
 class MosaicBuilder
 {
 public:
-    MosaicBuilder(std::shared_ptr<const Photo> photo, int subdivisions);
+    MosaicBuilder(int subdivisions);
     ~MosaicBuilder();
-    void build(const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver);
+    void build(const Photo& photo, const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver);
 
 private:
     void copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Rect& box);

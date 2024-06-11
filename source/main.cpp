@@ -20,16 +20,13 @@ int main(int argc, char* argv[])
 
     try
     {
+        //TODO MOVE COUT
         std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++ PHOTO MOSAIC GENERATOR ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl << std::endl;
-
         clock.start();
-
         parameters.initialize(argc, argv);
         MosaicGenerator generator(parameters);
         generator.Build();
-
         clock.end();
-
         std::cout << std::endl << "++++++++++++++++++++++++++++++++++++++++++++++++           END          ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
     }
     catch (CustomException& e)

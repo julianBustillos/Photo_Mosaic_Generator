@@ -7,14 +7,13 @@
 class IPixelAdapter
 {
 public:
-    IPixelAdapter(std::shared_ptr<const Photo> photo, int subdivisions) : _photo(photo), _subdivisions(subdivisions) {};
-    virtual ~IPixelAdapter() { _photo.reset(); };
+    IPixelAdapter(int subdivisions) : _subdivisions(subdivisions) {};
+    virtual ~IPixelAdapter() {};
 
 public:
-    virtual void compute() = 0;
+    virtual void compute(const Photo& photo) = 0;
     virtual void applyCorrection(cv::Mat& tile, int mosaicId) const = 0;
 
 protected:
-    std::shared_ptr<const Photo> _photo;
     const int _subdivisions;
 };

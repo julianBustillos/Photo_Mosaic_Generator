@@ -1,13 +1,15 @@
 #include "TilesImpl.h"
-#include <iostream>
-#include <filesystem>
 #include "CustomException.h"
 #include "OutputManager.h"
 #include "MathUtils.h"
+#include "ProgressBar.h"
+#include <iostream>
+#include <filesystem>
+#include <thread>//TODO DEBUG
 
 
-TilesImpl::TilesImpl(const std::string& path, const cv::Size& tileSize, int subdivisions) :
-    ITiles(path, tileSize), _tileParam({cv::IMWRITE_PNG_COMPRESSION, 0}), _subdivisions(subdivisions)
+TilesImpl::TilesImpl(const std::string& path, int subdivisions) :
+    ITiles(path), _tileParam({cv::IMWRITE_PNG_COMPRESSION, 0}), _subdivisions(subdivisions)
 {
 }
 
@@ -80,6 +82,10 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
     removeTemp();
     createTemp();
 
+    ProgressBar progressBar("Compute tile candidates ", 60);//TODO DEBUG
+    progressBar.setNbSteps(_tilesData.size());
+    std::thread barThread(&ProgressBar::threadExecution, &progressBar);//TODO DEBUG
+
     OutputManager::getInstance().cstderr_silent();
     const int padding = std::to_string(_tilesData.size()).length();
     for (int t = 0; t < _tilesData.size(); t++)
@@ -88,9 +94,11 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
         std::string index = std::to_string(t);
         index = std::string(padding - index.length(), '0') + index;
         _tilesData[t]._tilePath = _tempPath + "\\tile_" + index + ".png";
-        computeTileFeatures(image, roi, _tilesData[t]);
+        computeTileFeatures(image, roi, photo.getTileSize(), _tilesData[t]);
+        progressBar.addSteps(1);
     }
     OutputManager::getInstance().cstderr_restore();
+    barThread.join();
 
     _photoFeatures.resize(_subdivisions * _subdivisions * NbFeatures);
     int f = 0;
@@ -157,20 +165,20 @@ void TilesImpl::removeTemp() const
     }
 }
 
-void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, Data& data)
+void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data)
 {
     cv::Rect box;
     cv::Mat tileMat;
 
-    computeCropInfo(image, box, roi);
-    MathUtils::computeImageResampling(tileMat, _tileSize, image, box, MathUtils::LANCZOS);
-    MathUtils::computeImageBGRFeatures(tileMat, cv::Rect(0, 0, _tileSize.width, _tileSize.height), data._features, FeatureDiv, NbFeatures);
+    computeCropInfo(image, box, roi, tileSize);
+    MathUtils::computeImageResampling(tileMat, tileSize, image, box, MathUtils::LANCZOS);
+    MathUtils::computeImageBGRFeatures(tileMat, cv::Rect(0, 0, tileSize.width, tileSize.height), data._features, FeatureDiv, NbFeatures);
     exportTile(tileMat, data._tilePath);
 }
 
-void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi)
+void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize)
 {
-    if (image.size() == _tileSize)
+    if (image.size() == tileSize)
     {
         box.x = box.y = 0;
         box.width = image.size().width;
@@ -178,12 +186,12 @@ void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegi
         return;
     }
 
-    double wScaleInv = (double)image.size().width / (double)_tileSize.width;
-    double hScaleInv = (double)image.size().height / (double)_tileSize.height;
+    double wScaleInv = (double)image.size().width / (double)tileSize.width;
+    double hScaleInv = (double)image.size().height / (double)tileSize.height;
     double scaleInv = std::min(wScaleInv, hScaleInv);
 
-    box.width = (int)ceil(_tileSize.width * scaleInv);
-    box.height = (int)ceil(_tileSize.height * scaleInv);
+    box.width = (int)ceil(tileSize.width * scaleInv);
+    box.height = (int)ceil(tileSize.height * scaleInv);
 
     roi.find(image, box, wScaleInv < hScaleInv);
 }

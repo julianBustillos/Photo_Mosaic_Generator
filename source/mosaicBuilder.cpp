@@ -4,19 +4,18 @@
 #include "MathUtils.h"
 
 
-MosaicBuilder::MosaicBuilder(std::shared_ptr<const Photo> photo, int subdivisions) : 
-    _photo(photo), _subdivisions(subdivisions)
+MosaicBuilder::MosaicBuilder(int subdivisions) : 
+    _subdivisions(subdivisions)
 {
 }
 
 MosaicBuilder::~MosaicBuilder()
 {
-    _photo.reset();
 }
 
-void MosaicBuilder::build(const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver)
+void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver)
 {
-    cv::Size mosaicSize = _photo->getTileSize() * _subdivisions;
+    cv::Size mosaicSize = photo.getTileSize() * _subdivisions;
     cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
     const std::vector<int>& matchingTiles = matchSolver.getMatchingTiles();
 
@@ -27,13 +26,13 @@ void MosaicBuilder::build(const IPixelAdapter& pixelAdapter, const ITiles& tiles
             int mosaicId = i * _subdivisions + j;
             int tileId = matchingTiles[mosaicId];
             if (tileId >= 0)
-                copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), pixelAdapter, mosaicId, _photo->getTileBox(i, j, false));
+                copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), pixelAdapter, mosaicId, photo.getTileBox(i, j, false));
             else
                 throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
         }
     }
 
-    exportMosaic(_photo->getDirectory(), mosaic);
+    exportMosaic(photo.getDirectory(), mosaic);
 
     printInfo();
 }

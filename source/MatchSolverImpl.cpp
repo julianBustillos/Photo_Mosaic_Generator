@@ -7,8 +7,8 @@
 #include "SortedVector.h"
 
 
-MatchSolverImpl::MatchSolverImpl(std::shared_ptr<const Photo> photo, int subdivisions) : 
-    IMatchSolver(photo, subdivisions)
+MatchSolverImpl::MatchSolverImpl(int subdivisions) : 
+    IMatchSolver(subdivisions)
 {
 }
 

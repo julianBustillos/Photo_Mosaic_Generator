@@ -10,7 +10,7 @@
 class ITiles
 {
 public:
-    ITiles(const std::string& path, const cv::Size& tileSize) : _path(path), _tempPath(path + "PMG_temp"), _tileSize(tileSize) {};
+    ITiles(const std::string& path) : _path(path), _tempPath(path + "PMG_temp") {};
     virtual ~ITiles() {};
 
 public:
@@ -25,5 +25,4 @@ public:
 protected:
     const std::string _path;
     const std::string _tempPath;
-    const cv::Size _tileSize;
 };

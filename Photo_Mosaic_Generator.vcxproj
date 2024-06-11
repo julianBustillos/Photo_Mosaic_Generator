@@ -133,6 +133,7 @@
     <ClCompile Include="source\Photo.cpp" />
     <ClCompile Include="source\PixelAdapterImpl.cpp" />
     <ClCompile Include="source\MeanShiftROIImpl.cpp" />
+    <ClCompile Include="source\ProgressBar.cpp" />
     <ClCompile Include="source\SaliencyFilter.cpp" />
     <ClCompile Include="source\TilesCleanerImpl.cpp" />
     <ClCompile Include="source\TilesImpl.cpp" />
@@ -154,6 +155,7 @@
     <ClInclude Include="include\IPixelAdapter.h" />
     <ClInclude Include="include\PixelAdapterImpl.h" />
     <ClInclude Include="include\MeanShiftROIImpl.h" />
+    <ClInclude Include="include\ProgressBar.h" />
     <ClInclude Include="include\SaliencyFilter.h" />
     <ClInclude Include="include\SortedVector.h" />
     <ClInclude Include="include\ITiles.h" />

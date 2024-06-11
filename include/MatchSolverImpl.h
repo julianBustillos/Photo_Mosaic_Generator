@@ -10,7 +10,7 @@ private:
     static constexpr int RedundancyTilesNumber = (RedundancyDistance * 2 + 1) * (RedundancyDistance * 2 + 1);
 
 public:
-    MatchSolverImpl(std::shared_ptr<const Photo> photo, int subdivisions);
+    MatchSolverImpl(int subdivisions);
     virtual ~MatchSolverImpl();
 
 public:
