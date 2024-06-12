@@ -31,8 +31,6 @@ void MatchSolverImpl::solve(const ITiles& tiles)
     }
 
     findBestTiles(candidates);
-
-    printInfo();
 }
 
 const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
@@ -92,6 +90,6 @@ void MatchSolverImpl::printInfo() const
 {
     std::cout << "MATCH SOLVER :" << std::endl;
     std::cout << "Number of tiles to find : " << _subdivisions * _subdivisions << std::endl;
-    std::cout << "TODO (distance ?) !!" << std::endl;
+    std::cout << "(distance ?) !!" << std::endl;
     std::cout << std::endl;
 }

@@ -41,8 +41,6 @@ void Photo::initialize()
 
     if (_tileSize.width < MinTileSize || _tileSize.height < MinTileSize)
         throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(MinTileSize) + "*" + std::to_string(MinTileSize) + ")", CustomException::Level::ERROR);
-
-    printInfo();
 }
 
 cv::Rect Photo::getTileBox(int i, int j, bool doShift) const

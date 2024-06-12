@@ -8,7 +8,7 @@
 class ProgressBar
 {
 public:
-    ProgressBar(const std::string& text, int barWidth);
+    ProgressBar(const std::string& text, int barWidth); //TODO add stream as param
     ~ProgressBar();
 
 public:

@@ -110,8 +110,6 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
             MathUtils::computeImageBGRFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureDiv, NbFeatures);
         }
     }
-
-    printInfo();
 }
 
 double TilesImpl::computeSquareDistance(int i, int j, int tileID) const

@@ -19,7 +19,6 @@ public:
 private:
     void copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Rect& box);
     void exportMosaic(const std::string& path, cv::Mat mosaic);
-    void printInfo() const;
 
 private:
     std::shared_ptr<const Photo> _photo;

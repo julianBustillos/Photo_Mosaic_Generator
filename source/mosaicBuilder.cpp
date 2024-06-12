@@ -33,8 +33,6 @@ void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter,
     }
 
     exportMosaic(photo.getDirectory(), mosaic);
-
-    printInfo();
 }
 
 void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Rect& box)
@@ -70,9 +68,3 @@ void MosaicBuilder::exportMosaic(const std::string& path, const cv::Mat mosaic)
     cv::imwrite(path + "\\mosaic.jpg", mosaic, image_params);
 }
 
-void MosaicBuilder::printInfo() const
-{
-    std::cout << "MOSAIC BUILDER :" << std::endl;
-    std::cout << "TODO !!" << std::endl;
-    std::cout << std::endl;
-}
