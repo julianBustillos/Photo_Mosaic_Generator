@@ -133,7 +133,6 @@
     <ClCompile Include="source\Photo.cpp" />
     <ClCompile Include="source\PixelAdapterImpl.cpp" />
     <ClCompile Include="source\MeanShiftROIImpl.cpp" />
-    <ClCompile Include="source\ProgressBar.cpp" />
     <ClCompile Include="source\SaliencyFilter.cpp" />
     <ClCompile Include="source\TilesCleanerImpl.cpp" />
     <ClCompile Include="source\TilesImpl.cpp" />
@@ -144,6 +143,7 @@
     <ClInclude Include="include\IMatchSolver.h" />
     <ClInclude Include="include\IRegionOfInterest.h" />
     <ClInclude Include="include\ITilesCleaner.h" />
+    <ClInclude Include="include\Log.h" />
     <ClInclude Include="include\MatchSolverImpl.h" />
     <ClInclude Include="include\MathUtils.h" />
     <ClInclude Include="include\MeanShift.h" />
@@ -160,6 +160,7 @@
     <ClInclude Include="include\SortedVector.h" />
     <ClInclude Include="include\ITiles.h" />
     <ClInclude Include="include\Clock.h" />
+    <ClInclude Include="include\SystemUtils.h" />
     <ClInclude Include="include\termcolor.h" />
     <ClInclude Include="include\TilesCleanerImpl.h" />
     <ClInclude Include="include\TilesImpl.h" />

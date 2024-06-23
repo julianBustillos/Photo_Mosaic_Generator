@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>
 #include "SortedVector.h"
+#include "Log.h"
 
 
 MatchSolverImpl::MatchSolverImpl(int subdivisions) : 
@@ -29,6 +30,7 @@ void MatchSolverImpl::solve(const ITiles& tiles)
             findCandidateTiles(candidates, i, j, tiles);
         }
     }
+    Log::Logger::getInstance().log(Log::TRACE) << "Candidate tiles found.";
 
     findBestTiles(candidates);
 }
@@ -57,6 +59,7 @@ void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates
 void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)
 {
     std::sort(candidates.begin(), candidates.end());
+    double distance = 0;
     for (int k = 0; k < candidates.size(); k++)
     {
         int candidateId = candidates[k]._i * _subdivisions + candidates[k]._j;
@@ -83,13 +86,10 @@ void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)
             continue;
 
         _matchingTiles[candidateId] = candidates[k]._id;
+        distance += sqrt(candidates[k]._squareDistance);
+
     }
+    Log::Logger::getInstance().log(Log::TRACE) << "Matching tiles found.";
+    Log::Logger::getInstance().log(Log::TRACE) << "With mean square distance : " << (distance / (_subdivisions * _subdivisions));
 }
 
-void MatchSolverImpl::printInfo() const
-{
-    std::cout << "MATCH SOLVER :" << std::endl;
-    std::cout << "Number of tiles to find : " << _subdivisions * _subdivisions << std::endl;
-    std::cout << "(distance ?) !!" << std::endl;
-    std::cout << std::endl;
-}

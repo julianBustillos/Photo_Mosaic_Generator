@@ -36,7 +36,6 @@ private:
 private:
     void findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const ITiles& tiles);
     void findBestTiles(std::vector<matchCandidate>& candidates);
-    void printInfo() const;
 
 private:
     std::vector<int> _matchingTiles;

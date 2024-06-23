@@ -3,6 +3,7 @@
 #include "OutputManager.h"
 #include "MathUtils.h"
 #include "ProgressBar.h"
+#include "Log.h"
 #include <iostream>
 #include <filesystem>
 #include <thread>//TODO DEBUG
@@ -39,6 +40,8 @@ void TilesImpl::initialize()
             }
         }
     }
+
+    Log::Logger::getInstance().log(Log::TRACE) << _tilesData.size() << " tiles found.";
 }
 
 unsigned int TilesImpl::getNbTiles() const
@@ -98,6 +101,7 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
         progressBar.addSteps(1);
     }
     OutputManager::getInstance().cstderr_restore();
+    Log::Logger::getInstance().log(Log::TRACE) <<"Tiles features computed.";
     barThread.join();
 
     _photoFeatures.resize(_subdivisions * _subdivisions * NbFeatures);
@@ -110,6 +114,7 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
             MathUtils::computeImageBGRFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureDiv, NbFeatures);
         }
     }
+    Log::Logger::getInstance().log(Log::TRACE) << "Photo features computed.";
 }
 
 double TilesImpl::computeSquareDistance(int i, int j, int tileID) const
@@ -148,6 +153,7 @@ void TilesImpl::createTemp() const
     if (!std::filesystem::exists(_tempPath))
     {
         std::filesystem::create_directory(_tempPath);
+        Log::Logger::getInstance().log(Log::TRACE) << _tempPath << " temporary folder created.";
     }
     if (!std::filesystem::exists(_tempPath))
     {
@@ -160,6 +166,7 @@ void TilesImpl::removeTemp() const
     if (std::filesystem::exists(_tempPath))
     {
         std::filesystem::remove_all(_tempPath);
+        Log::Logger::getInstance().log(Log::TRACE) << _tempPath << " temporary folder removed.";
     }
 }
 

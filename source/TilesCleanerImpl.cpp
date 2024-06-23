@@ -2,6 +2,7 @@
 #include "MathUtils.h"
 #include "OutputManager.h"
 #include "ProgressBar.h"
+#include "Log.h"
 #include <stack>
 #include <thread>//TODO DEBUG
 
@@ -33,6 +34,7 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
         progressBar.addSteps(1);
     }
     OutputManager::getInstance().cstderr_restore();
+    Log::Logger::getInstance().log(Log::TRACE) << "Tiles DHash computed.";
 
     for (int t1 = 0; t1 < tiles.getNbTiles() - 1; t1++)
     {
@@ -49,6 +51,7 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
         }
     }
     progressBar.addSteps(1);
+    Log::Logger::getInstance().log(Log::TRACE) << "Tiles DHash compared.";
 
     std::vector<unsigned int> toRemove;
     for (int t = 0; t < tiles.getNbTiles(); t++)
@@ -58,6 +61,8 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
     }
     tiles.remove(toRemove);
     progressBar.addSteps(1);
+    Log::Logger::getInstance().log(Log::TRACE) << toRemove.size() << " tiles removed.";
+    Log::Logger::getInstance().log(Log::TRACE) << tiles.getNbTiles() << " remaining tiles.";
 
     barThread.join();
 }

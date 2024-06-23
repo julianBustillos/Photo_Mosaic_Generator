@@ -1,5 +1,6 @@
 #include "Parameters.h"
 #include "CustomException.h"
+#include "Log.h"
 #include <filesystem>
 #include <algorithm>
 
@@ -57,6 +58,14 @@ void Parameters::parse(int argc, char* argv[])
     _options.allow_unrecognised_options();
     cxxopts::ParseResult result = _options.parse(argc, argv);
 
+    std::string params;
+    for (int i = 0; i < argc; i++)
+    {
+        params += argv[i];
+        params += " ";
+    }
+    Log::Logger::getInstance().log(Log::INFO) << "Launching call : " << params;
+
     if (result.count("help"))
     {
         throw CustomException("", CustomException::Level::HELP);
@@ -90,7 +99,7 @@ void Parameters::parse(int argc, char* argv[])
 
 void Parameters::check()
 {
-    std::string message = "ARGUMENTS : ";
+    std::string message = "Arguments check : ";
     unsigned int errorCount = 0;
 
     if (_photoPath == "")
@@ -133,4 +142,12 @@ void Parameters::check()
     {
         throw CustomException(message, CustomException::Level::NORMAL);
     }
+
+    Log::Logger::getInstance().log(Log::TRACE) << "Parameter checked.";
+    Log::Logger::getInstance().log(Log::DEBUG) << "Photo path : " << _photoPath;
+    Log::Logger::getInstance().log(Log::DEBUG) << "Tiles path : " << _tilesPath;
+    Log::Logger::getInstance().log(Log::DEBUG) << "Subidivion : " << _subdivision;
+    Log::Logger::getInstance().log(Log::DEBUG) << "Scale : " << _scale;
+    Log::Logger::getInstance().log(Log::DEBUG) << "Ratio : " << _ratio;
 }
+

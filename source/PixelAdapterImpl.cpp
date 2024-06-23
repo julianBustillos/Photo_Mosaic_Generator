@@ -1,6 +1,7 @@
 #include "PixelAdapterImpl.h"
 #include "MathUtils.h"
 #include "CustomException.h"
+#include "Log.h"
 
 
 PixelAdapterImpl::PixelAdapterImpl(int subdivisions) :
@@ -24,6 +25,7 @@ void PixelAdapterImpl::compute(const Photo& photo)
             computeAdapterData(_tileCorrection[mosaicId], photo.getImage(), photo.getTileBox(i, j, true));
         }
     }
+    Log::Logger::getInstance().log(Log::TRACE) << "Adapter data computed.";
 }
 
 void PixelAdapterImpl::applyCorrection(cv::Mat& tile, int mosaicId) const

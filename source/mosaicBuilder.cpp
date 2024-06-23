@@ -2,6 +2,7 @@
 #include <vector>
 #include "CustomException.h"
 #include "MathUtils.h"
+#include "Log.h"
 
 
 MosaicBuilder::MosaicBuilder(int subdivisions) : 
@@ -31,6 +32,7 @@ void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter,
                 throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
         }
     }
+    Log::Logger::getInstance().log(Log::TRACE) << "Mosaic computed.";
 
     exportMosaic(photo.getDirectory(), mosaic);
 }
@@ -65,6 +67,8 @@ void MosaicBuilder::exportMosaic(const std::string& path, const cv::Mat mosaic)
     std::vector<int> image_params;
     image_params.emplace_back(cv::IMWRITE_JPEG_QUALITY);
     image_params.emplace_back(100);
-    cv::imwrite(path + "\\mosaic.jpg", mosaic, image_params);
+    std::string mosaicPath = path + "\\mosaic.jpg";
+    cv::imwrite(mosaicPath, mosaic, image_params);
+    Log::Logger::getInstance().log(Log::TRACE) << "Mosaic exported at " << mosaicPath;
 }
 

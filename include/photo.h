@@ -21,9 +21,6 @@ public:
     std::string getDirectory() const;
 
 private:
-    void printInfo() const;
-
-private:
     const std::string _filePath;
     const double _scale;
     const double _ratio;

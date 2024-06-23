@@ -21,7 +21,6 @@ public:
     virtual void initialize();
 
 private:
-    std::string getCurrentProcessDirectory();
     void getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Rect& box, double scaleInv, bool rowDirSearch) const;
     void getDefaultROI(const cv::Size& imageSize, cv::Rect& box, bool rowDirSearch) const;
 

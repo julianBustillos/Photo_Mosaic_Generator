@@ -2,6 +2,7 @@
 #include "CustomException.h"
 #include "OutputManager.h"
 #include "MathUtils.h"
+#include "Log.h"
 #include <iostream>
 
 
@@ -41,6 +42,11 @@ void Photo::initialize()
 
     if (_tileSize.width < MinTileSize || _tileSize.height < MinTileSize)
         throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(MinTileSize) + "*" + std::to_string(MinTileSize) + ")", CustomException::Level::ERROR);
+
+    Log::Logger::getInstance().log(Log::INFO) << "Photo size  : " << _inSize.width << "*" << _inSize.height;
+    Log::Logger::getInstance().log(Log::INFO) << "Mosaic size : " << _mat.size().width << "*" << _mat.size().height;
+    Log::Logger::getInstance().log(Log::INFO) << "Tile size   : " << _tileSize.width << "*" << _tileSize.height;
+    Log::Logger::getInstance().log(Log::INFO) << "Lost size   : " << _lostSize.width << "*" << _lostSize.height;
 }
 
 cv::Rect Photo::getTileBox(int i, int j, bool doShift) const
@@ -77,12 +83,3 @@ std::string Photo::getDirectory() const
     return "";
 }
 
-void Photo::printInfo() const
-{
-    std::cout << "PHOTO DATA : " << std::endl;
-    std::cout << "Photo size  : " << _inSize.width << "*" << _inSize.height << std::endl;
-    std::cout << "Mosaic size : " << _mat.size().width << "*" << _mat.size().height << std::endl;
-    std::cout << "Tile size   : " << _tileSize.width << "*" << _tileSize.height << std::endl;
-    std::cout << "Lost size   : " << _lostSize.width << "*" << _lostSize.height << std::endl;
-    std::cout << std::endl;
-}
