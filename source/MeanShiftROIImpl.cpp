@@ -9,7 +9,7 @@ MeanSHiftROIImpl::MeanSHiftROIImpl()
 {
 }
 
-void MeanSHiftROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch) const
+void MeanSHiftROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const
 {
     std::vector<int> clusterMapping;
     int nbClusters;

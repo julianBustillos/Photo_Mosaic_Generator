@@ -35,8 +35,8 @@ private:
     bool checkExtension(const std::string& extension) const;
     void createTemp() const;
     void removeTemp() const;
-    void computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data);
-    void computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize);
+    void computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data, int threadID);
+    void computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize, int threadID);
     void exportTile(const cv::Mat& tile, const std::string& tilePath);
 
 private:

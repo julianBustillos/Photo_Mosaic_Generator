@@ -2,6 +2,7 @@
 
 #include "IRegionOfInterest.h"
 #include <opencv2/objdetect.hpp>
+#include <vector>
 #include <string>
 
 
@@ -17,7 +18,7 @@ public:
     ~FaceDetectionROIImpl();
 
 public:
-    virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch) const;
+    virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const;
     virtual void initialize();
 
 private:
@@ -31,5 +32,5 @@ private:
     const static int _detectionSize;
 
 private:
-    cv::Ptr<cv::FaceDetectorYN> _faceDetector;
+    std::vector<cv::Ptr<cv::FaceDetectorYN>> _faceDetectors;
 };

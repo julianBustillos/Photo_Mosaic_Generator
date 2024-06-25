@@ -6,6 +6,7 @@
 #include "Log.h"
 #include "Console.h"
 #include <filesystem>
+#include <omp.h>
 
 
 TilesImpl::TilesImpl(const std::string& path, int subdivisions) :
@@ -80,7 +81,6 @@ void TilesImpl::remove(std::vector<unsigned int>& toRemove)
 
 void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
 {
-    cv::Mat image;
     removeTemp();
     createTemp();
 
@@ -89,13 +89,15 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
 
     OutputManager::get().cstderr_silent();
     const int padding = std::to_string(_tilesData.size()).length();
+    #pragma omp parallel for
     for (int t = 0; t < _tilesData.size(); t++)
     {
+        cv::Mat image;
         getImage(t, image);
         std::string index = std::to_string(t);
         index = std::string(padding - index.length(), '0') + index;
         _tilesData[t]._tilePath = _tempPath + "\\tile_" + index + ".png";
-        computeTileFeatures(image, roi, photo.getTileSize(), _tilesData[t]);
+        computeTileFeatures(image, roi, photo.getTileSize(), _tilesData[t], omp_get_thread_num());
         Console::Out::addBarSteps(1);
     }
     OutputManager::get().cstderr_restore();
@@ -168,18 +170,18 @@ void TilesImpl::removeTemp() const
     }
 }
 
-void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data)
+void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data, int threadID)
 {
     cv::Rect box;
     cv::Mat tileMat;
 
-    computeCropInfo(image, box, roi, tileSize);
+    computeCropInfo(image, box, roi, tileSize, threadID);
     MathUtils::computeImageResampling(tileMat, tileSize, image, box, MathUtils::LANCZOS);
     MathUtils::computeImageBGRFeatures(tileMat, cv::Rect(0, 0, tileSize.width, tileSize.height), data._features, FeatureDiv, NbFeatures);
     exportTile(tileMat, data._tilePath);
 }
 
-void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize)
+void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize, int threadID)
 {
     if (image.size() == tileSize)
     {
@@ -196,7 +198,7 @@ void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegi
     box.width = (int)ceil(tileSize.width * scaleInv);
     box.height = (int)ceil(tileSize.height * scaleInv);
 
-    roi.find(image, box, wScaleInv < hScaleInv);
+    roi.find(image, box, wScaleInv < hScaleInv, threadID);
 }
 
 void TilesImpl::exportTile(const cv::Mat& tile, const std::string& tilePath)

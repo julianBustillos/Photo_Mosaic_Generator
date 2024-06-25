@@ -11,5 +11,5 @@ public:
 
 public:
     virtual void initialize() = 0;
-    virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch) const = 0;
+    virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const = 0;
 };

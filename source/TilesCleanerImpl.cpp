@@ -10,7 +10,6 @@
 void TilesCleanerImpl::clean(ITiles& tiles) const
 {
     const unsigned int maxBitDist = MathUtils::HashBits * DistanceTolerance;
-    cv::Mat tile;
     std::vector<MathUtils::Hash> hashes(tiles.getNbTiles());
     std::vector<bool> isEmpty(tiles.getNbTiles(), false);
     std::vector<bool> isDuplicate(tiles.getNbTiles(), false);
@@ -19,8 +18,10 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
     Console::Out::startBar(Console::DEFAULT);
 
     OutputManager::get().cstderr_silent();
+    #pragma omp parallel for
     for (int t = 0; t < tiles.getNbTiles(); t++)
     {
+        cv::Mat tile;
         tiles.getImage(t, tile);
         if (!tile.empty())
         {
@@ -32,6 +33,7 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
         }
         Console::Out::addBarSteps(1);
     }
+    //PARALLEL
     OutputManager::get().cstderr_restore();
     Log::Logger::get().log(Log::TRACE) << "Tiles DHash computed.";
 

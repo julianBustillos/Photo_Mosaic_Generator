@@ -9,7 +9,7 @@ class MeanSHiftROIImpl : public IRegionOfInterest
 public:
     MeanSHiftROIImpl();
     ~MeanSHiftROIImpl() {};
-    virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch) const;
+    virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const;
 
 private:
     void getDefaultROI(const cv::Size& imageSize, cv::Rect& box, bool rowDirSearch) const;

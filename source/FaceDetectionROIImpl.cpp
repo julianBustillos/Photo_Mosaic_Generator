@@ -5,6 +5,7 @@
 #include "Log.h"
 #include <opencv2/dnn/dnn.hpp>
 #include <vector>
+#include <omp.h>
 
 
 const int FaceDetectionROIImpl::_detectionSize = 640;
@@ -16,10 +17,10 @@ FaceDetectionROIImpl::FaceDetectionROIImpl()
 
 FaceDetectionROIImpl::~FaceDetectionROIImpl()
 {
-    _faceDetector.reset();
+    _faceDetectors.clear();
 }
 
-void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch) const
+void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const
 {
     //Test if face search is needed
     double croppedRatio = rowDirSearch ? (double)box.height / (double)image.size().height : (double)box.width / (double)image.size().width;
@@ -35,8 +36,8 @@ void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDir
         int sHeight = (int)std::round((double)image.size().height * scale);
         cv::Mat sImage;
         MathUtils::computeImageResampling(sImage, cv::Size(sWidth, sHeight), image, MathUtils::AREA);
-        _faceDetector->setInputSize(sImage.size());
-        _faceDetector->detect(sImage, faces);
+        _faceDetectors[threadID]->setInputSize(sImage.size());
+        _faceDetectors[threadID]->detect(sImage, faces);
 
         if (!faces.empty())
         {
@@ -51,9 +52,14 @@ void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDir
 void FaceDetectionROIImpl::initialize()
 {
     std::string processPath = SystemUtils::getCurrentProcessDirectory();
-    _faceDetector = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5, 0.3, 5000);
-    if (!_faceDetector)
-        throw CustomException("Bad allocation for _faceDetector in FaceDetectionROIImpl.", CustomException::Level::ERROR);
+    const int nbThreads = omp_get_max_threads();
+    _faceDetectors.resize(nbThreads);
+    for (int t = 0; t < nbThreads; t++)
+    {
+        _faceDetectors[t] = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5, 0.3, 5000);
+        if (!_faceDetectors[t])
+            throw CustomException("Bad allocation for _faceDetector in FaceDetectionROIImpl.", CustomException::Level::ERROR);
+    }
     Log::Logger::get().log(Log::TRACE) << "Face detection model loaded.";
 }
 
