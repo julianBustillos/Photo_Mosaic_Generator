@@ -28,10 +28,10 @@ int main(int argc, char* argv[])
 
         const std::string logPath = SystemUtils::getCurrentProcessDirectory() + "/log.txt";
         Log::Logger::get().setStream(new std::ofstream(logPath), true);
-#ifdef NDEBUG
-        Log::Logger::get().setLevel(Log::Level::INFO);
-#else
+#ifdef _DEBUG
         Log::Logger::get().setLevel(Log::Level::TRACE);
+#else
+        Log::Logger::get().setLevel(Log::Level::INFO);
 #endif
 
         parameters.initialize(argc, argv);
