@@ -12,16 +12,17 @@
 class MosaicBuilder
 {
 public:
-    MosaicBuilder(int subdivisions);
+    MosaicBuilder(int subdivisions, double blending);
     ~MosaicBuilder();
     void build(const Photo& photo, const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver);
 
 private:
-    void copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Rect& box);
-    void exportMosaic(const std::string& path, cv::Mat mosaic);
+    void copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, double blending, int mosaicId, const cv::Rect& box);
+    void exportMosaic(const std::string& path, double _blending, cv::Mat mosaic);
 
 private:
     std::shared_ptr<const Photo> _photo;
     const int _subdivisions;
+    const double _blending;
 };
 

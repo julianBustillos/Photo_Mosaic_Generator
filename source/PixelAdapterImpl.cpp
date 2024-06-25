@@ -30,11 +30,8 @@ void PixelAdapterImpl::compute(const Photo& photo)
     Log::Logger::get().log(Log::TRACE) << "Adapter data computed.";
 }
 
-void PixelAdapterImpl::applyCorrection(cv::Mat& tile, int mosaicId) const
+void PixelAdapterImpl::applyCorrection(cv::Mat& tile, double blending, int mosaicId) const
 {
-    if (_tileCorrection.empty())
-        throw CustomException("PixelAdapterImpl::compute() has not generated data !", CustomException::Level::ERROR);
-
     cv::Rect box(0, 0, tile.size().width, tile.size().height);
     AdapterData originalTile;
     computeAdapterData(originalTile, tile, box);
@@ -66,9 +63,9 @@ void PixelAdapterImpl::applyCorrection(cv::Mat& tile, int mosaicId) const
         uchar matchingGreen = BGR_correction_function[1][originalGreen];
         uchar matchingRed = BGR_correction_function[2][originalRed];
 
-        data[k] = (uchar)(HistogramCorrectionBlending * (double)matchingBlue + (1. - HistogramCorrectionBlending) * (double)originalBlue);
-        data[k + 1] = (uchar)(HistogramCorrectionBlending * (double)matchingGreen + (1. - HistogramCorrectionBlending) * (double)originalGreen);
-        data[k + 2] = (uchar)(HistogramCorrectionBlending * (double)matchingRed + (1. - HistogramCorrectionBlending) * (double)originalRed);
+        data[k] = (uchar)(blending * (double)matchingBlue + (1. - blending) * (double)originalBlue);
+        data[k + 1] = (uchar)(blending * (double)matchingGreen + (1. - blending) * (double)originalGreen);
+        data[k + 2] = (uchar)(blending * (double)matchingRed + (1. - blending) * (double)originalRed);
     }
 }
 

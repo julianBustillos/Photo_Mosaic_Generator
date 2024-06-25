@@ -5,16 +5,13 @@
 
 class PixelAdapterImpl : public IPixelAdapter
 {
-private:
-    static constexpr double HistogramCorrectionBlending = 0.4;
-
 public:
     PixelAdapterImpl(int subdivisions);
     virtual ~PixelAdapterImpl();
 
 public:
     virtual void compute(const Photo& photo);
-    virtual void applyCorrection(cv::Mat& tile, int mosaicId) const;
+    virtual void applyCorrection(cv::Mat& tile, double blending, int mosaicId) const;
 
 private:
     struct AdapterData

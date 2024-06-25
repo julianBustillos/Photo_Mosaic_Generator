@@ -14,6 +14,7 @@ Parameters::Parameters() :
         ("d,subdiv", "Image subdivision (height and width)", cxxopts::value<int>())
         ("s,scale", "Image scale", cxxopts::value<double>()->default_value("1."))
         ("r,ratio", "Image ratio (width / height)", cxxopts::value<double>()->default_value("0."))
+        ("b,blending", "Blending step for exported mosaics [0.01;1]", cxxopts::value<double>()->default_value("0.1"))
         ("h,help", "Print usage");
 }
 
@@ -33,6 +34,11 @@ std::string Parameters::getTilesPath() const
     return _tilesPath;
 }
 
+int Parameters::getSubdivision() const
+{
+    return _subdivision;
+}
+
 double Parameters::getScale() const
 {
     return _scale;
@@ -43,9 +49,9 @@ double Parameters::getRatio() const
     return _ratio;
 }
 
-int Parameters::getSubdivision() const
+double Parameters::getBlending() const
 {
-    return _subdivision;
+    return _blending;
 }
 
 std::string Parameters::getHelp() const
@@ -90,6 +96,7 @@ void Parameters::parse(int argc, char* argv[])
         _subdivision = result["subdiv"].as<int>();
     _scale = result["scale"].as<double>();
     _ratio = result["ratio"].as<double>();
+    _blending = result["blending"].as<double>();
 
     std::replace(_photoPath.begin(), _photoPath.end(), '/', '\\');
     std::replace(_tilesPath.begin(), _tilesPath.end(), '/', '\\');
@@ -107,32 +114,37 @@ void Parameters::check()
         message += "\nNo photo defined";
         errorCount++;
     }
-    else if (!std::filesystem::exists(_photoPath))
+    if (!std::filesystem::exists(_photoPath))
     {
         message += "\nInvalid file : " + _photoPath;
         errorCount++;
     }
-    else if (_tilesPath == "")
+    if (_tilesPath == "")
     {
         message += "\nNo tiles path defined";
         errorCount++;
     }
-    else if (!std::filesystem::exists(_tilesPath))
+    if (!std::filesystem::exists(_tilesPath))
     {
         message += "\nInvalid path : " + _tilesPath;
         errorCount++;
     }
-    else if (_subdivision <= 0)
+    if (_subdivision <= 0)
     {
         message += "\nInvalid subdivision value";
         errorCount++;
     }
-    else if (_scale <= 0)
+    if (_scale <= 0)
     {
         message += "\nInvalid scale value";
         errorCount++;
     }
-    else if (_ratio < 0)
+    if (_ratio < 0)
+    {
+        message += "\nInvalid ratio value";
+        errorCount++;
+    }
+    if (_blending < 0.01 || 1. < _blending)
     {
         message += "\nInvalid ratio value";
         errorCount++;

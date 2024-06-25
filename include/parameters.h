@@ -12,9 +12,10 @@ public:
 	void initialize(int argc, char* argv[]);
 	std::string getPhotoPath() const;
 	std::string getTilesPath() const;
-    double getScale() const;
-    double getRatio() const;
 	int getSubdivision() const;
+	double getScale() const;
+    double getRatio() const;
+    double getBlending() const;
 	std::string getHelp() const;
 
 private:
@@ -28,4 +29,5 @@ private:
 	int _subdivision = 0;
 	double _scale = 1.;
     double _ratio = 0.;
+	double _blending = 0.1;
 };

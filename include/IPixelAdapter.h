@@ -12,7 +12,7 @@ public:
 
 public:
     virtual void compute(const Photo& photo) = 0;
-    virtual void applyCorrection(cv::Mat& tile, int mosaicId) const = 0;
+    virtual void applyCorrection(cv::Mat& tile, double blending, int mosaicId) const = 0;
 
 protected:
     const int _subdivisions;

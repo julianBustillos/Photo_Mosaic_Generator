@@ -6,8 +6,8 @@
 #include "Console.h"
 
 
-MosaicBuilder::MosaicBuilder(int subdivisions) : 
-    _subdivisions(subdivisions)
+MosaicBuilder::MosaicBuilder(int subdivisions, double blending) :
+    _subdivisions(subdivisions), _blending(blending)
 {
 }
 
@@ -22,30 +22,34 @@ void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter,
     cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
     const std::vector<int>& matchingTiles = matchSolver.getMatchingTiles();
 
-    for (int i = 0; i < _subdivisions; i++)
+    for (double b = 0.; b <= 1; b += _blending)
     {
-        for (int j = 0; j < _subdivisions; j++)
+        for (int i = 0; i < _subdivisions; i++)
         {
-            int mosaicId = i * _subdivisions + j;
-            int tileId = matchingTiles[mosaicId];
-            if (tileId >= 0)
-                copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), pixelAdapter, mosaicId, photo.getTileBox(i, j, false));
-            else
-                throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
+            for (int j = 0; j < _subdivisions; j++)
+            {
+                int mosaicId = i * _subdivisions + j;
+                int tileId = matchingTiles[mosaicId];
+                if (tileId >= 0)
+                    copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), pixelAdapter, b, mosaicId, photo.getTileBox(i, j, false));
+                else
+                    throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
+            }
         }
+        exportMosaic(photo.getDirectory(), b, mosaic);
     }
+
     Log::Logger::get().log(Log::TRACE) << "Mosaic computed.";
 
-    exportMosaic(photo.getDirectory(), mosaic);
 }
 
-void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, int mosaicId, const cv::Rect& box)
+void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, double blending, int mosaicId, const cv::Rect& box)
 {
     cv::Mat tile = cv::imread(tilePath);
     if (tile.empty())
         throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::ERROR);
 
-    pixelAdapter.applyCorrection(tile, mosaicId);
+    pixelAdapter.applyCorrection(tile, blending, mosaicId);
 
     const cv::Size tileSize = tile.size();
     const int channels = tile.channels();
@@ -64,12 +68,13 @@ void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePat
     }
 }
 
-void MosaicBuilder::exportMosaic(const std::string& path, const cv::Mat mosaic)
+void MosaicBuilder::exportMosaic(const std::string& path, double blending, const cv::Mat mosaic)
 {
     std::vector<int> image_params;
     image_params.emplace_back(cv::IMWRITE_JPEG_QUALITY);
     image_params.emplace_back(100);
-    std::string mosaicPath = path + "\\mosaic.jpg";
+    std::string value = std::to_string(blending);
+    std::string mosaicPath = path + "\\mosaic_" + std::to_string(blending).substr(0, 4) + ".jpg";
     cv::imwrite(mosaicPath, mosaic, image_params);
     Log::Logger::get().log(Log::TRACE) << "Mosaic exported at " << mosaicPath;
 }
