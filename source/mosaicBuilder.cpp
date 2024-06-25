@@ -17,13 +17,16 @@ MosaicBuilder::~MosaicBuilder()
 
 void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver)
 {
-    Console::Out::get(Console::DEFAULT) << "Building mosaic...";
+    Console::Out::get(Console::DEFAULT) << "Building mosaics...";
     cv::Size mosaicSize = photo.getTileSize() * _subdivisions;
-    cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
     const std::vector<int>& matchingTiles = matchSolver.getMatchingTiles();
+    const int nbSteps = (int)(1. / _blending) + 1;
 
-    for (double b = 0.; b <= 1; b += _blending)
+    #pragma omp parallel for
+    for (int b = 0; b < nbSteps; b++)
     {
+        cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
+        double blendingValue = b * _blending;
         for (int i = 0; i < _subdivisions; i++)
         {
             for (int j = 0; j < _subdivisions; j++)
@@ -31,12 +34,12 @@ void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter,
                 int mosaicId = i * _subdivisions + j;
                 int tileId = matchingTiles[mosaicId];
                 if (tileId >= 0)
-                    copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), pixelAdapter, b, mosaicId, photo.getTileBox(i, j, false));
+                    copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), pixelAdapter, blendingValue, mosaicId, photo.getTileBox(i, j, false));
                 else
                     throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
             }
         }
-        exportMosaic(photo.getDirectory(), b, mosaic);
+        exportMosaic(photo.getDirectory(), blendingValue, mosaic);
     }
 
     Log::Logger::get().log(Log::TRACE) << "Mosaic computed.";
@@ -76,6 +79,6 @@ void MosaicBuilder::exportMosaic(const std::string& path, double blending, const
     std::string value = std::to_string(blending);
     std::string mosaicPath = path + "\\mosaic_" + std::to_string(blending).substr(0, 4) + ".jpg";
     cv::imwrite(mosaicPath, mosaic, image_params);
-    Log::Logger::get().log(Log::TRACE) << "Mosaic exported at " << mosaicPath;
+    Log::Logger::get().log(Log::INFO) << "Mosaic exported at " << mosaicPath;
 }
 

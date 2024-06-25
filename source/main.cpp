@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 
         std::string timeStamp = clock.getTimeStamp();
         Console::Out::get(Console::TIME) << timeStamp;
-        Log::Logger::get().log(Log::TRACE) << timeStamp;
+        Log::Logger::get().log(Log::INFO) << timeStamp;
 
         Console::Out::get(Console::DEFAULT) << "";
         Console::Out::get(Console::DEFAULT) << "++++++++++++++++++++++++++++++++++++++++++++++++           END          ++++++++++++++++++++++++++++++++++++++++++++++++";
