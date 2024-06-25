@@ -25,7 +25,7 @@ private:
         int _j;
         double _squareDistance;
 
-        matchCandidate(int i, int j) : _i(i), _j(j), _id(-1), _squareDistance(0) {};
+        matchCandidate(int i = -1, int j = -1) : _i(i), _j(j), _id(-1), _squareDistance(0) {};
 
         bool operator<(const matchCandidate& rhs) const
         {

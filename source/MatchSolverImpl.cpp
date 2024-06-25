@@ -3,9 +3,9 @@
 #include "ITiles.h"
 #include <vector>
 #include <algorithm>
-#include "SortedVector.h"
 #include "Log.h"
 #include "Console.h"
+#include "CustomException.h"
 
 
 MatchSolverImpl::MatchSolverImpl(int subdivisions) : 
@@ -19,6 +19,9 @@ MatchSolverImpl::~MatchSolverImpl()
 
 void MatchSolverImpl::solve(const ITiles& tiles)
 {
+    if (tiles.getNbTiles() < RedundancyTilesNumber)
+        throw CustomException("No sufficient number of tiles, should have at least " + std::to_string(RedundancyTilesNumber), CustomException::ERROR);
+
     Console::Out::get(Console::DEFAULT) << "Computing tiles matching...";
     _matchingTiles.resize(_subdivisions * _subdivisions, -1);
 
@@ -43,17 +46,18 @@ const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
 
 void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const ITiles& tiles)
 {
-    SortedVector<matchCandidate> tileCandidates(RedundancyTilesNumber); //TODO replace with normal vector ??
+    std::vector<matchCandidate> tileCandidates(tiles.getNbTiles());
     matchCandidate candidate(i, j);
 
     for (int t = 0; t < tiles.getNbTiles(); t++)
     {
         candidate._id = t;
         candidate._squareDistance = tiles.computeSquareDistance(i, j, t);
-        tileCandidates.emplace_sorted(candidate);
+        tileCandidates[t] = candidate;
     }
 
-    for (int k = 0; k < tileCandidates.size(); k++)
+    std::sort(tileCandidates.begin(), tileCandidates.end());
+    for (int k = 0; k < RedundancyTilesNumber; k++)
         candidates.emplace_back(tileCandidates[k]);
 }
 

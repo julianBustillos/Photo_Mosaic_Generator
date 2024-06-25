@@ -89,9 +89,6 @@
     <ClInclude Include="include\SaliencyFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\SortedVector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\PixelAdapterImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
