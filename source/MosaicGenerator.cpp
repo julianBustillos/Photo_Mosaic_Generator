@@ -5,6 +5,7 @@
 #include "TilesCleanerImpl.h"
 #include "MatchSolverImpl.h"
 #include "CustomException.h"
+#include "Console.h"
 
 
 MosaicGenerator::MosaicGenerator(const Parameters& parameters)
@@ -50,6 +51,7 @@ MosaicGenerator::~MosaicGenerator()
 
 void MosaicGenerator::Build()
 {
+    Console::Out::get(Console::DEFAULT) << "Initializing data...";
     _photo->initialize();
     _roi->initialize();
     _tiles->initialize();

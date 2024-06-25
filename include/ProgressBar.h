@@ -10,28 +10,29 @@
 class ProgressBar
 {
 public:
-    ProgressBar(const std::string& text, int barWidth); //TODO add stream as param
+    ProgressBar(std::ostream& stream);
     ~ProgressBar();
 
 public:
-    void setNbSteps(int nbSteps);
+    void initialize(const std::string& text, int width, int nbSteps);
     void addSteps(int steps);
-    void threadExecution();
+    void threadUpdate();
 
 private:
     bool writeProgress();
 
 private:
-    const std::string _text;
-    const int _barWidth;
+    std::ostream& _stream;
+    std::string _text;
+    int _width;
     std::atomic<int> _nbSteps;
     std::atomic<int> _currStep;
     std::mutex _mutex;
 };
 
 
-inline ProgressBar::ProgressBar(const std::string& text, int barWidth) :
-    _text(text), _barWidth(barWidth), _nbSteps(0), _currStep(0)
+inline ProgressBar::ProgressBar(std::ostream& stream) :
+    _stream(stream), _text(""), _width(0), _nbSteps(0), _currStep(0)
 {
 }
 
@@ -39,9 +40,12 @@ inline ProgressBar::~ProgressBar()
 {
 }
 
-inline void ProgressBar::setNbSteps(int nbSteps)
+inline void ProgressBar::initialize(const std::string& text, int width, int nbSteps)
 {
+    _text = text;
+    _width = width;
     _nbSteps = nbSteps;
+    _currStep = 0;
 }
 
 inline void ProgressBar::addSteps(int steps)
@@ -49,7 +53,7 @@ inline void ProgressBar::addSteps(int steps)
     _currStep += steps;
 }
 
-inline void ProgressBar::threadExecution()
+inline void ProgressBar::threadUpdate()
 {
     bool finished = false;
     while (!finished)
@@ -57,7 +61,7 @@ inline void ProgressBar::threadExecution()
         finished = writeProgress();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    std::cout << std::endl;
+    _stream << std::endl;
 }
 
 inline bool ProgressBar::writeProgress()
@@ -68,17 +72,17 @@ inline bool ProgressBar::writeProgress()
         return true;
 
     float progress = (float)_currStep / (float)_nbSteps;
-    int completed = (int)(progress * (float)_barWidth);
+    int completed = (int)(progress * (float)_width);
 
-    std::cout << "\r" << std::flush;
-    std::cout << _text << " [";
+    _stream << "\r" << std::flush;
+    _stream << _text << " [";
 
     for (int i = 0; i < completed; i++)
-        std::cout << "#";
-    for (int i = completed; i < _barWidth; i++)
-        std::cout << " ";
+        _stream << "#";
+    for (int i = completed; i < _width; i++)
+        _stream << " ";
 
-    std::cout << "] " << (int)(progress * 100.) << "%";
+    _stream << "] " << (int)(progress * 100.) << "%";
 
     return _currStep == _nbSteps;
 }

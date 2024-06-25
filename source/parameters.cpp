@@ -64,7 +64,7 @@ void Parameters::parse(int argc, char* argv[])
         params += argv[i];
         params += " ";
     }
-    Log::Logger::getInstance().log(Log::INFO) << "Launching call : " << params;
+    Log::Logger::get().log(Log::INFO) << "Launching call : " << params;
 
     if (result.count("help"))
     {
@@ -143,11 +143,11 @@ void Parameters::check()
         throw CustomException(message, CustomException::Level::NORMAL);
     }
 
-    Log::Logger::getInstance().log(Log::TRACE) << "Parameter checked.";
-    Log::Logger::getInstance().log(Log::DEBUG) << "Photo path : " << _photoPath;
-    Log::Logger::getInstance().log(Log::DEBUG) << "Tiles path : " << _tilesPath;
-    Log::Logger::getInstance().log(Log::DEBUG) << "Subidivion : " << _subdivision;
-    Log::Logger::getInstance().log(Log::DEBUG) << "Scale : " << _scale;
-    Log::Logger::getInstance().log(Log::DEBUG) << "Ratio : " << _ratio;
+    Log::Logger::get().log(Log::TRACE) << "Parameter checked.";
+    Log::Logger::get().log(Log::DEBUG) << "Photo path : " << _photoPath;
+    Log::Logger::get().log(Log::DEBUG) << "Tiles path : " << _tilesPath;
+    Log::Logger::get().log(Log::DEBUG) << "Subidivion : " << _subdivision;
+    Log::Logger::get().log(Log::DEBUG) << "Scale : " << _scale;
+    Log::Logger::get().log(Log::DEBUG) << "Ratio : " << _ratio;
 }
 

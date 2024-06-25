@@ -6,10 +6,6 @@
 #include <opencv2/dnn/dnn.hpp>
 #include <vector>
 
-#undef ERROR // Windows.h include issues
-#undef max
-#undef min
-
 
 const int FaceDetectionROIImpl::_detectionSize = 640;
 
@@ -58,7 +54,7 @@ void FaceDetectionROIImpl::initialize()
     _faceDetector = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5, 0.3, 5000);
     if (!_faceDetector)
         throw CustomException("Bad allocation for _faceDetector in FaceDetectionROIImpl.", CustomException::Level::ERROR);
-    Log::Logger::getInstance().log(Log::TRACE) << "Face detection model loaded.";
+    Log::Logger::get().log(Log::TRACE) << "Face detection model loaded.";
 }
 
 void FaceDetectionROIImpl::getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Rect& box, double scaleInv, bool rowDirSearch) const

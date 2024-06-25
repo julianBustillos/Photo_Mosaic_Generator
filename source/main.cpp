@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <opencv2/core/utils/logger.hpp>
-#define NOMINMAX
 #include "termcolor.h"
 #include "Clock.h"
 #include "CustomException.h"
@@ -9,6 +8,7 @@
 #include "MosaicGenerator.h"
 #include "SystemUtils.h"
 #include "Log.h"
+#include "Console.h"
 
 
 int main(int argc, char* argv[])
@@ -16,7 +16,6 @@ int main(int argc, char* argv[])
     int exitCode = EXIT_SUCCESS;
 
     cv::utils::logging::setLogLevel(cv::utils::logging::LogLevel::LOG_LEVEL_SILENT);
-    std::cout << termcolor::bright_green;
 
     Parameters parameters;
 
@@ -24,14 +23,15 @@ int main(int argc, char* argv[])
     {
         Clock clock;
         //TODO MOVE COUT
-        std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++ PHOTO MOSAIC GENERATOR ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl << std::endl;
+        Console::Out::get(Console::DEFAULT) << "++++++++++++++++++++++++++++++++++++++++++++++++ PHOTO MOSAIC GENERATOR ++++++++++++++++++++++++++++++++++++++++++++++++";
+        Console::Out::get(Console::DEFAULT) << "";
 
         const std::string logPath = SystemUtils::getCurrentProcessDirectory() + "/log.txt";
-        Log::Logger::getInstance().setStream(new std::ofstream(logPath), true);
+        Log::Logger::get().setStream(new std::ofstream(logPath), true);
 #ifdef NDEBUG
-        Log::Logger::getInstance().setLevel(Log::Level::INFO);
+        Log::Logger::get().setLevel(Log::Level::INFO);
 #else
-        Log::Logger::getInstance().setLevel(Log::Level::TRACE);
+        Log::Logger::get().setLevel(Log::Level::TRACE);
 #endif
 
         parameters.initialize(argc, argv);
@@ -39,48 +39,41 @@ int main(int argc, char* argv[])
         generator.Build();
 
         std::string timeStamp = clock.getTimeStamp();
-        std::cout << termcolor::bright_blue;
-        std::cout << timeStamp << std::endl;
-        Log::Logger::getInstance().log(Log::TRACE) << timeStamp;
+        Console::Out::get(Console::TIME) << timeStamp;
+        Log::Logger::get().log(Log::TRACE) << timeStamp;
 
-        std::cout << std::endl << "++++++++++++++++++++++++++++++++++++++++++++++++           END          ++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        Console::Out::get(Console::DEFAULT) << "";
+        Console::Out::get(Console::DEFAULT) << "++++++++++++++++++++++++++++++++++++++++++++++++           END          ++++++++++++++++++++++++++++++++++++++++++++++++";
     }
     catch (CustomException& e)
     {
         switch (e.getLevel())
         {
         case CustomException::Level::HELP:
-            std::cout << termcolor::bright_yellow;
-            std::cout << parameters.getHelp() << std::endl;
+            Console::Out::get(Console::HELP) << parameters.getHelp();
             break;
         case CustomException::Level::NORMAL:
-            std::cout << termcolor::bright_yellow;
-            std::cout << e.what() << std::endl << std::endl;
-            Log::Logger::getInstance().log(Log::WARN) << e.what();
-            std::cout << parameters.getHelp() << std::endl;
+            Console::Out::get(Console::HELP) << e.what();
+            Console::Out::get(Console::HELP) << parameters.getHelp();
+            Log::Logger::get().log(Log::WARN) << e.what();
             break;
         case CustomException::Level::ERROR:
-            std::cerr << termcolor::bright_red;
-            std::cerr << e.what() << std::endl;
-            Log::Logger::getInstance().log(Log::ERROR) << e.what();
+            Console::Out::get(Console::ERROR) << e.what();
+            Log::Logger::get().log(Log::ERROR) << e.what();
             break;
         default:
-            std::cout << termcolor::bright_red;
             std::string message = "Unknown CustomException !!";
-            std::cerr << message << std::endl;
-            Log::Logger::getInstance().log(Log::FATAL) << message;
+            Console::Out::get(Console::ERROR) << message;
+            Log::Logger::get().log(Log::FATAL) << message;
         }
     }
     catch (std::exception& e)
     {
-        std::cout << termcolor::bright_red;
         std::string message = "Unhandled exception : ";
-        std::cerr << message << e.what() << std::endl;
-        Log::Logger::getInstance().log(Log::FATAL) << message << e.what();
+        Console::Out::get(Console::ERROR) << e.what();
+        Log::Logger::get().log(Log::FATAL) << message << e.what();
         exitCode = EXIT_FAILURE;
     }
 
-    std::cout << termcolor::reset;
-    std::cerr << termcolor::reset;
     return exitCode;
 }

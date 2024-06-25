@@ -5,8 +5,6 @@
 #include <chrono>
 #include <mutex>
 
-#undef ERROR
-
 
 namespace Log
 {
@@ -28,7 +26,7 @@ namespace Log
         friend class Message;
 
     public:
-        static Logger& getInstance();
+        static Logger& get();
 
     public:
         Logger();
@@ -75,7 +73,7 @@ namespace Log
     };
 };
 
-inline Log::Logger& Log::Logger::getInstance()
+inline Log::Logger& Log::Logger::get()
 {
     static Logger logger;
     return logger;

@@ -38,7 +38,6 @@ private:
     void computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data);
     void computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize);
     void exportTile(const cv::Mat& tile, const std::string& tilePath);
-    void printInfo() const;
 
 private:
     const std::vector<int> _tileParam;

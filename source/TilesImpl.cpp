@@ -4,9 +4,8 @@
 #include "MathUtils.h"
 #include "ProgressBar.h"
 #include "Log.h"
-#include <iostream>
+#include "Console.h"
 #include <filesystem>
-#include <thread>//TODO DEBUG
 
 
 TilesImpl::TilesImpl(const std::string& path, int subdivisions) :
@@ -41,7 +40,7 @@ void TilesImpl::initialize()
         }
     }
 
-    Log::Logger::getInstance().log(Log::TRACE) << _tilesData.size() << " tiles found.";
+    Log::Logger::get().log(Log::TRACE) << _tilesData.size() << " tiles found.";
 }
 
 unsigned int TilesImpl::getNbTiles() const
@@ -85,11 +84,10 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
     removeTemp();
     createTemp();
 
-    ProgressBar progressBar("Compute tile candidates ", 60);//TODO DEBUG
-    progressBar.setNbSteps(_tilesData.size());
-    std::thread barThread(&ProgressBar::threadExecution, &progressBar);//TODO DEBUG
+    Console::Out::initBar("Computing tile candidates", _tilesData.size());
+    Console::Out::startBar(Console::DEFAULT);
 
-    OutputManager::getInstance().cstderr_silent();
+    OutputManager::get().cstderr_silent();
     const int padding = std::to_string(_tilesData.size()).length();
     for (int t = 0; t < _tilesData.size(); t++)
     {
@@ -98,11 +96,11 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
         index = std::string(padding - index.length(), '0') + index;
         _tilesData[t]._tilePath = _tempPath + "\\tile_" + index + ".png";
         computeTileFeatures(image, roi, photo.getTileSize(), _tilesData[t]);
-        progressBar.addSteps(1);
+        Console::Out::addBarSteps(1);
     }
-    OutputManager::getInstance().cstderr_restore();
-    Log::Logger::getInstance().log(Log::TRACE) <<"Tiles features computed.";
-    barThread.join();
+    OutputManager::get().cstderr_restore();
+    Log::Logger::get().log(Log::TRACE) <<"Tiles features computed.";
+    Console::Out::waitBar();
 
     _photoFeatures.resize(_subdivisions * _subdivisions * NbFeatures);
     int f = 0;
@@ -114,7 +112,7 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
             MathUtils::computeImageBGRFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureDiv, NbFeatures);
         }
     }
-    Log::Logger::getInstance().log(Log::TRACE) << "Photo features computed.";
+    Log::Logger::get().log(Log::TRACE) << "Photo features computed.";
 }
 
 double TilesImpl::computeSquareDistance(int i, int j, int tileID) const
@@ -153,7 +151,7 @@ void TilesImpl::createTemp() const
     if (!std::filesystem::exists(_tempPath))
     {
         std::filesystem::create_directory(_tempPath);
-        Log::Logger::getInstance().log(Log::TRACE) << _tempPath << " temporary folder created.";
+        Log::Logger::get().log(Log::TRACE) << _tempPath << " temporary folder created.";
     }
     if (!std::filesystem::exists(_tempPath))
     {
@@ -166,7 +164,7 @@ void TilesImpl::removeTemp() const
     if (std::filesystem::exists(_tempPath))
     {
         std::filesystem::remove_all(_tempPath);
-        Log::Logger::getInstance().log(Log::TRACE) << _tempPath << " temporary folder removed.";
+        Log::Logger::get().log(Log::TRACE) << _tempPath << " temporary folder removed.";
     }
 }
 
@@ -208,9 +206,3 @@ void TilesImpl::exportTile(const cv::Mat& tile, const std::string& tilePath)
         throw CustomException("Impossible to create temporary tile : " + tilePath, CustomException::Level::ERROR);
 }
 
-void TilesImpl::printInfo() const
-{
-    std::cout << "TILES :" << std::endl;
-    std::cout << "Number of tile found : " << _tilesData.size() << std::endl;
-    std::cout << std::endl;
-}

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "WindowsSafe.h"
 #include <string>
-#include <Windows.h>
 #include <filesystem>
 
 namespace SystemUtils

@@ -6,7 +6,7 @@
 class OutputManager
 {
 public:
-    static OutputManager& getInstance()
+    static OutputManager& get()
     {
         static OutputManager instance;
         return instance;

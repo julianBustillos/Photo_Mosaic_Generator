@@ -2,10 +2,10 @@
 #include <opencv2/opencv.hpp>
 #include "ITiles.h"
 #include <vector>
-#include <iostream>
 #include <algorithm>
 #include "SortedVector.h"
 #include "Log.h"
+#include "Console.h"
 
 
 MatchSolverImpl::MatchSolverImpl(int subdivisions) : 
@@ -19,6 +19,7 @@ MatchSolverImpl::~MatchSolverImpl()
 
 void MatchSolverImpl::solve(const ITiles& tiles)
 {
+    Console::Out::get(Console::DEFAULT) << "Computing tiles matching...";
     _matchingTiles.resize(_subdivisions * _subdivisions, -1);
 
     std::vector<matchCandidate> candidates;
@@ -30,7 +31,7 @@ void MatchSolverImpl::solve(const ITiles& tiles)
             findCandidateTiles(candidates, i, j, tiles);
         }
     }
-    Log::Logger::getInstance().log(Log::TRACE) << "Candidate tiles found.";
+    Log::Logger::get().log(Log::TRACE) << "Candidate tiles found.";
 
     findBestTiles(candidates);
 }
@@ -89,7 +90,7 @@ void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)
         distance += sqrt(candidates[k]._squareDistance);
 
     }
-    Log::Logger::getInstance().log(Log::TRACE) << "Matching tiles found.";
-    Log::Logger::getInstance().log(Log::TRACE) << "With mean square distance : " << (distance / (_subdivisions * _subdivisions));
+    Log::Logger::get().log(Log::TRACE) << "Matching tiles found.";
+    Log::Logger::get().log(Log::TRACE) << "With mean square distance : " << (distance / (_subdivisions * _subdivisions));
 }
 

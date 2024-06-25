@@ -3,8 +3,8 @@
 #include "OutputManager.h"
 #include "ProgressBar.h"
 #include "Log.h"
+#include "Console.h"
 #include <stack>
-#include <thread>//TODO DEBUG
 
 
 void TilesCleanerImpl::clean(ITiles& tiles) const
@@ -15,11 +15,10 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
     std::vector<bool> isEmpty(tiles.getNbTiles(), false);
     std::vector<bool> isDuplicate(tiles.getNbTiles(), false);
 
-    ProgressBar progressBar("Detect image duplicates ", 60);//TODO DEBUG
-    progressBar.setNbSteps(tiles.getNbTiles() + 2);
-    std::thread barThread(&ProgressBar::threadExecution, &progressBar);//TODO DEBUG
+    Console::Out::initBar("Detecting image duplicates", tiles.getNbTiles() + 2);
+    Console::Out::startBar(Console::DEFAULT);
 
-    OutputManager::getInstance().cstderr_silent();
+    OutputManager::get().cstderr_silent();
     for (int t = 0; t < tiles.getNbTiles(); t++)
     {
         tiles.getImage(t, tile);
@@ -31,10 +30,10 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
         {
             isEmpty[t] = true;
         }
-        progressBar.addSteps(1);
+        Console::Out::addBarSteps(1);
     }
-    OutputManager::getInstance().cstderr_restore();
-    Log::Logger::getInstance().log(Log::TRACE) << "Tiles DHash computed.";
+    OutputManager::get().cstderr_restore();
+    Log::Logger::get().log(Log::TRACE) << "Tiles DHash computed.";
 
     for (int t1 = 0; t1 < tiles.getNbTiles() - 1; t1++)
     {
@@ -50,8 +49,8 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
             }
         }
     }
-    progressBar.addSteps(1);
-    Log::Logger::getInstance().log(Log::TRACE) << "Tiles DHash compared.";
+    Console::Out::addBarSteps(1);
+    Log::Logger::get().log(Log::TRACE) << "Tiles DHash compared.";
 
     std::vector<unsigned int> toRemove;
     for (int t = 0; t < tiles.getNbTiles(); t++)
@@ -60,10 +59,10 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
             toRemove.emplace_back(t);
     }
     tiles.remove(toRemove);
-    progressBar.addSteps(1);
-    Log::Logger::getInstance().log(Log::TRACE) << toRemove.size() << " tiles removed.";
-    Log::Logger::getInstance().log(Log::TRACE) << tiles.getNbTiles() << " remaining tiles.";
+    Console::Out::addBarSteps(1);
+    Log::Logger::get().log(Log::TRACE) << toRemove.size() << " tiles removed.";
+    Log::Logger::get().log(Log::TRACE) << tiles.getNbTiles() << " remaining tiles.";
 
-    barThread.join();
+    Console::Out::waitBar();
 }
 

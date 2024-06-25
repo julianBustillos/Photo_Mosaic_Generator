@@ -39,7 +39,7 @@
 #elif defined(TERMCOLOR_TARGET_WINDOWS)
 #   define NOMINMAX
 #   include <io.h>
-#   include <windows.h>
+#   include "WindowsSafe.h"
 #endif
 
 

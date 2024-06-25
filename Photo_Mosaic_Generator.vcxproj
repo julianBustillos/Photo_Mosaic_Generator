@@ -138,6 +138,7 @@
     <ClCompile Include="source\TilesImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Console.h" />
     <ClInclude Include="include\CustomException.h" />
     <ClInclude Include="include\FaceDetectionROIImpl.h" />
     <ClInclude Include="include\IMatchSolver.h" />
@@ -164,6 +165,7 @@
     <ClInclude Include="include\termcolor.h" />
     <ClInclude Include="include\TilesCleanerImpl.h" />
     <ClInclude Include="include\TilesImpl.h" />
+    <ClInclude Include="include\WindowsSafe.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

@@ -3,6 +3,7 @@
 #include "CustomException.h"
 #include "MathUtils.h"
 #include "Log.h"
+#include "Console.h"
 
 
 MosaicBuilder::MosaicBuilder(int subdivisions) : 
@@ -16,6 +17,7 @@ MosaicBuilder::~MosaicBuilder()
 
 void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver)
 {
+    Console::Out::get(Console::DEFAULT) << "Building mosaic...";
     cv::Size mosaicSize = photo.getTileSize() * _subdivisions;
     cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
     const std::vector<int>& matchingTiles = matchSolver.getMatchingTiles();
@@ -32,7 +34,7 @@ void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter,
                 throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
         }
     }
-    Log::Logger::getInstance().log(Log::TRACE) << "Mosaic computed.";
+    Log::Logger::get().log(Log::TRACE) << "Mosaic computed.";
 
     exportMosaic(photo.getDirectory(), mosaic);
 }
@@ -69,6 +71,6 @@ void MosaicBuilder::exportMosaic(const std::string& path, const cv::Mat mosaic)
     image_params.emplace_back(100);
     std::string mosaicPath = path + "\\mosaic.jpg";
     cv::imwrite(mosaicPath, mosaic, image_params);
-    Log::Logger::getInstance().log(Log::TRACE) << "Mosaic exported at " << mosaicPath;
+    Log::Logger::get().log(Log::TRACE) << "Mosaic exported at " << mosaicPath;
 }
 

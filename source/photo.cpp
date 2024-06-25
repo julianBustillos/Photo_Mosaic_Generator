@@ -3,7 +3,6 @@
 #include "OutputManager.h"
 #include "MathUtils.h"
 #include "Log.h"
-#include <iostream>
 
 
 Photo::Photo(const std::string& path, double scale, double ratio, int subdivision) :
@@ -13,9 +12,9 @@ Photo::Photo(const std::string& path, double scale, double ratio, int subdivisio
 
 void Photo::initialize()
 {
-    OutputManager::getInstance().cstderr_silent();
+    OutputManager::get().cstderr_silent();
     cv::Mat inputImage = cv::imread(_filePath, cv::IMREAD_COLOR);
-    OutputManager::getInstance().cstderr_restore();
+    OutputManager::get().cstderr_restore();
     if (!inputImage.data)
         throw CustomException("Impossible to load image : " + _filePath, CustomException::Level::ERROR);
 
@@ -43,10 +42,10 @@ void Photo::initialize()
     if (_tileSize.width < MinTileSize || _tileSize.height < MinTileSize)
         throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(MinTileSize) + "*" + std::to_string(MinTileSize) + ")", CustomException::Level::ERROR);
 
-    Log::Logger::getInstance().log(Log::INFO) << "Photo size  : " << _inSize.width << "*" << _inSize.height;
-    Log::Logger::getInstance().log(Log::INFO) << "Mosaic size : " << _mat.size().width << "*" << _mat.size().height;
-    Log::Logger::getInstance().log(Log::INFO) << "Tile size   : " << _tileSize.width << "*" << _tileSize.height;
-    Log::Logger::getInstance().log(Log::INFO) << "Lost size   : " << _lostSize.width << "*" << _lostSize.height;
+    Log::Logger::get().log(Log::INFO) << "Photo size  : " << _inSize.width << "*" << _inSize.height;
+    Log::Logger::get().log(Log::INFO) << "Mosaic size : " << _mat.size().width << "*" << _mat.size().height;
+    Log::Logger::get().log(Log::INFO) << "Tile size   : " << _tileSize.width << "*" << _tileSize.height;
+    Log::Logger::get().log(Log::INFO) << "Lost size   : " << _lostSize.width << "*" << _lostSize.height;
 }
 
 cv::Rect Photo::getTileBox(int i, int j, bool doShift) const
