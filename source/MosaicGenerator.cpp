@@ -54,7 +54,7 @@ void MosaicGenerator::Build()
     Console::Out::get(Console::DEFAULT) << "Initializing data...";
     _photo->initialize();
     _roi->initialize();
-    _tiles->initialize();
+    _tiles->initialize(_matchSolver->getRequiredNbTiles());
 
     _tilesCleaner->clean(*_tiles);
     _tiles->compute(*_roi, *_photo);

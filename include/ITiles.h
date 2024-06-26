@@ -14,7 +14,7 @@ public:
     virtual ~ITiles() {};
 
 public:
-    virtual void initialize() = 0;
+    virtual void initialize(int minNbTiles) = 0;
     virtual void getImage(int tileID, cv::Mat& image) const = 0;
     virtual unsigned int getNbTiles() const = 0;
     virtual void remove(std::vector<unsigned int>& toRemove) = 0;

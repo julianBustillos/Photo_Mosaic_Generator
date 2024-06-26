@@ -17,11 +17,13 @@ MatchSolverImpl::~MatchSolverImpl()
 {
 }
 
+int MatchSolverImpl::getRequiredNbTiles()
+{
+    return RedundancyTilesNumber;
+}
+
 void MatchSolverImpl::solve(const ITiles& tiles)
 {
-    if (tiles.getNbTiles() < RedundancyTilesNumber)
-        throw CustomException("No sufficient number of tiles, should have at least " + std::to_string(RedundancyTilesNumber), CustomException::ERROR);
-
     Console::Out::get(Console::DEFAULT) << "Computing tiles matching...";
     _matchingTiles.resize(_subdivisions * _subdivisions, -1);
 

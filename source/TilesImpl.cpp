@@ -19,7 +19,7 @@ TilesImpl::~TilesImpl()
     removeTemp();
 }
 
-void TilesImpl::initialize()
+void TilesImpl::initialize(int minNbTiles)
 {
     Data data;
     for (auto it = std::filesystem::recursive_directory_iterator(_path); it != std::filesystem::recursive_directory_iterator(); it++)
@@ -42,6 +42,9 @@ void TilesImpl::initialize()
     }
 
     Log::Logger::get().log(Log::TRACE) << _tilesData.size() << " tiles found.";
+
+    if (_tilesData.size() < minNbTiles)
+        throw CustomException("No sufficient number of tiles, " + std::to_string(_tilesData.size()) + " found but should have at least " + std::to_string(minNbTiles), CustomException::ERROR);
 }
 
 unsigned int TilesImpl::getNbTiles() const

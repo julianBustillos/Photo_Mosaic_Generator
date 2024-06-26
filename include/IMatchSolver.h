@@ -12,6 +12,7 @@ public:
     virtual ~IMatchSolver() {};
 
 public:
+    virtual int getRequiredNbTiles() = 0;
     virtual void solve(const ITiles& tiles) = 0;
     virtual const std::vector<int>& getMatchingTiles() const = 0;
 
