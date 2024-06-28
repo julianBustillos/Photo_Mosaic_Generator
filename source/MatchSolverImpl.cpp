@@ -79,12 +79,13 @@ void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)
         int jMax = std::min(candidates[k]._j + RedundancyDistance, _subdivisions - 1);
 
         bool redundancy = false;
-        for (int i = iMin; i <= iMax && !redundancy; i++)
+        int currId = iMin * _subdivisions + jMin;
+        const int step = _subdivisions - (jMax - jMin + 1);
+        for (int i = iMin; i <= iMax && !redundancy; i++, currId += step)
         {
-            for (int j = jMin; j <= jMax && !redundancy; j++)
+            for (int j = jMin; j <= jMax && !redundancy; j++, currId++)
             {
-                int currentId = i * _subdivisions + j;
-                if (_matchingTiles[currentId] == candidates[k]._id)
+                if (_matchingTiles[currId] == candidates[k]._id)
                     redundancy = true;
             }
         }
