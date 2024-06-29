@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IMatchSolver.h"
+#include <opencv2/opencv.hpp>
 
 
 class MatchSolverImpl : public IMatchSolver
@@ -19,25 +20,34 @@ public:
     virtual const std::vector<int>& getMatchingTiles() const;
 
 private:
-    struct matchCandidate
+    struct MatchCandidate
     {
         int _id;
-        int _i;
-        int _j;
-        double _squareDistance;
+        double _sqDist;
 
-        matchCandidate(int i = -1, int j = -1) : _i(i), _j(j), _id(-1), _squareDistance(0) {};
+        MatchCandidate() : _id(-1), _sqDist(0) {};
 
-        bool operator<(const matchCandidate& rhs) const
+        bool operator<(const MatchCandidate& rhs) const
         {
-            return this->_squareDistance < rhs._squareDistance;
+            return this->_sqDist < rhs._sqDist;
         }
     };
 
+    struct InitCandidate : public MatchCandidate
+    {
+        int _i;
+        int _j;
+
+        InitCandidate(int i, int j) : _i(i), _j(j) {};
+    };
+
 private:
-    void findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const ITiles& tiles);
-    void findBestTiles(std::vector<matchCandidate>& candidates);
+    void computeRedundancyBox(int i, int j, cv::Rect& box) const;
+    void findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const ITiles& tiles) const;
+    void reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates) const;
+    void findInitialSolution(std::vector<std::vector<MatchCandidate>>& candidates);
 
 private:
     std::vector<int> _matchingTiles;
+    double _cost;
 };

@@ -87,7 +87,7 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
     removeTemp();
     createTemp();
 
-    Console::Out::initBar("Computing tile candidates", _tilesData.size());
+    Console::Out::initBar("Computing tile candidates ", _tilesData.size());
     Console::Out::startBar(Console::DEFAULT);
 
     OutputManager::get().cstderr_silent();

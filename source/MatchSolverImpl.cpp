@@ -9,7 +9,7 @@
 
 
 MatchSolverImpl::MatchSolverImpl(int subdivisions) : 
-    IMatchSolver(subdivisions)
+    IMatchSolver(subdivisions), _cost(-1)
 {
 }
 
@@ -25,20 +25,14 @@ int MatchSolverImpl::getRequiredNbTiles()
 void MatchSolverImpl::solve(const ITiles& tiles)
 {
     Console::Out::get(Console::DEFAULT) << "Computing tiles matching...";
-    _matchingTiles.resize(_subdivisions * _subdivisions, -1);
+    const int mosaicSize = _subdivisions * _subdivisions;
+    _matchingTiles.resize(mosaicSize, -1);
+    std::vector<std::vector<MatchCandidate>> candidates(mosaicSize);
 
-    std::vector<matchCandidate> candidates;
-
-    for (int i = 0; i < _subdivisions; i++)
-    {
-        for (int j = 0; j < _subdivisions; j++)
-        {
-            findCandidateTiles(candidates, i, j, tiles);
-        }
-    }
-    Log::Logger::get().log(Log::TRACE) << "Candidate tiles found.";
-
-    findBestTiles(candidates);
+    findCandidateTiles(candidates, tiles);
+    reduceCandidateTiles(candidates);
+    findInitialSolution(candidates);
+    Log::Logger::get().log(Log::TRACE) << "Best tiles found.";
 }
 
 const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
@@ -46,46 +40,132 @@ const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
     return _matchingTiles;
 }
 
-void MatchSolverImpl::findCandidateTiles(std::vector<matchCandidate>& candidates, int i, int j, const ITiles& tiles)
+void MatchSolverImpl::computeRedundancyBox(int i, int j, cv::Rect& box) const
 {
-    std::vector<matchCandidate> tileCandidates(tiles.getNbTiles());
-    matchCandidate candidate(i, j);
-
-    for (int t = 0; t < tiles.getNbTiles(); t++)
-    {
-        candidate._id = t;
-        candidate._squareDistance = tiles.computeSquareDistance(i, j, t);
-        tileCandidates[t] = candidate;
-    }
-
-    std::sort(tileCandidates.begin(), tileCandidates.end());
-    for (int k = 0; k < RedundancyTilesNumber; k++)
-        candidates.emplace_back(tileCandidates[k]);
+    box.y = std::max(i - RedundancyDistance, 0);
+    box.height = std::min(i + RedundancyDistance, _subdivisions - 1) - box.y + 1;
+    box.x = std::max(j - RedundancyDistance, 0);
+    box.width = std::min(j + RedundancyDistance, _subdivisions - 1) - box.x + 1;
 }
 
-void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)
+void MatchSolverImpl::findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const ITiles& tiles) const
 {
-    std::sort(candidates.begin(), candidates.end());
-    double distance = 0;
-    for (int k = 0; k < candidates.size(); k++)
+    int m = 0;
+    for (int i = 0; i < _subdivisions; i++)
     {
-        int candidateId = candidates[k]._i * _subdivisions + candidates[k]._j;
+        for (int j = 0; j < _subdivisions; j++, m++)
+        {
+            candidates[m].resize(tiles.getNbTiles());
+
+            for (int t = 0; t < tiles.getNbTiles(); t++)
+            {
+                candidates[m][t]._id = t;
+                candidates[m][t]._sqDist = tiles.computeSquareDistance(i, j, t);
+            }
+
+            std::sort(candidates[m].begin(), candidates[m].end());
+            candidates[m].resize(RedundancyTilesNumber);
+        }
+    }
+}
+
+void MatchSolverImpl::reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates) const
+{
+    std::vector<std::vector<int>> sortedId(candidates.size());
+    for (int m = 0; m < candidates.size(); m++)
+    {
+        sortedId[m].resize(candidates[m].size());
+        for (int t = 0; t < candidates[m].size(); t++)
+        {
+            sortedId[m][t] = candidates[m][t]._id;
+        }
+        std::sort(sortedId[m].begin(), sortedId[m].end());
+    }
+
+    int lastReduction = -1;
+    cv::Rect box;
+    while (true)
+    {
+        int m = 0;
+        for (int i = 0; i < _subdivisions; i++)
+        {
+            for (int j = 0; j < _subdivisions; j++, m++)
+            {
+                if (lastReduction == m)
+                    return;
+
+                if (candidates[m].size() < 2)
+                    continue;
+
+                computeRedundancyBox(i, j, box);
+                for (int t = 0; t < candidates[m].size() - 1; t++)
+                {
+                    bool redundancy = false;
+                    int currId = box.y * _subdivisions + box.x;
+                    const int step = _subdivisions - box.width;
+                    for (int i = 0; i < box.height && !redundancy; i++, currId += step)
+                    {
+                        for (int j = 0; j < box.width && !redundancy; j++, currId++)
+                        {
+                            if (std::binary_search(sortedId[currId].begin(), sortedId[currId].end(), candidates[m][t]._id))
+                                redundancy = true;
+                        }
+                    }
+
+                    if (!redundancy)
+                    {
+                        candidates[m].resize(t + 1);
+                        sortedId[m].resize(t + 1);
+                        for (int t = 0; t < candidates[m].size(); t++)
+                        {
+                            sortedId[m][t] = candidates[m][t]._id;
+                        }
+                        std::sort(sortedId[m].begin(), sortedId[m].end());
+                        lastReduction = m;
+                    }
+                }
+            }
+        }
+
+        if (lastReduction < 0)
+            return;
+    }
+}
+
+void MatchSolverImpl::findInitialSolution(std::vector<std::vector<MatchCandidate>>& candidates)
+{
+    std::vector<InitCandidate> initCandidates;
+    for (int m = 0; m < candidates.size(); m++)
+    {
+        const int i = m / _subdivisions;
+        const int j = m - i * _subdivisions;
+        const int start = initCandidates.size();
+        initCandidates.resize(start + candidates[m].size(), InitCandidate(i, j));
+        for (int t = 0; t < candidates[m].size(); t++)
+        {
+            initCandidates[start + t]._id = candidates[m][t]._id;
+            initCandidates[start + t]._sqDist = candidates[m][t]._sqDist;
+        }
+    }
+    std::sort(initCandidates.begin(), initCandidates.end());
+   
+    _cost = 0;
+    cv::Rect box;
+    for (int k = 0; k < initCandidates.size(); k++)
+    {
+        int candidateId = initCandidates[k]._i * _subdivisions + initCandidates[k]._j;
         if (_matchingTiles[candidateId] >= 0)
             continue;
 
-        int iMin = std::max(candidates[k]._i - RedundancyDistance, 0);
-        int iMax = std::min(candidates[k]._i + RedundancyDistance, _subdivisions - 1);
-        int jMin = std::max(candidates[k]._j - RedundancyDistance, 0);
-        int jMax = std::min(candidates[k]._j + RedundancyDistance, _subdivisions - 1);
-
+        computeRedundancyBox(initCandidates[k]._i, initCandidates[k]._j, box);
         bool redundancy = false;
-        int currId = iMin * _subdivisions + jMin;
-        const int step = _subdivisions - (jMax - jMin + 1);
-        for (int i = iMin; i <= iMax && !redundancy; i++, currId += step)
+        int currId = box.y * _subdivisions + box.x;
+        const int step = _subdivisions - box.width;
+        for (int i = 0; i < box.height && !redundancy; i++, currId += step)
         {
-            for (int j = jMin; j <= jMax && !redundancy; j++, currId++)
+            for (int j = 0; j < box.width && !redundancy; j++, currId++)
             {
-                if (_matchingTiles[currId] == candidates[k]._id)
+                if (_matchingTiles[currId] == initCandidates[k]._id)
                     redundancy = true;
             }
         }
@@ -93,11 +173,11 @@ void MatchSolverImpl::findBestTiles(std::vector<matchCandidate>& candidates)
         if (redundancy)
             continue;
 
-        _matchingTiles[candidateId] = candidates[k]._id;
-        distance += sqrt(candidates[k]._squareDistance);
+        _matchingTiles[candidateId] = initCandidates[k]._id;
+        _cost += sqrt(initCandidates[k]._sqDist);
 
     }
     Log::Logger::get().log(Log::TRACE) << "Matching tiles found.";
-    Log::Logger::get().log(Log::TRACE) << "With mean square distance : " << (distance / (_subdivisions * _subdivisions));
+    Log::Logger::get().log(Log::TRACE) << "With mean square cost : " << (_cost / (_subdivisions * _subdivisions));
 }
 
