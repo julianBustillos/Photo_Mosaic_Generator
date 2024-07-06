@@ -23,13 +23,13 @@ private:
     struct MatchCandidate
     {
         int _id;
-        double _sqDist;
+        double _dist;
 
-        MatchCandidate() : _id(-1), _sqDist(0) {};
+        MatchCandidate() : _id(-1), _dist(0) {};
 
         bool operator<(const MatchCandidate& rhs) const
         {
-            return this->_sqDist < rhs._sqDist;
+            return _dist < rhs._dist;
         }
     };
 
@@ -41,6 +41,15 @@ private:
         InitCandidate(int i, int j) : _i(i), _j(j) {};
     };
 
+    struct SearchNode
+    {
+        int _depth;
+        int _tile;
+        double _cost;
+
+        SearchNode(int depth, int tile, double cost) : _depth(depth), _tile(tile), _cost(cost) {};
+    };
+
 private:
     void computeRedundancyBox(int i, int j, cv::Rect& box) const;
     void findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const ITiles& tiles) const;
@@ -48,6 +57,6 @@ private:
     void findInitialSolution(std::vector<std::vector<MatchCandidate>>& candidates);
 
 private:
-    std::vector<int> _matchingTiles;
-    double _cost;
+    std::vector<int> _bestSolution;
+    double _bestCost;
 };

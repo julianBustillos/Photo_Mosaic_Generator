@@ -3,13 +3,14 @@
 #include "ITiles.h"
 #include <vector>
 #include <algorithm>
+#include <stack>
 #include "Log.h"
 #include "Console.h"
 #include "CustomException.h"
 
 
 MatchSolverImpl::MatchSolverImpl(int subdivisions) : 
-    IMatchSolver(subdivisions), _cost(-1)
+    IMatchSolver(subdivisions), _bestCost(-1)
 {
 }
 
@@ -26,7 +27,7 @@ void MatchSolverImpl::solve(const ITiles& tiles)
 {
     Console::Out::get(Console::DEFAULT) << "Computing tiles matching...";
     const int mosaicSize = _subdivisions * _subdivisions;
-    _matchingTiles.resize(mosaicSize, -1);
+    _bestSolution.resize(mosaicSize, -1);
     std::vector<std::vector<MatchCandidate>> candidates(mosaicSize);
 
     findCandidateTiles(candidates, tiles);
@@ -37,7 +38,7 @@ void MatchSolverImpl::solve(const ITiles& tiles)
 
 const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
 {
-    return _matchingTiles;
+    return _bestSolution;
 }
 
 void MatchSolverImpl::computeRedundancyBox(int i, int j, cv::Rect& box) const
@@ -60,7 +61,7 @@ void MatchSolverImpl::findCandidateTiles(std::vector<std::vector<MatchCandidate>
             for (int t = 0; t < tiles.getNbTiles(); t++)
             {
                 candidates[m][t]._id = t;
-                candidates[m][t]._sqDist = tiles.computeSquareDistance(i, j, t);
+                candidates[m][t]._dist = tiles.computeDistance(i, j, t);
             }
 
             std::sort(candidates[m].begin(), candidates[m].end());
@@ -103,9 +104,9 @@ void MatchSolverImpl::reduceCandidateTiles(std::vector<std::vector<MatchCandidat
                     bool redundancy = false;
                     int currId = box.y * _subdivisions + box.x;
                     const int step = _subdivisions - box.width;
-                    for (int i = 0; i < box.height && !redundancy; i++, currId += step)
+                    for (int iBox = 0; iBox < box.height && !redundancy; iBox++, currId += step)
                     {
-                        for (int j = 0; j < box.width && !redundancy; j++, currId++)
+                        for (int jBox = 0; jBox < box.width && !redundancy; jBox++, currId++)
                         {
                             if (std::binary_search(sortedId[currId].begin(), sortedId[currId].end(), candidates[m][t]._id))
                                 redundancy = true;
@@ -144,17 +145,17 @@ void MatchSolverImpl::findInitialSolution(std::vector<std::vector<MatchCandidate
         for (int t = 0; t < candidates[m].size(); t++)
         {
             initCandidates[start + t]._id = candidates[m][t]._id;
-            initCandidates[start + t]._sqDist = candidates[m][t]._sqDist;
+            initCandidates[start + t]._dist = candidates[m][t]._dist;
         }
     }
     std::sort(initCandidates.begin(), initCandidates.end());
    
-    _cost = 0;
+    _bestCost = 0;
     cv::Rect box;
     for (int k = 0; k < initCandidates.size(); k++)
     {
         int candidateId = initCandidates[k]._i * _subdivisions + initCandidates[k]._j;
-        if (_matchingTiles[candidateId] >= 0)
+        if (_bestSolution[candidateId] >= 0)
             continue;
 
         computeRedundancyBox(initCandidates[k]._i, initCandidates[k]._j, box);
@@ -165,7 +166,7 @@ void MatchSolverImpl::findInitialSolution(std::vector<std::vector<MatchCandidate
         {
             for (int j = 0; j < box.width && !redundancy; j++, currId++)
             {
-                if (_matchingTiles[currId] == initCandidates[k]._id)
+                if (_bestSolution[currId] == initCandidates[k]._id)
                     redundancy = true;
             }
         }
@@ -173,11 +174,11 @@ void MatchSolverImpl::findInitialSolution(std::vector<std::vector<MatchCandidate
         if (redundancy)
             continue;
 
-        _matchingTiles[candidateId] = initCandidates[k]._id;
-        _cost += sqrt(initCandidates[k]._sqDist);
+        _bestSolution[candidateId] = initCandidates[k]._id;
+        _bestCost += initCandidates[k]._dist;
 
     }
-    Log::Logger::get().log(Log::TRACE) << "Matching tiles found.";
-    Log::Logger::get().log(Log::TRACE) << "With mean square cost : " << (_cost / (_subdivisions * _subdivisions));
+    Log::Logger::get().log(Log::TRACE) << "Matching tiles initial solution found.";
+    Log::Logger::get().log(Log::TRACE) << "With mean cost : " << (_bestCost / (_subdivisions * _subdivisions));
 }
 

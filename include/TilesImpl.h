@@ -20,7 +20,7 @@ public:
     virtual void getImage(int tileID, cv::Mat& image) const;
     virtual void remove(std::vector<unsigned int>& toRemove);
     virtual void compute(const IRegionOfInterest& roi, const Photo& photo);
-    virtual double computeSquareDistance(int i, int j, int tileID) const;
+    virtual double computeDistance(int i, int j, int tileID) const;
     virtual const std::string getTileFilepath(int tileId) const;
 
 private:

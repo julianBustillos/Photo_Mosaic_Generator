@@ -19,7 +19,7 @@ public:
     virtual unsigned int getNbTiles() const = 0;
     virtual void remove(std::vector<unsigned int>& toRemove) = 0;
     virtual void compute(const IRegionOfInterest& roi, const Photo& photo) = 0;
-    virtual double computeSquareDistance(int i, int j, int tileID) const = 0;
+    virtual double computeDistance(int i, int j, int tileID) const = 0;
     virtual const std::string getTileFilepath(int tileId) const = 0;
 
 protected:

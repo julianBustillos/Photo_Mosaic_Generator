@@ -120,7 +120,7 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
     Log::Logger::get().log(Log::TRACE) << "Photo features computed.";
 }
 
-double TilesImpl::computeSquareDistance(int i, int j, int tileID) const
+double TilesImpl::computeDistance(int i, int j, int tileID) const
 {
     const double* features = &_photoFeatures[(i * _subdivisions + j) * NbFeatures];
     return MathUtils::BGRFeatureDistance(features, _tilesData[tileID]._features, NbFeatures);
