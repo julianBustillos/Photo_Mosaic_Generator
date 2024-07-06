@@ -1,4 +1,4 @@
-#include "TilesImpl.h"
+#include "Tiles.h"
 #include "CustomException.h"
 #include "OutputManager.h"
 #include "MathUtils.h"
@@ -9,17 +9,17 @@
 #include <omp.h>
 
 
-TilesImpl::TilesImpl(const std::string& path, int subdivisions) :
-    ITiles(path), _tileParam({cv::IMWRITE_PNG_COMPRESSION, 0}), _subdivisions(subdivisions)
+Tiles::Tiles(const std::string& path, int subdivisions) :
+    _path(path), _tempPath(path + TempDir), _tileParam({cv::IMWRITE_PNG_COMPRESSION, 0}), _subdivisions(subdivisions)
 {
 }
 
-TilesImpl::~TilesImpl()
+Tiles::~Tiles()
 {
     removeTemp();
 }
 
-void TilesImpl::initialize(int minNbTiles)
+void Tiles::initialize(int minNbTiles)
 {
     Data data;
     for (auto it = std::filesystem::recursive_directory_iterator(_path); it != std::filesystem::recursive_directory_iterator(); it++)
@@ -47,17 +47,17 @@ void TilesImpl::initialize(int minNbTiles)
         throw CustomException("No sufficient number of tiles, " + std::to_string(_tilesData.size()) + " found but should have at least " + std::to_string(minNbTiles), CustomException::ERROR);
 }
 
-unsigned int TilesImpl::getNbTiles() const
+unsigned int Tiles::getNbTiles() const
 {
     return _tilesData.size();
 }
 
-void TilesImpl::getImage(int tileID, cv::Mat& image) const
+void Tiles::getImage(int tileID, cv::Mat& image) const
 {
     image = cv::imread(_tilesData[tileID]._imagePath, cv::IMREAD_COLOR);
 }
 
-void TilesImpl::remove(std::vector<unsigned int>& toRemove)
+void Tiles::remove(std::vector<unsigned int>& toRemove)
 {
     std::sort(toRemove.begin(), toRemove.end());
 
@@ -82,7 +82,7 @@ void TilesImpl::remove(std::vector<unsigned int>& toRemove)
     _tilesData.resize(_tilesData.size() - (t2 - t1));
 }
 
-void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
+void Tiles::compute(const IRegionOfInterest& roi, const Photo& photo)
 {
     removeTemp();
     createTemp();
@@ -120,18 +120,18 @@ void TilesImpl::compute(const IRegionOfInterest& roi, const Photo& photo)
     Log::Logger::get().log(Log::TRACE) << "Photo features computed.";
 }
 
-double TilesImpl::computeDistance(int i, int j, int tileID) const
+double Tiles::computeDistance(int i, int j, int tileID) const
 {
     const double* features = &_photoFeatures[(i * _subdivisions + j) * NbFeatures];
     return MathUtils::BGRFeatureDistance(features, _tilesData[tileID]._features, NbFeatures);
 }
 
-const std::string TilesImpl::getTileFilepath(int tileId) const
+const std::string Tiles::getTileFilepath(int tileId) const
 {
     return _tilesData[tileId]._tilePath;
 }
 
-bool TilesImpl::checkExtension(const std::string& extension) const
+bool Tiles::checkExtension(const std::string& extension) const
 {
     if (extension == ".bmp") return true;
     if (extension == ".dib") return true;
@@ -151,7 +151,7 @@ bool TilesImpl::checkExtension(const std::string& extension) const
     return false;
 }
 
-void TilesImpl::createTemp() const
+void Tiles::createTemp() const
 {
     if (!std::filesystem::exists(_tempPath))
     {
@@ -164,7 +164,7 @@ void TilesImpl::createTemp() const
     }
 }
 
-void TilesImpl::removeTemp() const
+void Tiles::removeTemp() const
 {
     if (std::filesystem::exists(_tempPath))
     {
@@ -173,7 +173,7 @@ void TilesImpl::removeTemp() const
     }
 }
 
-void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data, int threadID)
+void Tiles::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data, int threadID)
 {
     cv::Rect box;
     cv::Mat tileMat;
@@ -184,7 +184,7 @@ void TilesImpl::computeTileFeatures(const cv::Mat& image, const IRegionOfInteres
     exportTile(tileMat, data._tilePath);
 }
 
-void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize, int threadID)
+void Tiles::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize, int threadID)
 {
     if (image.size() == tileSize)
     {
@@ -204,7 +204,7 @@ void TilesImpl::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegi
     roi.find(image, box, wScaleInv < hScaleInv, threadID);
 }
 
-void TilesImpl::exportTile(const cv::Mat& tile, const std::string& tilePath)
+void Tiles::exportTile(const cv::Mat& tile, const std::string& tilePath)
 {
     cv::imwrite(tilePath, tile, _tileParam);
     if (!std::filesystem::exists(tilePath))

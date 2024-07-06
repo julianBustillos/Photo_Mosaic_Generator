@@ -1,20 +1,20 @@
-#include "PixelAdapterImpl.h"
+#include "PixelAdapter.h"
 #include "MathUtils.h"
 #include "CustomException.h"
 #include "Log.h"
 #include "Console.h"
 
 
-PixelAdapterImpl::PixelAdapterImpl(int subdivisions) :
-    IPixelAdapter(subdivisions)
+PixelAdapter::PixelAdapter(int subdivisions) :
+    _subdivisions(subdivisions)
 {
 }
 
-PixelAdapterImpl::~PixelAdapterImpl()
+PixelAdapter::~PixelAdapter()
 {
 }
 
-void PixelAdapterImpl::compute(const Photo& photo)
+void PixelAdapter::compute(const Photo& photo)
 {
     Console::Out::get(Console::DEFAULT) << "Computing image correction data...";
     _tileCorrection.resize(_subdivisions * _subdivisions);
@@ -30,7 +30,7 @@ void PixelAdapterImpl::compute(const Photo& photo)
     Log::Logger::get().log(Log::TRACE) << "Adapter data computed.";
 }
 
-void PixelAdapterImpl::applyCorrection(cv::Mat& tile, double blending, int mosaicId) const
+void PixelAdapter::applyCorrection(cv::Mat& tile, double blending, int mosaicId) const
 {
     cv::Rect box(0, 0, tile.size().width, tile.size().height);
     AdapterData originalTile;
@@ -69,7 +69,7 @@ void PixelAdapterImpl::applyCorrection(cv::Mat& tile, double blending, int mosai
     }
 }
 
-void PixelAdapterImpl::computeAdapterData(AdapterData& adapterData, const cv::Mat& image, const cv::Rect& box) const
+void PixelAdapter::computeAdapterData(AdapterData& adapterData, const cv::Mat& image, const cv::Rect& box) const
 {
     //Compute cumulative distribution function for BGR colors
     for (int c = 0; c < 3; c++)

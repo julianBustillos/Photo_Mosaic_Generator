@@ -1,17 +1,17 @@
 #pragma once
 
-#include "IPixelAdapter.h"
+#include "Photo.h"
 
 
-class PixelAdapterImpl : public IPixelAdapter
+class PixelAdapter
 {
 public:
-    PixelAdapterImpl(int subdivisions);
-    virtual ~PixelAdapterImpl();
+    PixelAdapter(int subdivisions);
+    ~PixelAdapter();
 
 public:
-    virtual void compute(const Photo& photo);
-    virtual void applyCorrection(cv::Mat& tile, double blending, int mosaicId) const;
+    void compute(const Photo& photo);
+    void applyCorrection(cv::Mat& tile, double blending, int mosaicId) const;
 
 private:
     struct AdapterData
@@ -21,6 +21,8 @@ private:
 
 private:
     void computeAdapterData(AdapterData& adapterData, const cv::Mat& image, const cv::Rect& box) const;
+
 private:
+    const int _subdivisions;
     std::vector<AdapterData> _tileCorrection;
 };

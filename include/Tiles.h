@@ -1,27 +1,30 @@
 #pragma once
 
-#include "ITiles.h"
+#include "Photo.h"
+#include "IRegionOfInterest.h"
+#include <vector>
 #include <string>
 
 
-class TilesImpl : public ITiles
+class Tiles
 {
 private:
+    static constexpr std::string TempDir = "PMG_temp";
     static constexpr int FeatureDiv = 4;
     static constexpr int NbFeatures = 3 * FeatureDiv * FeatureDiv;
 
 public:
-    TilesImpl(const std::string& path, int subdivisions);
-    virtual ~TilesImpl();
+    Tiles(const std::string& path, int subdivisions);
+    ~Tiles();
 
 public:
-    virtual void initialize(int minNbTiles);
-    virtual unsigned int getNbTiles() const;
-    virtual void getImage(int tileID, cv::Mat& image) const;
-    virtual void remove(std::vector<unsigned int>& toRemove);
-    virtual void compute(const IRegionOfInterest& roi, const Photo& photo);
-    virtual double computeDistance(int i, int j, int tileID) const;
-    virtual const std::string getTileFilepath(int tileId) const;
+    void initialize(int minNbTiles);
+    unsigned int getNbTiles() const;
+    void getImage(int tileID, cv::Mat& image) const;
+    void remove(std::vector<unsigned int>& toRemove);
+    void compute(const IRegionOfInterest& roi, const Photo& photo);
+    double computeDistance(int i, int j, int tileID) const;
+    const std::string getTileFilepath(int tileId) const;
 
 private:
     struct Data
@@ -40,6 +43,8 @@ private:
     void exportTile(const cv::Mat& tile, const std::string& tilePath);
 
 private:
+    const std::string _path;
+    const std::string _tempPath;
     const std::vector<int> _tileParam;
     const int _subdivisions;
     std::vector<Data> _tilesData;

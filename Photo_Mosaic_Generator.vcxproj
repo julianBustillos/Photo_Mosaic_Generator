@@ -124,28 +124,26 @@
   <ItemGroup>
     <ClCompile Include="source\FaceDetectionROIImpl.cpp" />
     <ClCompile Include="source\main.cpp" />
-    <ClCompile Include="source\MatchSolverImpl.cpp" />
+    <ClCompile Include="source\MatchSolver.cpp" />
     <ClCompile Include="source\MathUtils.cpp" />
     <ClCompile Include="source\MeanShift.cpp" />
     <ClCompile Include="source\MosaicBuilder.cpp" />
     <ClCompile Include="source\MosaicGenerator.cpp" />
     <ClCompile Include="source\Parameters.cpp" />
     <ClCompile Include="source\Photo.cpp" />
-    <ClCompile Include="source\PixelAdapterImpl.cpp" />
+    <ClCompile Include="source\PixelAdapter.cpp" />
     <ClCompile Include="source\MeanShiftROIImpl.cpp" />
     <ClCompile Include="source\SaliencyFilter.cpp" />
-    <ClCompile Include="source\TilesCleanerImpl.cpp" />
-    <ClCompile Include="source\TilesImpl.cpp" />
+    <ClCompile Include="source\TilesCleaner.cpp" />
+    <ClCompile Include="source\Tiles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Console.h" />
     <ClInclude Include="include\CustomException.h" />
     <ClInclude Include="include\FaceDetectionROIImpl.h" />
-    <ClInclude Include="include\IMatchSolver.h" />
     <ClInclude Include="include\IRegionOfInterest.h" />
-    <ClInclude Include="include\ITilesCleaner.h" />
     <ClInclude Include="include\Log.h" />
-    <ClInclude Include="include\MatchSolverImpl.h" />
+    <ClInclude Include="include\MatchSolver.h" />
     <ClInclude Include="include\MathUtils.h" />
     <ClInclude Include="include\MeanShift.h" />
     <ClInclude Include="include\MosaicBuilder.h" />
@@ -153,17 +151,15 @@
     <ClInclude Include="include\OutputManager.h" />
     <ClInclude Include="include\Parameters.h" />
     <ClInclude Include="include\Photo.h" />
-    <ClInclude Include="include\IPixelAdapter.h" />
-    <ClInclude Include="include\PixelAdapterImpl.h" />
+    <ClInclude Include="include\PixelAdapter.h" />
     <ClInclude Include="include\MeanShiftROIImpl.h" />
     <ClInclude Include="include\ProgressBar.h" />
     <ClInclude Include="include\SaliencyFilter.h" />
-    <ClInclude Include="include\ITiles.h" />
     <ClInclude Include="include\Clock.h" />
     <ClInclude Include="include\SystemUtils.h" />
     <ClInclude Include="include\termcolor.h" />
-    <ClInclude Include="include\TilesCleanerImpl.h" />
-    <ClInclude Include="include\TilesImpl.h" />
+    <ClInclude Include="include\TilesCleaner.h" />
+    <ClInclude Include="include\Tiles.h" />
     <ClInclude Include="include\WindowsSafe.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

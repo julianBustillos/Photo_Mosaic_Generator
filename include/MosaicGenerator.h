@@ -2,11 +2,11 @@
 
 #include "Parameters.h"
 #include "Photo.h"
-#include "IPixelAdapter.h"
+#include "PixelAdapter.h"
 #include "IRegionOfInterest.h"
-#include "ITiles.h"
-#include "ITilesCleaner.h"
-#include "IMatchSolver.h"
+#include "Tiles.h"
+#include "TilesCleaner.h"
+#include "MatchSolver.h"
 #include "MosaicBuilder.h"
 #include <memory>
 
@@ -20,10 +20,10 @@ public:
 
 private:
     std::shared_ptr<Photo> _photo;
-    std::shared_ptr<IPixelAdapter> _pixelAdapter;
+    std::shared_ptr<PixelAdapter> _pixelAdapter;
     std::shared_ptr<IRegionOfInterest> _roi;
-    std::shared_ptr<ITiles> _tiles;
-    std::shared_ptr<ITilesCleaner> _tilesCleaner;
-    std::shared_ptr<IMatchSolver> _matchSolver;
+    std::shared_ptr<Tiles> _tiles;
+    std::shared_ptr<TilesCleaner> _tilesCleaner;
+    std::shared_ptr<MatchSolver> _matchSolver;
     std::shared_ptr<MosaicBuilder> _mosaicBuilder;
 };

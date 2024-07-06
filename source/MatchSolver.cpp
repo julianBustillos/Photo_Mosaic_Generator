@@ -1,6 +1,5 @@
-#include "MatchSolverImpl.h"
+#include "MatchSolver.h"
 #include <opencv2/opencv.hpp>
-#include "ITiles.h"
 #include <vector>
 #include <algorithm>
 #include <stack>
@@ -9,21 +8,21 @@
 #include "CustomException.h"
 
 
-MatchSolverImpl::MatchSolverImpl(int subdivisions) : 
-    IMatchSolver(subdivisions), _bestCost(-1)
+MatchSolver::MatchSolver(int subdivisions) : 
+    _subdivisions(subdivisions), _bestCost(-1)
 {
 }
 
-MatchSolverImpl::~MatchSolverImpl()
+MatchSolver::~MatchSolver()
 {
 }
 
-int MatchSolverImpl::getRequiredNbTiles()
+int MatchSolver::getRequiredNbTiles()
 {
     return RedundancyTilesNumber;
 }
 
-void MatchSolverImpl::solve(const ITiles& tiles)
+void MatchSolver::solve(const Tiles& tiles)
 {
     Console::Out::get(Console::DEFAULT) << "Computing tiles matching...";
     const int mosaicSize = _subdivisions * _subdivisions;
@@ -36,12 +35,12 @@ void MatchSolverImpl::solve(const ITiles& tiles)
     Log::Logger::get().log(Log::TRACE) << "Best tiles found.";
 }
 
-const std::vector<int>& MatchSolverImpl::getMatchingTiles() const
+const std::vector<int>& MatchSolver::getMatchingTiles() const
 {
     return _bestSolution;
 }
 
-void MatchSolverImpl::computeRedundancyBox(int i, int j, cv::Rect& box) const
+void MatchSolver::computeRedundancyBox(int i, int j, cv::Rect& box) const
 {
     box.y = std::max(i - RedundancyDistance, 0);
     box.height = std::min(i + RedundancyDistance, _subdivisions - 1) - box.y + 1;
@@ -49,7 +48,7 @@ void MatchSolverImpl::computeRedundancyBox(int i, int j, cv::Rect& box) const
     box.width = std::min(j + RedundancyDistance, _subdivisions - 1) - box.x + 1;
 }
 
-void MatchSolverImpl::findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const ITiles& tiles) const
+void MatchSolver::findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const Tiles& tiles) const
 {
     int m = 0;
     for (int i = 0; i < _subdivisions; i++)
@@ -70,7 +69,7 @@ void MatchSolverImpl::findCandidateTiles(std::vector<std::vector<MatchCandidate>
     }
 }
 
-void MatchSolverImpl::reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates) const
+void MatchSolver::reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates) const
 {
     std::vector<std::vector<int>> sortedId(candidates.size());
     for (int m = 0; m < candidates.size(); m++)
@@ -133,7 +132,7 @@ void MatchSolverImpl::reduceCandidateTiles(std::vector<std::vector<MatchCandidat
     }
 }
 
-void MatchSolverImpl::findInitialSolution(std::vector<std::vector<MatchCandidate>>& candidates)
+void MatchSolver::findInitialSolution(std::vector<std::vector<MatchCandidate>>& candidates)
 {
     std::vector<InitCandidate> initCandidates;
     for (int m = 0; m < candidates.size(); m++)

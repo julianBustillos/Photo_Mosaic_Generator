@@ -1,23 +1,23 @@
 #pragma once
 
-#include "IMatchSolver.h"
+#include "Tiles.h"
 #include <opencv2/opencv.hpp>
 
 
-class MatchSolverImpl : public IMatchSolver
+class MatchSolver
 {
 private:
     static constexpr int RedundancyDistance = 4; //TODO OPTION ??
     static constexpr int RedundancyTilesNumber = (RedundancyDistance * 2 + 1) * (RedundancyDistance * 2 + 1);
 
 public:
-    MatchSolverImpl(int subdivisions);
-    virtual ~MatchSolverImpl();
+    MatchSolver(int subdivisions);
+    ~MatchSolver();
 
 public:
-    virtual int getRequiredNbTiles();
-    virtual void solve(const ITiles& tiles);
-    virtual const std::vector<int>& getMatchingTiles() const;
+    int getRequiredNbTiles();
+    void solve(const Tiles& tiles);
+    const std::vector<int>& getMatchingTiles() const;
 
 private:
     struct MatchCandidate
@@ -52,11 +52,12 @@ private:
 
 private:
     void computeRedundancyBox(int i, int j, cv::Rect& box) const;
-    void findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const ITiles& tiles) const;
+    void findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const Tiles& tiles) const;
     void reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates) const;
     void findInitialSolution(std::vector<std::vector<MatchCandidate>>& candidates);
 
 private:
+    const int _subdivisions;
     std::vector<int> _bestSolution;
     double _bestCost;
 };

@@ -1,9 +1,6 @@
 #include "MosaicGenerator.h"
-#include "PixelAdapterImpl.h"
+#include "PixelAdapter.h"
 #include "FaceDetectionROIImpl.h"
-#include "TilesImpl.h"
-#include "TilesCleanerImpl.h"
-#include "MatchSolverImpl.h"
 #include "CustomException.h"
 #include "Console.h"
 
@@ -14,7 +11,7 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_photo)
         throw CustomException("Bad allocation for _photo in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _pixelAdapter = std::make_shared<PixelAdapterImpl>(parameters.getSubdivision());
+    _pixelAdapter = std::make_shared<PixelAdapter>(parameters.getSubdivision());
     if (!_pixelAdapter)
         throw CustomException("Bad allocation for _pixelAdapter in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
@@ -22,15 +19,15 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_roi)
         throw CustomException("Bad allocation for _roi in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _tiles = std::make_shared<TilesImpl>(parameters.getTilesPath(), parameters.getSubdivision());
+    _tiles = std::make_shared<Tiles>(parameters.getTilesPath(), parameters.getSubdivision());
     if (!_tiles)
         throw CustomException("Bad allocation for _tiles in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _tilesCleaner = std::make_shared<TilesCleanerImpl>();
+    _tilesCleaner = std::make_shared<TilesCleaner>();
     if (!_tilesCleaner)
         throw CustomException("Bad allocation for _tilesCleaner in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _matchSolver = std::make_shared<MatchSolverImpl>(parameters.getSubdivision());
+    _matchSolver = std::make_shared<MatchSolver>(parameters.getSubdivision());
     if (!_matchSolver)
         throw CustomException("Bad allocation for _matchSolver in MosaicGenerator constructor.", CustomException::Level::ERROR);
 

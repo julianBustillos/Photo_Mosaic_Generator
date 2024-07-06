@@ -42,19 +42,19 @@
     <ClCompile Include="source\SaliencyFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\PixelAdapterImpl.cpp">
+    <ClCompile Include="source\PixelAdapter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\MatchSolverImpl.cpp">
+    <ClCompile Include="source\MatchSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\TilesImpl.cpp">
+    <ClCompile Include="source\Tiles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\FaceDetectionROIImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\TilesCleanerImpl.cpp">
+    <ClCompile Include="source\TilesCleaner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -89,22 +89,13 @@
     <ClInclude Include="include\SaliencyFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\PixelAdapterImpl.h">
+    <ClInclude Include="include\PixelAdapter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\IPixelAdapter.h">
+    <ClInclude Include="include\MatchSolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ITiles.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\IMatchSolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\MatchSolverImpl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\TilesImpl.h">
+    <ClInclude Include="include\Tiles.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\IRegionOfInterest.h">
@@ -113,10 +104,7 @@
     <ClInclude Include="include\FaceDetectionROIImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ITilesCleaner.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\TilesCleanerImpl.h">
+    <ClInclude Include="include\TilesCleaner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\OutputManager.h">

@@ -15,7 +15,7 @@ MosaicBuilder::~MosaicBuilder()
 {
 }
 
-void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter, const ITiles& tiles, const IMatchSolver& matchSolver)
+void MosaicBuilder::build(const Photo& photo, const PixelAdapter& pixelAdapter, const Tiles& tiles, const MatchSolver& matchSolver)
 {
     Console::Out::get(Console::DEFAULT) << "Building mosaics...";
     cv::Size mosaicSize = photo.getTileSize() * _subdivisions;
@@ -46,7 +46,7 @@ void MosaicBuilder::build(const Photo& photo, const IPixelAdapter& pixelAdapter,
 
 }
 
-void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const IPixelAdapter& pixelAdapter, double blending, int mosaicId, const cv::Rect& box)
+void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const PixelAdapter& pixelAdapter, double blending, int mosaicId, const cv::Rect& box)
 {
     cv::Mat tile = cv::imread(tilePath);
     if (tile.empty())

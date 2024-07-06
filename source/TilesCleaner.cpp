@@ -1,4 +1,4 @@
-#include "TilesCleanerImpl.h"
+#include "TilesCleaner.h"
 #include "MathUtils.h"
 #include "OutputManager.h"
 #include "ProgressBar.h"
@@ -7,7 +7,7 @@
 #include <stack>
 
 
-void TilesCleanerImpl::clean(ITiles& tiles) const
+void TilesCleaner::clean(Tiles& tiles) const
 {
     const unsigned int maxBitDist = MathUtils::HashBits * DistanceTolerance;
     std::vector<MathUtils::Hash> hashes(tiles.getNbTiles());
@@ -33,7 +33,6 @@ void TilesCleanerImpl::clean(ITiles& tiles) const
         }
         Console::Out::addBarSteps(1);
     }
-    //PARALLEL
     OutputManager::get().cstderr_restore();
     Log::Logger::get().log(Log::TRACE) << "Tiles DHash computed.";
 
