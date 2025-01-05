@@ -9,7 +9,7 @@
 class Tiles
 {
 private:
-    static constexpr std::string TempDir = "PMG_temp";
+    static const std::string TempDir;
     static constexpr int FeatureDiv = 4;
     static constexpr int NbFeatures = 3 * FeatureDiv * FeatureDiv;
 

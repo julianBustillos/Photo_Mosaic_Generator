@@ -9,6 +9,8 @@
 #include <omp.h>
 
 
+const std::string Tiles::TempDir = "PMG_temp";
+
 Tiles::Tiles(const std::string& path, int subdivisions) :
     _path(path), _tempPath(path + TempDir), _tileParam({cv::IMWRITE_PNG_COMPRESSION, 0}), _subdivisions(subdivisions)
 {
