@@ -76,8 +76,9 @@ void MosaicBuilder::exportMosaic(const std::string& path, double blending, const
     std::vector<int> image_params;
     image_params.emplace_back(cv::IMWRITE_JPEG_QUALITY);
     image_params.emplace_back(100);
-    std::string value = std::to_string(blending);
-    std::string mosaicPath = path + "\\mosaic_" + std::to_string(blending).substr(0, 4) + ".jpg";
+    std::string value = std::to_string((int)(blending * 100));
+    value = std::string(3 - value.length(), '0') + value;
+    std::string mosaicPath = path + "\\mosaic_" + value + ".jpg";
     cv::imwrite(mosaicPath, mosaic, image_params);
     Log::Logger::get().log(Log::INFO) << "Mosaic exported at " << mosaicPath;
 }
