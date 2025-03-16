@@ -15,6 +15,8 @@ Parameters::Parameters() :
         ("s,scale", "Image scale", cxxopts::value<double>()->default_value("1."))
         ("r,ratio", "Image ratio (width / height)", cxxopts::value<double>()->default_value("0."))
         ("b,blending", "Blending step for exported mosaics [0.01;1]", cxxopts::value<double>()->default_value("0.1"))
+        ("m,blending_min", "Blending minimum value >= 0", cxxopts::value<double>()->default_value("0"))
+        ("M,blending_max", "Blending maximum value <= 1", cxxopts::value<double>()->default_value("1"))
         ("h,help", "Print usage");
 }
 
@@ -52,6 +54,16 @@ double Parameters::getRatio() const
 double Parameters::getBlending() const
 {
     return _blending;
+}
+
+double Parameters::getBlendingMin() const
+{
+    return _blendingMin;
+}
+
+double Parameters::getBlendingMax() const
+{
+    return _blendingMax;
 }
 
 std::string Parameters::getHelp() const
@@ -97,6 +109,8 @@ void Parameters::parse(int argc, char* argv[])
     _scale = result["scale"].as<double>();
     _ratio = result["ratio"].as<double>();
     _blending = result["blending"].as<double>();
+    _blendingMin = result["blending_min"].as<double>();
+    _blendingMax = result["blending_max"].as<double>();
 
     std::replace(_photoPath.begin(), _photoPath.end(), '/', '\\');
     std::replace(_tilesPath.begin(), _tilesPath.end(), '/', '\\');
@@ -147,6 +161,21 @@ void Parameters::check()
     if (_blending < 0.01 || 1. < _blending)
     {
         message += "\nInvalid ratio value";
+        errorCount++;
+    }
+    if (_blendingMin < 0)
+    {
+        message += "\nInvalid minimum value";
+        errorCount++;
+    }
+    if (_blendingMax > 1)
+    {
+        message += "\nInvalid maximum value";
+        errorCount++;
+    }
+    if (_blendingMin > _blendingMax)
+    {
+        message += "\nMinimum value > Maximum value";
         errorCount++;
     }
 

@@ -31,7 +31,7 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_matchSolver)
         throw CustomException("Bad allocation for _matchSolver in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _mosaicBuilder = std::make_shared<MosaicBuilder>(parameters.getSubdivision(), parameters.getBlending());
+    _mosaicBuilder = std::make_shared<MosaicBuilder>(parameters.getSubdivision(), parameters.getBlending(), parameters.getBlendingMin(), parameters.getBlendingMax());
     if (!_mosaicBuilder)
         throw CustomException("Bad allocation for _mosaicBuilder in MosaicGenerator constructor.", CustomException::Level::ERROR);
 }

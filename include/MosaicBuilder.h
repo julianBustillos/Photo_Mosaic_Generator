@@ -12,7 +12,7 @@
 class MosaicBuilder
 {
 public:
-    MosaicBuilder(int subdivisions, double blending);
+    MosaicBuilder(int subdivisions, double blending, double blendingMin, double blendingMax);
     ~MosaicBuilder();
     void build(const Photo& photo, const PixelAdapter& pixelAdapter, const Tiles& tiles, const MatchSolver& matchSolver);
 
@@ -24,5 +24,7 @@ private:
     std::shared_ptr<const Photo> _photo;
     const int _subdivisions;
     const double _blending;
+    const double _blendingMin;
+    const double _blendingMax;
 };
 

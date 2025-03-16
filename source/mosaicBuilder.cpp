@@ -6,8 +6,8 @@
 #include "Console.h"
 
 
-MosaicBuilder::MosaicBuilder(int subdivisions, double blending) :
-    _subdivisions(subdivisions), _blending(blending)
+MosaicBuilder::MosaicBuilder(int subdivisions, double blending, double blendingMin, double blendingMax) :
+    _subdivisions(subdivisions), _blending(blending), _blendingMin(blendingMin), _blendingMax(blendingMax)
 {
 }
 
@@ -20,13 +20,14 @@ void MosaicBuilder::build(const Photo& photo, const PixelAdapter& pixelAdapter, 
     Console::Out::get(Console::DEFAULT) << "Building mosaics...";
     cv::Size mosaicSize = photo.getTileSize() * _subdivisions;
     const std::vector<int>& matchingTiles = matchSolver.getMatchingTiles();
-    const int nbSteps = (int)(1. / _blending) + 1;
+    const double blendingSize = _blendingMax - _blendingMin;
+    const int nbSteps = blendingSize > 0 ? (int)(blendingSize / _blending) + 1 : 1;
 
     #pragma omp parallel for
     for (int b = 0; b < nbSteps; b++)
     {
         cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
-        double blendingValue = b * _blending;
+        double blendingValue = _blendingMin + b * _blending;
         for (int i = 0; i < _subdivisions; i++)
         {
             for (int j = 0; j < _subdivisions; j++)

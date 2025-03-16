@@ -16,6 +16,8 @@ public:
 	double getScale() const;
     double getRatio() const;
     double getBlending() const;
+    double getBlendingMin() const;
+    double getBlendingMax() const;
 	std::string getHelp() const;
 
 private:
@@ -30,4 +32,6 @@ private:
 	double _scale = 1.;
     double _ratio = 0.;
 	double _blending = 0.1;
+	double _blendingMin = 0;
+	double _blendingMax = 1;
 };
