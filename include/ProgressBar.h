@@ -72,6 +72,8 @@ inline bool ProgressBar::writeProgress()
         return true;
 
     float progress = (float)_currStep / (float)_nbSteps;
+    int percentage = (int)(progress * 100.);
+    std::string padding = percentage < 10 ? "  " : percentage < 100 ? " " : "";
     int completed = (int)(progress * (float)_width);
 
     _stream << "\r" << std::flush;
@@ -82,7 +84,7 @@ inline bool ProgressBar::writeProgress()
     for (int i = completed; i < _width; i++)
         _stream << " ";
 
-    _stream << "] " << (int)(progress * 100.) << "%";
+    _stream << "] " << padding << percentage << "%";
 
     return _currStep == _nbSteps;
 }
