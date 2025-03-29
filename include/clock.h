@@ -1,7 +1,7 @@
 #pragma once
 
 #include <chrono>
-#include "termcolor.h"
+#include "termcolor.hpp"
 
 
 class Clock

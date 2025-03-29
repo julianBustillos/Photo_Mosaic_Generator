@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ProgressBar.h"
-#include "termcolor.h"
+#include "termcolor.hpp"
 #include <iostream>
 #include <thread>
 #include <mutex>

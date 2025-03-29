@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <opencv2/core/utils/logger.hpp>
-#include "termcolor.h"
+#include "termcolor.hpp"
 #include "Clock.h"
 #include "CustomException.h"
 #include "Parameters.h"
@@ -22,7 +22,6 @@ int main(int argc, char* argv[])
     try
     {
         Clock clock;
-        //TODO MOVE COUT
         Console::Out::get(Console::DEFAULT) << "++++++++++++++++++++++++++++++++++++++++++++++++ PHOTO MOSAIC GENERATOR ++++++++++++++++++++++++++++++++++++++++++++++++";
         Console::Out::get(Console::DEFAULT) << "";
 
