@@ -6,8 +6,8 @@
 #include "Console.h"
 
 
-MosaicBuilder::MosaicBuilder(int subdivisions, double blending, double blendingMin, double blendingMax) :
-    _subdivisions(subdivisions), _blending(blending), _blendingMin(blendingMin), _blendingMax(blendingMax)
+MosaicBuilder::MosaicBuilder(std::tuple<int, int> grid, std::tuple<double, double, double> blending) :
+    _gridWidth(std::get<0>(grid)), _gridHeight(std::get<1>(grid)), _blendingStep(std::get<0>(blending)), _blendingMin(std::get<1>(blending)), _blendingMax(std::get<2>(blending))
 {
 }
 
@@ -18,21 +18,23 @@ MosaicBuilder::~MosaicBuilder()
 void MosaicBuilder::build(const Photo& photo, const PixelAdapter& pixelAdapter, const Tiles& tiles, const MatchSolver& matchSolver)
 {
     Console::Out::get(Console::DEFAULT) << "Building mosaics...";
-    cv::Size mosaicSize = photo.getTileSize() * _subdivisions;
+    cv::Size mosaicSize = photo.getTileSize();
+    mosaicSize.width *= _gridWidth;
+    mosaicSize.height *= _gridHeight;
     const std::vector<int>& matchingTiles = matchSolver.getMatchingTiles();
     const double blendingSize = _blendingMax - _blendingMin;
-    const int nbSteps = blendingSize > 0 ? (int)(blendingSize / _blending) + 1 : 1;
+    const int nbSteps = blendingSize > 0 ? (int)(blendingSize / _blendingStep) + 1 : 1;
 
     #pragma omp parallel for
     for (int b = 0; b < nbSteps; b++)
     {
         cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
-        double blendingValue = _blendingMin + b * _blending;
-        for (int i = 0; i < _subdivisions; i++)
+        double blendingValue = _blendingMin + b * _blendingStep;
+        for (int i = 0; i < _gridHeight; i++)
         {
-            for (int j = 0; j < _subdivisions; j++)
+            for (int j = 0; j < _gridWidth; j++)
             {
-                int mosaicId = i * _subdivisions + j;
+                int mosaicId = i * _gridWidth + j;
                 int tileId = matchingTiles[mosaicId];
                 if (tileId >= 0)
                     copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), pixelAdapter, blendingValue, mosaicId, photo.getTileBox(i, j, false));

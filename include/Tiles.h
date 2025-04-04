@@ -4,6 +4,7 @@
 #include "IRegionOfInterest.h"
 #include <vector>
 #include <string>
+#include <tuple>
 
 
 class Tiles
@@ -12,9 +13,10 @@ private:
     static const std::string TempDir;
     static constexpr int FeatureDiv = 4;
     static constexpr int NbFeatures = 3 * FeatureDiv * FeatureDiv;
+    static constexpr int TileParam[2] = {cv::IMWRITE_PNG_COMPRESSION, 0};
 
 public:
-    Tiles(const std::string& path, int subdivisions);
+    Tiles(const std::string& path, std::tuple<int, int> grid);
     ~Tiles();
 
 public:
@@ -45,8 +47,8 @@ private:
 private:
     const std::string _path;
     const std::string _tempPath;
-    const std::vector<int> _tileParam;
-    const int _subdivisions;
+    const int _gridWidth;
+    const int _gridHeight;
     std::vector<Data> _tilesData;
     std::vector<double> _photoFeatures;
 };

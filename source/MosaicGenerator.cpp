@@ -7,11 +7,11 @@
 
 MosaicGenerator::MosaicGenerator(const Parameters& parameters)
 {
-    _photo = std::make_shared<Photo>(parameters.getPhotoPath(), parameters.getScale(), parameters.getRatio(), parameters.getSubdivision());
+    _photo = std::make_shared<Photo>(parameters.getPhotoPath(), parameters.getGrid(), parameters.getScale(), parameters.getResolution());
     if (!_photo)
         throw CustomException("Bad allocation for _photo in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _pixelAdapter = std::make_shared<PixelAdapter>(parameters.getSubdivision());
+    _pixelAdapter = std::make_shared<PixelAdapter>(parameters.getGrid());
     if (!_pixelAdapter)
         throw CustomException("Bad allocation for _pixelAdapter in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
@@ -19,7 +19,7 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_roi)
         throw CustomException("Bad allocation for _roi in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _tiles = std::make_shared<Tiles>(parameters.getTilesPath(), parameters.getSubdivision());
+    _tiles = std::make_shared<Tiles>(parameters.getTilesPath(), parameters.getGrid());
     if (!_tiles)
         throw CustomException("Bad allocation for _tiles in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
@@ -27,11 +27,11 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_tilesCleaner)
         throw CustomException("Bad allocation for _tilesCleaner in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _matchSolver = std::make_shared<MatchSolver>(parameters.getSubdivision());
+    _matchSolver = std::make_shared<MatchSolver>(parameters.getGrid());
     if (!_matchSolver)
         throw CustomException("Bad allocation for _matchSolver in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _mosaicBuilder = std::make_shared<MosaicBuilder>(parameters.getSubdivision(), parameters.getBlending(), parameters.getBlendingMin(), parameters.getBlendingMax());
+    _mosaicBuilder = std::make_shared<MosaicBuilder>(parameters.getGrid(), parameters.getBlending());
     if (!_mosaicBuilder)
         throw CustomException("Bad allocation for _mosaicBuilder in MosaicGenerator constructor.", CustomException::Level::ERROR);
 }

@@ -56,7 +56,7 @@ void FaceDetectionROIImpl::initialize()
     _faceDetectors.resize(nbThreads);
     for (int t = 0; t < nbThreads; t++)
     {
-        _faceDetectors[t] = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5, 0.3, 5000);
+        _faceDetectors[t] = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5f, 0.3f, 5000);
         if (!_faceDetectors[t])
             throw CustomException("Bad allocation for _faceDetector in FaceDetectionROIImpl.", CustomException::Level::ERROR);
     }

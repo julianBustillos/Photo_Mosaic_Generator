@@ -9,14 +9,13 @@ Parameters::Parameters() :
     _options("Photo_Mosaic_Generator.exe", "Generates an awesome mosaic to match a photo using a photo database.")
 {
     _options.add_options()
-        ("p,photo", "Path to reference photo for mosaic", cxxopts::value<std::string>())
-        ("t,tiles", "Path to tiles image folder", cxxopts::value<std::string>())
-        ("d,subdiv", "Image subdivision (height and width)", cxxopts::value<int>())
-        ("s,scale", "Image scale", cxxopts::value<double>()->default_value("1."))
-        ("r,ratio", "Image ratio (width / height)", cxxopts::value<double>()->default_value("0."))
-        ("b,blending", "Blending step for exported mosaics [0.01;1]", cxxopts::value<double>()->default_value("0.1"))
-        ("m,blending_min", "Blending minimum value >= 0", cxxopts::value<double>()->default_value("0"))
-        ("M,blending_max", "Blending maximum value <= 1", cxxopts::value<double>()->default_value("1"))
+        ("p,photo", "Path to reference photo for mosaic.", cxxopts::value<std::string>())
+        ("t,tiles", "Path to tiles image folder.", cxxopts::value<std::string>())
+        ("g,grid", "Grid size (width, height) for tiling. Could be one value (equal on both dimensions) or two values.", cxxopts::value<std::vector<int>>())
+        ("s,scale", "Photo scale value for outputs resolution. Not compatible with resolution usage.", cxxopts::value<double>())
+        ("r,resolution", "Resolution values (width, height) for outputs. Not compatible with scale usage.", cxxopts::value<std::vector<int>>())
+        ("c,crop", "Allow cropping photo when resolution mode is enabled. Can only be used with resolution option.")
+        ("b,blending", "Blending values for outputs. Could be one or three values: step for exported mosaics [0.01;1], minimum value >= 0, maximum value <= 1.", cxxopts::value<std::vector<double>>()->default_value("0.1"))
         ("h,help", "Print usage");
 }
 
@@ -24,46 +23,45 @@ void Parameters::initialize(int argc, char* argv[])
 {
     parse(argc, argv);
     check();
+
+    Log::Logger::get().log(Log::TRACE) << "Parameter checked.";
+    Log::Logger::get().log(Log::DEBUG) << "Photo path : " << _photoPath.value();
+    Log::Logger::get().log(Log::DEBUG) << "Tiles path : " << _tilesPath.value();
+    Log::Logger::get().log(Log::DEBUG) << "Grid : " << _grid.value();
+    Log::Logger::get().log(Log::DEBUG) << "Scale : " << _scale.value();
+    Log::Logger::get().log(Log::DEBUG) << "Resolution : " << _resolution.value();
+    Log::Logger::get().log(Log::DEBUG) << "Crop : " << (_crop ? "true" : "false");
+    Log::Logger::get().log(Log::DEBUG) << "Blending : " << _blending.value();
 }
 
 std::string Parameters::getPhotoPath() const
 {
-    return _photoPath;
+    return _photoPath.value();
 }
 
 std::string Parameters::getTilesPath() const
 {
-    return _tilesPath;
+    return _tilesPath.value();
 }
 
-int Parameters::getSubdivision() const
+std::tuple<int, int>  Parameters::getGrid() const
 {
-    return _subdivision;
+    return std::make_tuple(_grid.value()[0], _grid.value()[1]);
 }
 
 double Parameters::getScale() const
 {
-    return _scale;
+    return _scale.has_value() ? _scale.value() : 0;
 }
 
-double Parameters::getRatio() const
+std::tuple<int, int, bool>  Parameters::getResolution() const
 {
-    return _ratio;
+    return std::make_tuple(_resolution.value()[0], _resolution.value()[1], _crop);
 }
 
-double Parameters::getBlending() const
+std::tuple<double, double, double>  Parameters::getBlending() const
 {
-    return _blending;
-}
-
-double Parameters::getBlendingMin() const
-{
-    return _blendingMin;
-}
-
-double Parameters::getBlendingMax() const
-{
-    return _blendingMax;
+    return std::make_tuple(_blending.value()[0], _blending.value()[1], _blending.value()[2]);
 }
 
 std::string Parameters::getHelp() const
@@ -104,18 +102,15 @@ void Parameters::parse(int argc, char* argv[])
         _photoPath = result["photo"].as<std::string>();
     if (result.count("tiles"))
         _tilesPath = result["tiles"].as<std::string>();
-    if (result.count("subdiv"))
-        _subdivision = result["subdiv"].as<int>();
-    _scale = result["scale"].as<double>();
-    _ratio = result["ratio"].as<double>();
-    _blending = result["blending"].as<double>();
-    _blendingMin = result["blending_min"].as<double>();
-    _blendingMax = result["blending_max"].as<double>();
-
-    std::replace(_photoPath.begin(), _photoPath.end(), '/', '\\');
-    std::replace(_tilesPath.begin(), _tilesPath.end(), '/', '\\');
-    if (_tilesPath.back() != '\\')
-        _tilesPath += "\\";
+    if (result.count("grid"))
+        _grid = result["grid"].as<std::vector<int>>();
+    if (result.count("scale"))
+        _scale = result["scale"].as<double>();
+    if (result.count("resolution"))
+        _resolution = result["resolution"].as<std::vector<int>>();
+    if (result.count("crop"))
+        _crop = true;
+    _blending = result["blending"].as<std::vector<double>>();
 }
 
 void Parameters::check()
@@ -123,72 +118,150 @@ void Parameters::check()
     std::string message = "Arguments check : ";
     unsigned int errorCount = 0;
 
-    if (_photoPath == "")
+    if (!_photoPath.has_value())
     {
         message += "\nNo photo defined";
         errorCount++;
     }
-    if (!std::filesystem::exists(_photoPath))
+    else
     {
-        message += "\nInvalid file : " + _photoPath;
-        errorCount++;
+        std::replace(_photoPath.value().begin(), _photoPath.value().end(), '/', '\\');
+        if (!std::filesystem::exists(_photoPath.value()))
+        {
+            message += "\nInvalid file : " + _photoPath.value();
+            errorCount++;
+        }
     }
-    if (_tilesPath == "")
+
+    if (!_tilesPath.has_value())
     {
         message += "\nNo tiles path defined";
         errorCount++;
     }
-    if (!std::filesystem::exists(_tilesPath))
+    else 
     {
-        message += "\nInvalid path : " + _tilesPath;
+        std::replace(_tilesPath.value().begin(), _tilesPath.value().end(), '/', '\\');
+        if (_tilesPath.value().back() != '\\')
+            _tilesPath.value() += "\\";
+
+        if (!std::filesystem::exists(_tilesPath.value()))
+        {
+            message += "\nInvalid path : " + _tilesPath.value();
+            errorCount++;
+        }
+    }
+
+    if (!_grid.has_value())
+    {
+        message += "\nNo grid values defined";
         errorCount++;
     }
-    if (_subdivision <= 0)
+    else if (_grid.value().empty() || _grid.value().size() > 2)
     {
-        message += "\nInvalid subdivision value";
+        message += "\nWrong number of grid elements : " + std::to_string(_grid.value().size());
         errorCount++;
     }
-    if (_scale <= 0)
+    else
     {
-        message += "\nInvalid scale value";
+        for (int i = 0; i < _grid.value().size(); i++)
+        {
+            if (_grid.value()[i] <= 0)
+            {
+                message += "\nInvalid grid value : " + std::to_string(_grid.value()[i]);
+                errorCount++;
+            }
+        }
+        if (_grid.value().size() == 1)
+            _grid.value().push_back(_grid.value()[0]);
+    }
+
+    if (_scale.has_value() && _resolution.has_value())
+    {
+        message += "\nInvalid use of scale and resolution exclusive options";
         errorCount++;
     }
-    if (_ratio < 0)
+    else
     {
-        message += "\nInvalid ratio value";
+        if (_scale.has_value() && _scale.value() <= 0)
+        {
+            message += "\nInvalid scale value : " + std::to_string(_scale.value());
+            errorCount++;
+        }
+        if (_resolution.has_value())
+        {
+            if (_resolution.value().empty())
+            {
+                message += "\nNo resolution defined";
+                errorCount++;
+            }
+            else if (_resolution.value().size() != 2)
+            {
+                message += "\nWrong number of resolution elements : " + std::to_string(_resolution.value().size());
+                errorCount++;
+            }
+            else
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    if (_resolution.value()[i] <= 0)
+                    {
+                        message += "\nInvalid resolution value : " + std::to_string(_resolution.value()[i]);
+                        errorCount++;
+                    }
+                }
+            }
+        }
+    }
+   
+    if (_crop && !_resolution.has_value())
+    {
+        message += "\nCrop option can only be used if resolution is enabled";
         errorCount++;
     }
-    if (_blending < 0.01 || 1. < _blending)
+
+    if (_blending.has_value())
     {
-        message += "\nInvalid ratio value";
-        errorCount++;
-    }
-    if (_blendingMin < 0)
-    {
-        message += "\nInvalid minimum value";
-        errorCount++;
-    }
-    if (_blendingMax > 1)
-    {
-        message += "\nInvalid maximum value";
-        errorCount++;
-    }
-    if (_blendingMin > _blendingMax)
-    {
-        message += "\nMinimum value > Maximum value";
-        errorCount++;
+        if (_blending.value().size() != 1 && _blending.value().size() != 3)
+        {
+            message += "\nWrong number of blending elements : " + std::to_string(_blending.value().size());
+            errorCount++;
+        }
+        else
+        {
+            if (_blending.value()[0] < 0.01 || 1. < _blending.value()[0])
+            {
+                message += "\nInvalid ratio value";
+                errorCount++;
+            }
+            if (_blending.value().size() == 3)
+            {
+                if (_blending.value()[1] < 0)
+                {
+                    message += "\nInvalid blending minimum value : " + std::to_string(_blending.value()[1]);
+                    errorCount++;
+                }
+                if (_blending.value()[2] > 1)
+                {
+                    message += "\nInvalid blending maximum value : " + std::to_string(_blending.value()[2]);
+                    errorCount++;
+                }
+                if (_blending.value()[1] > _blending.value()[2])
+                {
+                    message += "\nMinimum value > Maximum value : " + std::to_string(_blending.value()[1]) + " > " + std::to_string(_blending.value()[2]);
+                    errorCount++;
+                }
+            }
+            else
+            {
+                _blending.value().push_back(0);
+                _blending.value().push_back(1);
+            }
+        }
     }
 
     if (errorCount > 0)
     {
         throw CustomException(message, CustomException::Level::NORMAL);
     }
-
-    Log::Logger::get().log(Log::TRACE) << "Parameter checked.";
-    Log::Logger::get().log(Log::DEBUG) << "Photo path : " << _photoPath;
-    Log::Logger::get().log(Log::DEBUG) << "Tiles path : " << _tilesPath;
-    Log::Logger::get().log(Log::DEBUG) << "Subidivion : " << _subdivision;
-    Log::Logger::get().log(Log::DEBUG) << "Scale : " << _scale;
-    Log::Logger::get().log(Log::DEBUG) << "Ratio : " << _ratio;
 }
 

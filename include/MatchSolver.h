@@ -1,17 +1,18 @@
 #pragma once
 
 #include "Tiles.h"
+#include <tuple>
 #include <opencv2/opencv.hpp>
 
 
 class MatchSolver
 {
 private:
-    static constexpr int RedundancyDistance = 4; //TODO OPTION ??
+    static constexpr int RedundancyDistance = 4;
     static constexpr int RedundancyTilesNumber = (RedundancyDistance * 2 + 1) * (RedundancyDistance * 2 + 1);
 
 public:
-    MatchSolver(int subdivisions);
+    MatchSolver(std::tuple<int, int> grid);
     ~MatchSolver();
 
 public:
@@ -57,7 +58,8 @@ private:
     void findInitialSolution(std::vector<std::vector<MatchCandidate>>& candidates);
 
 private:
-    const int _subdivisions;
+    const int _gridWidth;
+    const int _gridHeight;
     std::vector<int> _bestSolution;
     double _bestCost;
 };

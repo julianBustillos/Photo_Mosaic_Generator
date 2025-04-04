@@ -5,8 +5,8 @@
 #include "Console.h"
 
 
-PixelAdapter::PixelAdapter(int subdivisions) :
-    _subdivisions(subdivisions)
+PixelAdapter::PixelAdapter(std::tuple<int, int> grid) :
+    _gridWidth(std::get<0>(grid)), _gridHeight(std::get<1>(grid))
 {
 }
 
@@ -17,13 +17,13 @@ PixelAdapter::~PixelAdapter()
 void PixelAdapter::compute(const Photo& photo)
 {
     Console::Out::get(Console::DEFAULT) << "Computing image correction data...";
-    _tileCorrection.resize(_subdivisions * _subdivisions);
+    _tileCorrection.resize(_gridWidth * _gridHeight);
 
-    for (int i = 0; i < _subdivisions; i++)
+    for (int i = 0; i < _gridHeight; i++)
     {
-        for (int j = 0; j < _subdivisions; j++)
+        for (int j = 0; j < _gridWidth; j++)
         {
-            int mosaicId = i * _subdivisions + j;
+            int mosaicId = i * _gridWidth + j;
             computeAdapterData(_tileCorrection[mosaicId], photo.getImage(), photo.getTileBox(i, j, true));
         }
     }
@@ -55,17 +55,12 @@ void PixelAdapter::applyCorrection(cv::Mat& tile, double blending, int mosaicId)
 
     for (int k = 0; k < tileDataSize; k += 3)
     {
-        uchar originalBlue = data[k];
-        uchar originalGreen = data[k + 1];
-        uchar originalRed = data[k + 2];
-
-        uchar matchingBlue = BGR_correction_function[0][originalBlue];
-        uchar matchingGreen = BGR_correction_function[1][originalGreen];
-        uchar matchingRed = BGR_correction_function[2][originalRed];
-
-        data[k] = (uchar)(blending * (double)matchingBlue + (1. - blending) * (double)originalBlue);
-        data[k + 1] = (uchar)(blending * (double)matchingGreen + (1. - blending) * (double)originalGreen);
-        data[k + 2] = (uchar)(blending * (double)matchingRed + (1. - blending) * (double)originalRed);
+        for (int c = 0; c < 3; c++)
+        {
+            uchar originalColor = data[k + c];
+            uchar matchingColor = BGR_correction_function[c][originalColor];
+            data[k + c] = (uchar)(blending * (double)matchingColor + (1. - blending) * (double)originalColor);
+        }
     }
 }
 

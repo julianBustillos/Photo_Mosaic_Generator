@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Photo.h"
+#include <tuple>
 
 
 class PixelAdapter
 {
 public:
-    PixelAdapter(int subdivisions);
+    PixelAdapter(std::tuple<int, int> grid);
     ~PixelAdapter();
 
 public:
@@ -23,6 +24,7 @@ private:
     void computeAdapterData(AdapterData& adapterData, const cv::Mat& image, const cv::Rect& box) const;
 
 private:
-    const int _subdivisions;
+    const int _gridWidth;
+    const int _gridHeight;
     std::vector<AdapterData> _tileCorrection;
 };

@@ -8,8 +8,8 @@
 #include "CustomException.h"
 
 
-MatchSolver::MatchSolver(int subdivisions) : 
-    _subdivisions(subdivisions), _bestCost(-1)
+MatchSolver::MatchSolver(std::tuple<int, int> grid) :
+    _gridWidth(std::get<0>(grid)), _gridHeight(std::get<1>(grid)), _bestCost(-1)
 {
 }
 
@@ -25,7 +25,7 @@ int MatchSolver::getRequiredNbTiles()
 void MatchSolver::solve(const Tiles& tiles)
 {
     Console::Out::get(Console::DEFAULT) << "Computing tiles matching...";
-    const int mosaicSize = _subdivisions * _subdivisions;
+    const int mosaicSize = _gridWidth * _gridHeight;
     _bestSolution.resize(mosaicSize, -1);
     std::vector<std::vector<MatchCandidate>> candidates(mosaicSize);
 
@@ -43,17 +43,17 @@ const std::vector<int>& MatchSolver::getMatchingTiles() const
 void MatchSolver::computeRedundancyBox(int i, int j, cv::Rect& box) const
 {
     box.y = std::max(i - RedundancyDistance, 0);
-    box.height = std::min(i + RedundancyDistance, _subdivisions - 1) - box.y + 1;
+    box.height = std::min(i + RedundancyDistance, _gridHeight - 1) - box.y + 1;
     box.x = std::max(j - RedundancyDistance, 0);
-    box.width = std::min(j + RedundancyDistance, _subdivisions - 1) - box.x + 1;
+    box.width = std::min(j + RedundancyDistance, _gridWidth - 1) - box.x + 1;
 }
 
 void MatchSolver::findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const Tiles& tiles) const
 {
     int m = 0;
-    for (int i = 0; i < _subdivisions; i++)
+    for (int i = 0; i < _gridHeight; i++)
     {
-        for (int j = 0; j < _subdivisions; j++, m++)
+        for (int j = 0; j < _gridWidth; j++, m++)
         {
             candidates[m].resize(tiles.getNbTiles());
 
@@ -87,9 +87,9 @@ void MatchSolver::reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>&
     while (true)
     {
         int m = 0;
-        for (int i = 0; i < _subdivisions; i++)
+        for (int i = 0; i < _gridHeight; i++)
         {
-            for (int j = 0; j < _subdivisions; j++, m++)
+            for (int j = 0; j < _gridWidth; j++, m++)
             {
                 if (lastReduction == m)
                     return;
@@ -101,8 +101,8 @@ void MatchSolver::reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>&
                 for (int t = 0; t < candidates[m].size() - 1; t++)
                 {
                     bool redundancy = false;
-                    int currId = box.y * _subdivisions + box.x;
-                    const int step = _subdivisions - box.width;
+                    int currId = box.y * _gridWidth + box.x;
+                    const int step = _gridWidth - box.width;
                     for (int iBox = 0; iBox < box.height && !redundancy; iBox++, currId += step)
                     {
                         for (int jBox = 0; jBox < box.width && !redundancy; jBox++, currId++)
@@ -137,8 +137,8 @@ void MatchSolver::findInitialSolution(std::vector<std::vector<MatchCandidate>>& 
     std::vector<InitCandidate> initCandidates;
     for (int m = 0; m < candidates.size(); m++)
     {
-        const int i = m / _subdivisions;
-        const int j = m - i * _subdivisions;
+        const int i = m / _gridWidth;
+        const int j = m - i * _gridWidth;
         const int start = initCandidates.size();
         initCandidates.resize(start + candidates[m].size(), InitCandidate(i, j));
         for (int t = 0; t < candidates[m].size(); t++)
@@ -153,14 +153,14 @@ void MatchSolver::findInitialSolution(std::vector<std::vector<MatchCandidate>>& 
     cv::Rect box;
     for (int k = 0; k < initCandidates.size(); k++)
     {
-        int candidateId = initCandidates[k]._i * _subdivisions + initCandidates[k]._j;
+        int candidateId = initCandidates[k]._i * _gridWidth + initCandidates[k]._j;
         if (_bestSolution[candidateId] >= 0)
             continue;
 
         computeRedundancyBox(initCandidates[k]._i, initCandidates[k]._j, box);
         bool redundancy = false;
-        int currId = box.y * _subdivisions + box.x;
-        const int step = _subdivisions - box.width;
+        int currId = box.y * _gridWidth + box.x;
+        const int step = _gridWidth - box.width;
         for (int i = 0; i < box.height && !redundancy; i++, currId += step)
         {
             for (int j = 0; j < box.width && !redundancy; j++, currId++)
@@ -178,6 +178,6 @@ void MatchSolver::findInitialSolution(std::vector<std::vector<MatchCandidate>>& 
 
     }
     Log::Logger::get().log(Log::TRACE) << "Matching tiles initial solution found.";
-    Log::Logger::get().log(Log::TRACE) << "With mean cost : " << (_bestCost / (_subdivisions * _subdivisions));
+    Log::Logger::get().log(Log::TRACE) << "With mean cost : " << (_bestCost / (_gridWidth * _gridHeight));
 }
 

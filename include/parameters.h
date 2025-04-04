@@ -1,10 +1,12 @@
 #pragma once
 
 #include <string>
+#include <optional>
+#include <tuple>
 #include "cxxopts.hpp"
 
 
-class Parameters 
+class Parameters
 {
 public:
 	Parameters();
@@ -12,12 +14,10 @@ public:
 	void initialize(int argc, char* argv[]);
 	std::string getPhotoPath() const;
 	std::string getTilesPath() const;
-	int getSubdivision() const;
+	std::tuple<int, int> getGrid() const;
 	double getScale() const;
-    double getRatio() const;
-    double getBlending() const;
-    double getBlendingMin() const;
-    double getBlendingMax() const;
+	std::tuple<int, int, bool> getResolution() const;
+	std::tuple<double, double, double> getBlending() const;
 	std::string getHelp() const;
 
 private:
@@ -26,12 +26,11 @@ private:
 
 private:
 	cxxopts::Options _options;
-	std::string _tilesPath = "";
-	std::string _photoPath = "";
-	int _subdivision = 0;
-	double _scale = 1.;
-    double _ratio = 0.;
-	double _blending = 0.1;
-	double _blendingMin = 0;
-	double _blendingMax = 1;
+	std::optional<std::string> _tilesPath;
+	std::optional<std::string> _photoPath;
+	std::optional<std::vector<int>> _grid;
+	std::optional<double> _scale;
+	std::optional<std::vector<int>> _resolution;
+	bool _crop = false;
+	std::optional<std::vector<double>> _blending;
 };

@@ -9,7 +9,7 @@
 
 void TilesCleaner::clean(Tiles& tiles) const
 {
-    const unsigned int maxBitDist = MathUtils::HashBits * DistanceTolerance;
+    const unsigned int maxBitDist = (unsigned int)(MathUtils::HashBits * DistanceTolerance);
     std::vector<MathUtils::Hash> hashes(tiles.getNbTiles());
     std::vector<bool> isEmpty(tiles.getNbTiles(), false);
     std::vector<bool> isDuplicate(tiles.getNbTiles(), false);

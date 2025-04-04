@@ -4,6 +4,7 @@
 #include <sstream>
 #include <chrono>
 #include <mutex>
+#include <vector>
 
 
 namespace Log
@@ -62,6 +63,9 @@ namespace Log
     public:
         template <typename T>
         Message& operator<<(const T& value);
+
+        template <typename T>
+        Message& operator<<(const std::vector<T>& vector);
 
     private:
         Message(Logger& logger, Level& level);
@@ -160,6 +164,17 @@ inline Log::Message& Log::Message::operator<<(const T& value)
     if (_level >= _logger._level)
     {
         _stream << value;
+    }
+    return *this;
+}
+
+template<typename T>
+inline Log::Message& Log::Message::operator<<(const std::vector<T>& vector)
+{
+    if (_level >= _logger._level)
+    {
+        for (const T& value: vector)
+            _stream << value << " ";
     }
     return *this;
 }

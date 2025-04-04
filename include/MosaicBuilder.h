@@ -5,6 +5,7 @@
 #include "Tiles.h"
 #include "MatchSolver.h"
 #include <vector>
+#include <tuple>
 #include <opencv2/opencv.hpp>
 
 
@@ -12,7 +13,7 @@
 class MosaicBuilder
 {
 public:
-    MosaicBuilder(int subdivisions, double blending, double blendingMin, double blendingMax);
+    MosaicBuilder(std::tuple<int, int> grid, std::tuple<double, double, double> blending);
     ~MosaicBuilder();
     void build(const Photo& photo, const PixelAdapter& pixelAdapter, const Tiles& tiles, const MatchSolver& matchSolver);
 
@@ -22,8 +23,9 @@ private:
 
 private:
     std::shared_ptr<const Photo> _photo;
-    const int _subdivisions;
-    const double _blending;
+    const int _gridWidth;
+    const int _gridHeight;
+    const double _blendingStep;
     const double _blendingMin;
     const double _blendingMax;
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <tuple>
 #include <opencv2/opencv.hpp>
 
 
@@ -10,7 +11,7 @@ private:
     static constexpr int MinTileSize = 32;
 
 public:
-    Photo(const std::string& path, double scale, double ratio, int subdivision);
+    Photo(const std::string& path, std::tuple<int, int> grid, double scale, std::tuple<int, int, bool> resolution);
     ~Photo() {};
 
 public:
@@ -22,9 +23,12 @@ public:
 
 private:
     const std::string _filePath;
+    const int _gridWidth;
+    const int _gridHeight;
     const double _scale;
-    const double _ratio;
-    const int _subdivision;
+    const int _resolutionWidth;
+    const int _resolutionHeight;
+    const bool _resolutionCrop;
     cv::Mat _mat;
     cv::Size _tileSize;
     cv::Size _lostSize;

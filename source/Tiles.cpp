@@ -11,8 +11,8 @@
 
 const std::string Tiles::TempDir = "PMG_temp";
 
-Tiles::Tiles(const std::string& path, int subdivisions) :
-    _path(path), _tempPath(path + TempDir), _tileParam({cv::IMWRITE_PNG_COMPRESSION, 0}), _subdivisions(subdivisions)
+Tiles::Tiles(const std::string& path, std::tuple<int, int> grid) :
+    _path(path), _tempPath(path + TempDir), _gridWidth(std::get<0>(grid)), _gridHeight(std::get<1>(grid))
 {
 }
 
@@ -109,13 +109,12 @@ void Tiles::compute(const IRegionOfInterest& roi, const Photo& photo)
     Log::Logger::get().log(Log::TRACE) <<"Tiles features computed.";
     Console::Out::waitBar();
 
-    _photoFeatures.resize(_subdivisions * _subdivisions * NbFeatures);
-    int f = 0;
-    for (int i = 0; i < _subdivisions; i++)
+    _photoFeatures.resize(_gridWidth * _gridHeight * NbFeatures);
+    for (int i = 0; i < _gridHeight; i++)
     {
-        for (int j = 0; j < _subdivisions; j++, f++)
+        for (int j = 0; j < _gridWidth; j++)
         {
-            double* features = &_photoFeatures[f * NbFeatures];
+            double* features = &_photoFeatures[(i * _gridWidth + j) * NbFeatures];
             MathUtils::computeImageBGRFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureDiv, NbFeatures);
         }
     }
@@ -124,7 +123,7 @@ void Tiles::compute(const IRegionOfInterest& roi, const Photo& photo)
 
 double Tiles::computeDistance(int i, int j, int tileID) const
 {
-    const double* features = &_photoFeatures[(i * _subdivisions + j) * NbFeatures];
+    const double* features = &_photoFeatures[(i * _gridWidth + j) * NbFeatures];
     return MathUtils::BGRFeatureDistance(features, _tilesData[tileID]._features, NbFeatures);
 }
 
@@ -208,7 +207,7 @@ void Tiles::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOf
 
 void Tiles::exportTile(const cv::Mat& tile, const std::string& tilePath)
 {
-    cv::imwrite(tilePath, tile, _tileParam);
+    cv::imwrite(tilePath, tile, std::vector<int>({TileParam[0], TileParam[1]}));
     if (!std::filesystem::exists(tilePath))
         throw CustomException("Impossible to create temporary tile : " + tilePath, CustomException::Level::ERROR);
 }
