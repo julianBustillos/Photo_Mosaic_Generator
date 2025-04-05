@@ -28,8 +28,10 @@ void Parameters::initialize(int argc, char* argv[])
     Log::Logger::get().log(Log::DEBUG) << "Photo path : " << _photoPath.value();
     Log::Logger::get().log(Log::DEBUG) << "Tiles path : " << _tilesPath.value();
     Log::Logger::get().log(Log::DEBUG) << "Grid : " << _grid.value();
-    Log::Logger::get().log(Log::DEBUG) << "Scale : " << _scale.value();
-    Log::Logger::get().log(Log::DEBUG) << "Resolution : " << _resolution.value();
+    if (_scale.has_value())
+        Log::Logger::get().log(Log::DEBUG) << "Scale : " << _scale.value();
+    if (_resolution.has_value())
+        Log::Logger::get().log(Log::DEBUG) << "Resolution : " << _resolution.value();
     Log::Logger::get().log(Log::DEBUG) << "Crop : " << (_crop ? "true" : "false");
     Log::Logger::get().log(Log::DEBUG) << "Blending : " << _blending.value();
 }
@@ -56,7 +58,10 @@ double Parameters::getScale() const
 
 std::tuple<int, int, bool>  Parameters::getResolution() const
 {
-    return std::make_tuple(_resolution.value()[0], _resolution.value()[1], _crop);
+    if (_resolution.has_value())
+        return std::make_tuple(_resolution.value()[0], _resolution.value()[1], _crop);
+    else
+        return std::make_tuple(0, 0, false);
 }
 
 std::tuple<double, double, double>  Parameters::getBlending() const
