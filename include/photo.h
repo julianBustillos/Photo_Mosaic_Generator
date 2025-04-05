@@ -29,8 +29,8 @@ private:
     const int _resolutionWidth;
     const int _resolutionHeight;
     const bool _resolutionCrop;
-    cv::Mat _mat;
+    cv::Mat _resampledPhoto;
+    cv::Size _inputSize;
     cv::Size _tileSize;
     cv::Size _croppedSize;
-    cv::Size _inSize;
 };

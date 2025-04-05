@@ -11,11 +11,11 @@ Parameters::Parameters() :
     _options.add_options()
         ("p,photo", "Path to reference photo for mosaic.", cxxopts::value<std::string>())
         ("t,tiles", "Path to tiles image folder.", cxxopts::value<std::string>())
-        ("g,grid", "Grid size (width, height) for tiling. Could be one value (equal on both dimensions) or two values.", cxxopts::value<std::vector<int>>())
+        ("g,grid", "Grid size (width, height) for tiling. Could be one value (equal on both dimensions) or two values. Separator [,].", cxxopts::value<std::vector<int>>())
         ("s,scale", "Photo scale value for outputs resolution. Not compatible with resolution usage.", cxxopts::value<double>())
-        ("r,resolution", "Resolution values (width, height) for outputs. Not compatible with scale usage.", cxxopts::value<std::vector<int>>())
+        ("r,resolution", "Resolution values (width, height) for outputs. Not compatible with scale usage.Separator [,].", cxxopts::value<std::vector<int>>())
         ("c,crop", "Allow cropping photo when resolution mode is enabled. Can only be used with resolution option.")
-        ("b,blending", "Blending values for outputs. Could be one or three values: step for exported mosaics [0.01;1], minimum value >= 0, maximum value <= 1.", cxxopts::value<std::vector<double>>()->default_value("0.1"))
+        ("b,blending", "Blending values for outputs. Could be one or three values: step for exported mosaics [0.01;1], minimum value >= 0, maximum value <= 1. Separator [,].", cxxopts::value<std::vector<double>>()->default_value("0.1"))
         ("h,help", "Print usage");
 }
 

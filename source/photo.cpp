@@ -18,43 +18,38 @@ void Photo::initialize()
     if (!inputImage.data)
         throw CustomException("Impossible to load image : " + _filePath, CustomException::Level::ERROR);
 
-    _inSize = inputImage.size();
-    cv::Size targetSize = _inSize;
+    _inputSize = inputImage.size();
+    cv::Size resampleSize = _inputSize;
+    cv::Size targetSize = _inputSize;
     if (_scale > 0)
     {
-        targetSize.width = (int)((double)targetSize.width * _scale);
-        targetSize.height = (int)((double)targetSize.height * _scale);
+        targetSize = resampleSize = cv::Size((int)((double)resampleSize.width * _scale), (int)((double)resampleSize.height * _scale));
     }
     else if (_resolutionWidth > 0 && _resolutionHeight > 0)
     {
-        targetSize.width = _resolutionWidth;
-        targetSize.height = _resolutionHeight;
+        targetSize = resampleSize = cv::Size(_resolutionWidth, _resolutionHeight);
         if (_resolutionCrop)
         {
-            double inputRatio = (double)_inSize.width / (double)_inSize.height;
+            double inputRatio = (double)_inputSize.width / (double)_inputSize.height;
             double targetRatio = (double)_resolutionWidth / (double)_resolutionHeight;
             if (inputRatio < targetRatio)
-            {
-                targetSize.height = (int)((double)_inSize.width / targetRatio);
-            }
+                resampleSize.height = (int)((double)targetSize.width / inputRatio);
             else if (inputRatio > targetRatio)
-            {
-                targetSize.width = (int)((double)_inSize.height * targetRatio);
-            }
+                resampleSize.width = (int)((double)targetSize.height * inputRatio);
         }
     }
-    MathUtils::computeImageResampling(_mat, targetSize, inputImage, MathUtils::LANCZOS);
+    MathUtils::computeImageResampling(_resampledPhoto, resampleSize, inputImage, MathUtils::LANCZOS);
 
-    _tileSize = cv::Size(_mat.size().width / _gridWidth, _mat.size().height / _gridHeight);
-    _croppedSize = cv::Size(_mat.size().width - _gridWidth * _tileSize.width, _mat.size().height - _gridHeight * _tileSize.height);
+    _tileSize = cv::Size(targetSize.width / _gridWidth, targetSize.height / _gridHeight);
+    _croppedSize = cv::Size(_resampledPhoto.size().width - _gridWidth * _tileSize.width, _resampledPhoto.size().height - _gridHeight * _tileSize.height);
 
     if (_tileSize.width < MinTileSize || _tileSize.height < MinTileSize)
         throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(MinTileSize) + "*" + std::to_string(MinTileSize) + ")", CustomException::Level::ERROR);
 
-    Log::Logger::get().log(Log::INFO) << "Photo size  : " << _inSize.width << "*" << _inSize.height;
-    Log::Logger::get().log(Log::INFO) << "Mosaic size : " << _mat.size().width << "*" << _mat.size().height;
-    Log::Logger::get().log(Log::INFO) << "Tile size   : " << _tileSize.width << "*" << _tileSize.height;
+    Log::Logger::get().log(Log::INFO) << "Photo size  : " << _inputSize.width << "*" << _inputSize.height;
+    Log::Logger::get().log(Log::INFO) << "Mosaic size : " << _resampledPhoto.size().width - _croppedSize.width << "*" << _resampledPhoto.size().height - _croppedSize.height;
     Log::Logger::get().log(Log::INFO) << "Cropped size   : " << _croppedSize.width << "*" << _croppedSize.height;
+    Log::Logger::get().log(Log::INFO) << "Tile size   : " << _tileSize.width << "*" << _tileSize.height;
 }
 
 cv::Rect Photo::getTileBox(int i, int j, bool doShift) const
@@ -80,7 +75,7 @@ cv::Size Photo::getTileSize() const
 
 const cv::Mat& Photo::getImage() const
 {
-    return _mat;
+    return _resampledPhoto;
 }
 
 std::string Photo::getDirectory() const
