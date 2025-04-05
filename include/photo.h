@@ -31,6 +31,6 @@ private:
     const bool _resolutionCrop;
     cv::Mat _mat;
     cv::Size _tileSize;
-    cv::Size _lostSize;
+    cv::Size _croppedSize;
     cv::Size _inSize;
 };

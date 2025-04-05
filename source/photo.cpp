@@ -46,7 +46,7 @@ void Photo::initialize()
     MathUtils::computeImageResampling(_mat, targetSize, inputImage, MathUtils::LANCZOS);
 
     _tileSize = cv::Size(_mat.size().width / _gridWidth, _mat.size().height / _gridHeight);
-    _lostSize = cv::Size(_mat.size().width - _gridWidth * _tileSize.width, _mat.size().height - _gridHeight * _tileSize.height);
+    _croppedSize = cv::Size(_mat.size().width - _gridWidth * _tileSize.width, _mat.size().height - _gridHeight * _tileSize.height);
 
     if (_tileSize.width < MinTileSize || _tileSize.height < MinTileSize)
         throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(MinTileSize) + "*" + std::to_string(MinTileSize) + ")", CustomException::Level::ERROR);
@@ -54,7 +54,7 @@ void Photo::initialize()
     Log::Logger::get().log(Log::INFO) << "Photo size  : " << _inSize.width << "*" << _inSize.height;
     Log::Logger::get().log(Log::INFO) << "Mosaic size : " << _mat.size().width << "*" << _mat.size().height;
     Log::Logger::get().log(Log::INFO) << "Tile size   : " << _tileSize.width << "*" << _tileSize.height;
-    Log::Logger::get().log(Log::INFO) << "Lost size   : " << _lostSize.width << "*" << _lostSize.height;
+    Log::Logger::get().log(Log::INFO) << "Cropped size   : " << _croppedSize.width << "*" << _croppedSize.height;
 }
 
 cv::Rect Photo::getTileBox(int i, int j, bool doShift) const
@@ -64,8 +64,8 @@ cv::Rect Photo::getTileBox(int i, int j, bool doShift) const
     box.x = j * _tileSize.width;
     if (doShift)
     {
-        box.y += _lostSize.height / 2;
-        box.x += _lostSize.width / 2;
+        box.y += _croppedSize.height / 2;
+        box.x += _croppedSize.width / 2;
     }
     box.width = _tileSize.width;
     box.height = _tileSize.height;
