@@ -131,7 +131,7 @@
     <ClCompile Include="source\MosaicGenerator.cpp" />
     <ClCompile Include="source\Parameters.cpp" />
     <ClCompile Include="source\Photo.cpp" />
-    <ClCompile Include="source\PixelAdapter.cpp" />
+    <ClCompile Include="source\ColorEnhancer.cpp" />
     <ClCompile Include="source\MeanShiftROIImpl.cpp" />
     <ClCompile Include="source\SaliencyFilter.cpp" />
     <ClCompile Include="source\TilesCleaner.cpp" />
@@ -151,7 +151,7 @@
     <ClInclude Include="include\OutputManager.h" />
     <ClInclude Include="include\Parameters.h" />
     <ClInclude Include="include\Photo.h" />
-    <ClInclude Include="include\PixelAdapter.h" />
+    <ClInclude Include="include\ColorEnhancer.h" />
     <ClInclude Include="include\MeanShiftROIImpl.h" />
     <ClInclude Include="include\ProgressBar.h" />
     <ClInclude Include="include\SaliencyFilter.h" />

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Photo.h"
-#include "PixelAdapter.h"
+#include "ColorEnhancer.h"
 #include "Tiles.h"
 #include "MatchSolver.h"
 #include <vector>
@@ -15,10 +15,10 @@ class MosaicBuilder
 public:
     MosaicBuilder(std::tuple<int, int> grid, std::tuple<double, double, double> blending);
     ~MosaicBuilder();
-    void build(const Photo& photo, const PixelAdapter& pixelAdapter, const Tiles& tiles, const MatchSolver& matchSolver);
+    void build(const Photo& photo, const ColorEnhancer& colorEnhancer, const Tiles& tiles, const MatchSolver& matchSolver);
 
 private:
-    void copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const PixelAdapter& pixelAdapter, double blending, int mosaicId, const cv::Rect& box);
+    void copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const ColorEnhancer& colorEnhancer, double blending, int mosaicId, const cv::Rect& box);
     void exportMosaic(const std::string& path, double _blending, cv::Mat mosaic);
 
 private:

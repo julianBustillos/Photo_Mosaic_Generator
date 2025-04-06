@@ -15,7 +15,7 @@ MosaicBuilder::~MosaicBuilder()
 {
 }
 
-void MosaicBuilder::build(const Photo& photo, const PixelAdapter& pixelAdapter, const Tiles& tiles, const MatchSolver& matchSolver)
+void MosaicBuilder::build(const Photo& photo, const ColorEnhancer& colorEnhancer, const Tiles& tiles, const MatchSolver& matchSolver)
 {
     Console::Out::get(Console::DEFAULT) << "Building mosaics...";
     cv::Size mosaicSize = photo.getTileSize();
@@ -36,8 +36,9 @@ void MosaicBuilder::build(const Photo& photo, const PixelAdapter& pixelAdapter, 
             {
                 int mosaicId = i * _gridWidth + j;
                 int tileId = matchingTiles[mosaicId];
+                //dump_i = i; dump_j = j;
                 if (tileId >= 0)
-                    copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), pixelAdapter, blendingValue, mosaicId, photo.getTileBox(i, j, false));
+                    copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), colorEnhancer, blendingValue, mosaicId, photo.getTileBox(i, j, false));
                 else
                     throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
             }
@@ -49,13 +50,13 @@ void MosaicBuilder::build(const Photo& photo, const PixelAdapter& pixelAdapter, 
 
 }
 
-void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const PixelAdapter& pixelAdapter, double blending, int mosaicId, const cv::Rect& box)
+void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const ColorEnhancer& colorEnhancer, double blending, int mosaicId, const cv::Rect& box)
 {
     cv::Mat tile = cv::imread(tilePath);
     if (tile.empty())
         throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::ERROR);
 
-    pixelAdapter.applyCorrection(tile, blending, mosaicId);
+    colorEnhancer.apply(tile, blending, mosaicId);
 
     const cv::Size tileSize = tile.size();
     const int channels = tile.channels();

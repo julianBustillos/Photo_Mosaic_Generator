@@ -1,5 +1,4 @@
 #include "MosaicGenerator.h"
-#include "PixelAdapter.h"
 #include "FaceDetectionROIImpl.h"
 #include "CustomException.h"
 #include "Console.h"
@@ -11,9 +10,9 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_photo)
         throw CustomException("Bad allocation for _photo in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _pixelAdapter = std::make_shared<PixelAdapter>(parameters.getGrid());
-    if (!_pixelAdapter)
-        throw CustomException("Bad allocation for _pixelAdapter in MosaicGenerator constructor.", CustomException::Level::ERROR);
+    _colorEnhancer = std::make_shared<ColorEnhancer>(parameters.getGrid());
+    if (!_colorEnhancer)
+        throw CustomException("Bad allocation for _colorEnhancer in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
     _roi = std::make_shared<FaceDetectionROIImpl>();
     if (!_roi)
@@ -39,7 +38,7 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
 MosaicGenerator::~MosaicGenerator()
 {
     _photo.reset();
-    _pixelAdapter.reset();
+    _colorEnhancer.reset();
     _roi.reset();
     _tiles.reset();
     _matchSolver.reset();
@@ -55,7 +54,7 @@ void MosaicGenerator::Build()
 
     _tilesCleaner->clean(*_tiles);
     _tiles->compute(*_roi, *_photo);
-    _pixelAdapter->compute(*_photo);
+    _colorEnhancer->computeData(*_photo);
     _matchSolver->solve(*_tiles);
-    _mosaicBuilder->build(*_photo, *_pixelAdapter, *_tiles, *_matchSolver);
+    _mosaicBuilder->build(*_photo, *_colorEnhancer, *_tiles, *_matchSolver);
 }

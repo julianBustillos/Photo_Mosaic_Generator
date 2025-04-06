@@ -42,7 +42,7 @@
     <ClCompile Include="source\SaliencyFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\PixelAdapter.cpp">
+    <ClCompile Include="source\ColorEnhancer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\MatchSolver.cpp">
@@ -89,7 +89,7 @@
     <ClInclude Include="include\SaliencyFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\PixelAdapter.h">
+    <ClInclude Include="include\ColorEnhancer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\MatchSolver.h">

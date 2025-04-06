@@ -1,40 +1,40 @@
-#include "PixelAdapter.h"
+#include "ColorEnhancer.h"
 #include "MathUtils.h"
 #include "CustomException.h"
 #include "Log.h"
 #include "Console.h"
 
 
-PixelAdapter::PixelAdapter(std::tuple<int, int> grid) :
+ColorEnhancer::ColorEnhancer(std::tuple<int, int> grid) :
     _gridWidth(std::get<0>(grid)), _gridHeight(std::get<1>(grid))
 {
 }
 
-PixelAdapter::~PixelAdapter()
+ColorEnhancer::~ColorEnhancer()
 {
 }
 
-void PixelAdapter::compute(const Photo& photo)
+void ColorEnhancer::computeData(const Photo& photo)
 {
     Console::Out::get(Console::DEFAULT) << "Computing image correction data...";
-    _tileCorrection.resize(_gridWidth * _gridHeight);
+    _tileData.resize(_gridWidth * _gridHeight);
 
     for (int i = 0; i < _gridHeight; i++)
     {
         for (int j = 0; j < _gridWidth; j++)
         {
             int mosaicId = i * _gridWidth + j;
-            computeAdapterData(_tileCorrection[mosaicId], photo.getImage(), photo.getTileBox(i, j, true));
+            computeTileData(_tileData[mosaicId], photo.getImage(), photo.getTileBox(i, j, true));
         }
     }
     Log::Logger::get().log(Log::TRACE) << "Adapter data computed.";
 }
 
-void PixelAdapter::applyCorrection(cv::Mat& tile, double blending, int mosaicId) const
+void ColorEnhancer::apply(cv::Mat& tile, double blending, int mosaicId) const
 {
     cv::Rect box(0, 0, tile.size().width, tile.size().height);
-    AdapterData originalTile;
-    computeAdapterData(originalTile, tile, box);
+    EnhancerData originalTile;
+    computeTileData(originalTile, tile, box);
 
     int tileDataSize = 3 * box.width * box.height;
 
@@ -44,8 +44,8 @@ void PixelAdapter::applyCorrection(cv::Mat& tile, double blending, int mosaicId)
         int matchingValue = 0;
         for (int k = 0; k < 256; k++)
         {
-            double probability = originalTile._BGR_cdf[c][k];
-            while (probability > _tileCorrection[mosaicId]._BGR_cdf[c][matchingValue])
+            double probability = originalTile._colorCDF[c][k];
+            while (probability > _tileData[mosaicId]._colorCDF[c][matchingValue])
                 matchingValue++;
             BGR_correction_function[c][k] = matchingValue;
         }
@@ -64,14 +64,14 @@ void PixelAdapter::applyCorrection(cv::Mat& tile, double blending, int mosaicId)
     }
 }
 
-void PixelAdapter::computeAdapterData(AdapterData& adapterData, const cv::Mat& image, const cv::Rect& box) const
+void ColorEnhancer::computeTileData(EnhancerData& data, const cv::Mat& image, const cv::Rect& box) const
 {
     //Compute cumulative distribution function for BGR colors
     for (int c = 0; c < 3; c++)
     {
         for (int k = 0; k < 256; k++)
         {
-            adapterData._BGR_cdf[c][k] = 0.;
+            data._colorCDF[c][k] = 0.;
         }
     }
 
@@ -84,7 +84,7 @@ void PixelAdapter::computeAdapterData(AdapterData& adapterData, const cv::Mat& i
         {
             for (int c = 0; c < 3; c++, p++)
             {
-                adapterData._BGR_cdf[c][image.data[p]] += 1.;
+                data._colorCDF[c][image.data[p]] += 1.;
             }
         }
     }
@@ -94,9 +94,9 @@ void PixelAdapter::computeAdapterData(AdapterData& adapterData, const cv::Mat& i
     {
         for (int k = 1; k < 256; k++)
         {
-            adapterData._BGR_cdf[c][k] += adapterData._BGR_cdf[c][k - 1];
-            adapterData._BGR_cdf[c][k - 1] /= nbPixel;
+            data._colorCDF[c][k] += data._colorCDF[c][k - 1];
+            data._colorCDF[c][k - 1] /= nbPixel;
         }
-        adapterData._BGR_cdf[c][255] /= nbPixel;
+        data._colorCDF[c][255] /= nbPixel;
     }
 }
