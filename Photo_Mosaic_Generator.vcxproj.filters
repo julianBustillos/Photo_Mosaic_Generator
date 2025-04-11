@@ -57,6 +57,9 @@
     <ClCompile Include="source\TilesCleaner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\GaussianMixtureModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Clock.h">
@@ -126,6 +129,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\WindowsSafe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\GaussianMixtureModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

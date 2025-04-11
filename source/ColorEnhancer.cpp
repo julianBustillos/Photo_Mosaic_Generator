@@ -33,33 +33,32 @@ void ColorEnhancer::computeData(const Photo& photo)
 void ColorEnhancer::apply(cv::Mat& tile, double blending, int mosaicId) const
 {
     cv::Rect box(0, 0, tile.size().width, tile.size().height);
-    EnhancerData originalTile;
-    computeTileData(originalTile, tile, box);
+    EnhancerData originalTileData;
+    computeTileData(originalTileData, tile, box);
 
     int tileDataSize = 3 * box.width * box.height;
 
-    int BGR_correction_function[3][256];
+    int colorCorrection[3][256];
     for (int c = 0; c < 3; c++)
     {
         int matchingValue = 0;
         for (int k = 0; k < 256; k++)
         {
-            double probability = originalTile._colorCDF[c][k];
+            double probability = originalTileData._colorCDF[c][k];
             while (probability > _tileData[mosaicId]._colorCDF[c][matchingValue])
                 matchingValue++;
-            BGR_correction_function[c][k] = matchingValue;
+            colorCorrection[c][k] = matchingValue;
         }
     }
 
     uchar* data = tile.data;
-
     for (int k = 0; k < tileDataSize; k += 3)
     {
         for (int c = 0; c < 3; c++)
         {
             uchar originalColor = data[k + c];
-            uchar matchingColor = BGR_correction_function[c][originalColor];
-            data[k + c] = (uchar)(blending * (double)matchingColor + (1. - blending) * (double)originalColor);
+            uchar correctedColor = colorCorrection[c][originalColor];
+            data[k + c] = (uchar)(blending * (double)correctedColor + (1. - blending) * (double)originalColor);
         }
     }
 }

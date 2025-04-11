@@ -12,6 +12,9 @@
 
 class MosaicBuilder
 {
+private:
+    static constexpr int MosaicParam[2] = {cv::IMWRITE_JPEG_QUALITY, 100};
+
 public:
     MosaicBuilder(std::tuple<int, int> grid, std::tuple<double, double, double> blending);
     ~MosaicBuilder();

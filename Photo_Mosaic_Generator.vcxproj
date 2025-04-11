@@ -123,6 +123,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\FaceDetectionROIImpl.cpp" />
+    <ClCompile Include="source\GaussianMixtureModel.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\MatchSolver.cpp" />
     <ClCompile Include="source\MathUtils.cpp" />
@@ -141,6 +142,7 @@
     <ClInclude Include="include\Console.h" />
     <ClInclude Include="include\CustomException.h" />
     <ClInclude Include="include\FaceDetectionROIImpl.h" />
+    <ClInclude Include="include\GaussianMixtureModel.h" />
     <ClInclude Include="include\IRegionOfInterest.h" />
     <ClInclude Include="include\Log.h" />
     <ClInclude Include="include\MatchSolver.h" />
