@@ -177,26 +177,12 @@ void GaussianMixtureModel::runKmeansPlusPlus()
 
 }
 
-//DEBUG  
-#include <iostream>
-void dump(int iter, std::vector<GaussianMixtureModel::Component> components,  double LLH)
-{
-	//printf("%d	%lf  %lf  %lf  %lf  %lf  %lf  %lf\n", iter, LLH, components[0]._mean, components[1]._mean, components[0]._covariance, components[1]._covariance, components[0]._weight, components[1]._weight);
-	printf("%d	%d  %lf \n", components.size(), iter, LLH);
-}
-//DEBUG
-
 void GaussianMixtureModel::runExpectationMaximization()
 {
     std::vector<std::vector<double>> resp(_components.size(), std::vector<double>(_histogram.size())); //Responsabilities
     int iteration = 0;
     double logLH = logLikelihood();
     double logLHDiff = std::numeric_limits<double>::max(); //Log-likelihood iteration difference
-
-	printf("GMM PERSO\n");
-	//printf("step   log_likelihood     mean[0]    mean[1]   covar[0]   covar[1]  weight[0] weight[1]\n");
-	printf("nbComponents   step   log_likelihood\n");
-    dump(iteration, _components, logLH);
 
     while (logLHDiff > _emTol && iteration < _emIter)
     {
@@ -254,20 +240,12 @@ void GaussianMixtureModel::runExpectationMaximization()
         logLH = newLogLH;
 
         iteration++;
-        dump(iteration, _components, logLH);
     }
 }
 
 double GaussianMixtureModel::normalPDF(double x, const Component& component)
 {
-    //DEBUG
-    double compo0 = -square(x - component._mean) / (2. * component._covariance);
-    double compo1 = -0.5 * log(2. * std::numbers::pi * component._covariance);
-    double compo2 = log(component._weight);
-    double testValue2 = exp(compo0 + compo1 + compo2);
-
-	double testValue1 = exp(-square(x - component._mean) / (2. * component._covariance)) / sqrt(2. * std::numbers::pi * component._covariance) * component._weight;
-    return testValue2;
+    return exp(-square(x - component._mean) / (2. * component._covariance)) / sqrt(2. * std::numbers::pi * component._covariance) * component._weight;
 }
 
 double GaussianMixtureModel::logLikelihood()
@@ -288,6 +266,5 @@ double GaussianMixtureModel::logLikelihood()
 void GaussianMixtureModel::computeBIC()
 {
 	_BIC = -2. * logLikelihood() + (double)(3 * _components.size() - 1) * log(_nbData);
-	std::cout << "_BIC : " << _BIC << std::endl;
 }
 
