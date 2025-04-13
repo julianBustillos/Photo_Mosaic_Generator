@@ -1,5 +1,5 @@
 #include "TilesCleaner.h"
-#include "MathUtils.h"
+#include "ImageUtils.h"
 #include "OutputManager.h"
 #include "ProgressBar.h"
 #include "Log.h"
@@ -9,8 +9,8 @@
 
 void TilesCleaner::clean(Tiles& tiles) const
 {
-    const unsigned int maxBitDist = (unsigned int)(MathUtils::HashBits * DistanceTolerance);
-    std::vector<MathUtils::Hash> hashes(tiles.getNbTiles());
+    const unsigned int maxBitDist = (unsigned int)(ImageUtils::HashBits * DistanceTolerance);
+    std::vector<ImageUtils::Hash> hashes(tiles.getNbTiles());
     std::vector<bool> isEmpty(tiles.getNbTiles(), false);
     std::vector<bool> isDuplicate(tiles.getNbTiles(), false);
 
@@ -25,7 +25,7 @@ void TilesCleaner::clean(Tiles& tiles) const
         tiles.getImage(t, tile);
         if (!tile.empty())
         {
-            MathUtils::computeImageDHash(tile, hashes[t]);
+            ImageUtils::DHash(tile, hashes[t]);
         }   
         else
         {

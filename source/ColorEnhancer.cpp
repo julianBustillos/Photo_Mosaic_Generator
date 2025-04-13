@@ -1,5 +1,4 @@
 #include "ColorEnhancer.h"
-#include "MathUtils.h"
 #include "CustomException.h"
 #include "Log.h"
 #include "Console.h"

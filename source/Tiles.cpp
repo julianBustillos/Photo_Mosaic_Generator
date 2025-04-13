@@ -1,7 +1,7 @@
 #include "Tiles.h"
 #include "CustomException.h"
 #include "OutputManager.h"
-#include "MathUtils.h"
+#include "ImageUtils.h"
 #include "ProgressBar.h"
 #include "Log.h"
 #include "Console.h"
@@ -115,7 +115,7 @@ void Tiles::compute(const IRegionOfInterest& roi, const Photo& photo)
         for (int j = 0; j < _gridWidth; j++)
         {
             double* features = &_photoFeatures[(i * _gridWidth + j) * NbFeatures];
-            MathUtils::computeImageBGRFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureDiv, NbFeatures);
+            ImageUtils::computeFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureDiv, NbFeatures);
         }
     }
     Log::Logger::get().log(Log::TRACE) << "Photo features computed.";
@@ -124,7 +124,7 @@ void Tiles::compute(const IRegionOfInterest& roi, const Photo& photo)
 double Tiles::computeDistance(int i, int j, int tileID) const
 {
     const double* features = &_photoFeatures[(i * _gridWidth + j) * NbFeatures];
-    return MathUtils::BGRFeatureDistance(features, _tilesData[tileID]._features, NbFeatures);
+    return ImageUtils::featureDistance(features, _tilesData[tileID]._features, NbFeatures);
 }
 
 const std::string Tiles::getTileFilepath(int tileId) const
@@ -180,8 +180,8 @@ void Tiles::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& r
     cv::Mat tileMat;
 
     computeCropInfo(image, box, roi, tileSize, threadID);
-    MathUtils::computeImageResampling(tileMat, tileSize, image, box, MathUtils::LANCZOS);
-    MathUtils::computeImageBGRFeatures(tileMat, cv::Rect(0, 0, tileSize.width, tileSize.height), data._features, FeatureDiv, NbFeatures);
+    ImageUtils::resample(tileMat, tileSize, image, box, ImageUtils::LANCZOS);
+    ImageUtils::computeFeatures(tileMat, cv::Rect(0, 0, tileSize.width, tileSize.height), data._features, FeatureDiv, NbFeatures);
     exportTile(tileMat, data._tilePath);
 }
 

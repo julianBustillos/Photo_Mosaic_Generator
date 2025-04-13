@@ -1,5 +1,5 @@
 #include "SaliencyFilter.h"
-#include "MathUtils.h"
+#include "ColorUtils.h"
 #include <limits>
 
 
@@ -50,7 +50,7 @@ void SaliencyFilter::buildClusters(std::vector<ClusterPoint>& cluster, const cv:
         cluster[clusterId]._B = (int)std::round((double)cluster[clusterId]._B / (double)cluster[clusterId]._size);
         cluster[clusterId]._G = (int)std::round((double)cluster[clusterId]._G / (double)cluster[clusterId]._size);
         cluster[clusterId]._R = (int)std::round((double)cluster[clusterId]._R / (double)cluster[clusterId]._size);
-        MathUtils::convertBGRtoLAB(cluster[clusterId]._L, cluster[clusterId]._a, cluster[clusterId]._b, (uchar)cluster[clusterId]._B, (uchar)cluster[clusterId]._G, (uchar)cluster[clusterId]._R);
+        ColorUtils::BGRtoLAB(cluster[clusterId]._L, cluster[clusterId]._a, cluster[clusterId]._b, (uchar)cluster[clusterId]._B, (uchar)cluster[clusterId]._G, (uchar)cluster[clusterId]._R);
     }
 }
 

@@ -1,7 +1,6 @@
 #include "MosaicBuilder.h"
 #include <vector>
 #include "CustomException.h"
-#include "MathUtils.h"
 #include "Log.h"
 #include "Console.h"
 #include "GaussianMixtureModel.h"

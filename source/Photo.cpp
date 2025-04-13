@@ -1,7 +1,7 @@
 #include "Photo.h"
 #include "CustomException.h"
 #include "OutputManager.h"
-#include "MathUtils.h"
+#include "ImageUtils.h"
 #include "Log.h"
 
 
@@ -38,7 +38,7 @@ void Photo::initialize()
                 resampleSize.width = (int)((double)targetSize.height * inputRatio);
         }
     }
-    MathUtils::computeImageResampling(_resampledPhoto, resampleSize, inputImage, MathUtils::LANCZOS);
+    ImageUtils::resample(_resampledPhoto, resampleSize, inputImage, ImageUtils::LANCZOS);
 
     _tileSize = cv::Size(targetSize.width / _gridWidth, targetSize.height / _gridHeight);
     _croppedSize = cv::Size(_resampledPhoto.size().width - _gridWidth * _tileSize.width, _resampledPhoto.size().height - _gridHeight * _tileSize.height);
