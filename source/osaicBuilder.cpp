@@ -4,6 +4,7 @@
 #include "MathUtils.h"
 #include "Log.h"
 #include "Console.h"
+#include "GaussianMixtureModel.h"
 
 
 MosaicBuilder::MosaicBuilder(std::tuple<int, int> grid, std::tuple<double, double, double> blending) :
@@ -15,6 +16,10 @@ MosaicBuilder::~MosaicBuilder()
 {
 }
 
+//DEBUG
+int dump_i, dump_j;
+const Photo* dump_photo = NULL;
+//DEBUG
 void MosaicBuilder::build(const Photo& photo, const ColorEnhancer& colorEnhancer, const Tiles& tiles, const MatchSolver& matchSolver)
 {
     Console::Out::get(Console::DEFAULT) << "Building mosaics...";
@@ -36,7 +41,13 @@ void MosaicBuilder::build(const Photo& photo, const ColorEnhancer& colorEnhancer
             {
                 int mosaicId = i * _gridWidth + j;
                 int tileId = matchingTiles[mosaicId];
-                //dump_i = i; dump_j = j;
+
+                //DEBUG
+                dump_i = i;
+                dump_j = j;
+                dump_photo = &photo;
+                //DEBUG
+
                 if (tileId >= 0)
                     copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), colorEnhancer, blendingValue, mosaicId, photo.getTileBox(i, j, false));
                 else
