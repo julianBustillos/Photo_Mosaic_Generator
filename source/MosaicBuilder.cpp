@@ -24,8 +24,6 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
     const double blendingSize = _blendingMax - _blendingMin;
     const int nbSteps = blendingSize > 0 ? (int)(blendingSize / _blendingStep) + 1 : 1;
     std::vector<cv::Mat> mosaics(nbSteps, cv::Mat(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0)));
-    ColorEnhancer enhancer(_gridWidth, _gridHeight);
-    enhancer.computeData(photo);
 
     #pragma omp parallel for
     for (int mosaicId = 0; mosaicId < _gridWidth * _gridHeight; mosaicId++)
@@ -33,11 +31,19 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
         int tileId = matchSolver.getMatchingTile(mosaicId);
         if (tileId < 0)
             throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
+        
+        const std::string tilePath = tiles.getTileFilepath(tileId);
+        cv::Mat tile = cv::imread(tilePath);
+        if (tile.empty())
+            throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::ERROR);
+
+        ColorEnhancer enhancer;
+        enhancer.computeData(photo, tile, mosaicId);
 
         for (int s = 0; s < nbSteps; s++)
         {
             double blending = _blendingMin + s * _blendingStep;
-            copyTileOnMosaic(mosaics[s], tiles.getTileFilepath(tileId), enhancer, blending, mosaicId, photo.getTileBox(mosaicId, false));
+            copyTileOnMosaic(mosaics[s], tile, enhancer, blending, mosaicId, photo.getTileBox(mosaicId, false));
         }
 
     }
@@ -52,14 +58,8 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
     Log::Logger::get().log(Log::TRACE) << "Mosaic computed.";
 }
 
-void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const ColorEnhancer& colorEnhancer, double blending, int mosaicId, const cv::Rect& box)
+void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const cv::Mat& tile, const ColorEnhancer& colorEnhancer, double blending, int mosaicId, const cv::Rect& box)
 {
-    cv::Mat tile = cv::imread(tilePath);
-    if (tile.empty())
-        throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::ERROR);
-
-    colorEnhancer.apply(tile, blending, mosaicId);
-
     const cv::Size tileSize = tile.size();
     const int channels = tile.channels();
     int pt = 0;
@@ -71,7 +71,7 @@ void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePat
         {
             for (int c = 0; c < channels; c++, pt++, pm++)
             {
-                mosaic.data[pm] = tile.data[pt];
+                mosaic.data[pm] = colorEnhancer.apply(tile.data[pt], c, blending);
             }
         }
     }

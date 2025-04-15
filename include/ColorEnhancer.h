@@ -8,12 +8,12 @@
 class ColorEnhancer
 {
 public:
-    ColorEnhancer(int gridWidth, int gridHeight);
+    ColorEnhancer();
     ~ColorEnhancer();
 
 public:
-    void computeData(const Photo& photo);
-    void apply(cv::Mat& tile, double blending, int mosaicId) const;
+    void computeData(const Photo& photo, const cv::Mat& tile, int mosaicId);
+    uchar apply(uchar color, int channel, double blending) const;
 
 private:
 
@@ -21,7 +21,5 @@ private:
     void computeTileCDF(ProbaUtils::CDF& cdf, const cv::Mat& image, const cv::Rect& box) const;
 
 private:
-    const int _gridWidth;
-    const int _gridHeight;
-    std::vector<ProbaUtils::CDF> _tileCDF;
+    int _colorMapping[3][256];
 };

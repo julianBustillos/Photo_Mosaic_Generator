@@ -4,8 +4,7 @@
 #include "Console.h"
 
 
-ColorEnhancer::ColorEnhancer(int gridWidth, int gridHeight) :
-    _gridWidth(gridWidth), _gridHeight(gridHeight)
+ColorEnhancer::ColorEnhancer()
 {
 }
 
@@ -13,20 +12,14 @@ ColorEnhancer::~ColorEnhancer()
 {
 }
 
-void ColorEnhancer::computeData(const Photo& photo)
+void ColorEnhancer::computeData(const Photo& photo, const cv::Mat& tile, int mosaicId)
 {
-    Console::Out::get(Console::DEFAULT) << "Computing image color enhancement data...";
-    _tileCDF.resize(_gridWidth * _gridHeight);
+    ProbaUtils::CDF _referenceCDF, _targetCDF;
+    cv::Rect box(0, 0, tile.size().width, tile.size().height);
 
-    for (int mosaicId = 0; mosaicId < _gridWidth * _gridHeight; mosaicId++)
-    {
-        computeTileCDF(_tileCDF[mosaicId], photo.getImage(), photo.getTileBox(mosaicId, true));
-    }
-    Log::Logger::get().log(Log::TRACE) << "Enhancement data computed.";
-}
+    computeTileCDF(_referenceCDF, photo.getImage(), photo.getTileBox(mosaicId, true));
+    computeTileCDF(_targetCDF, tile, box);
 
-void ColorEnhancer::apply(cv::Mat& tile, double blending, int mosaicId) const
-{
     //TODO: compute CDF
     //TODO: check WDistance
     //TODO: find optimal GMM
@@ -35,35 +28,23 @@ void ColorEnhancer::apply(cv::Mat& tile, double blending, int mosaicId) const
     //TODO: compute real blending value
     //TODO: apply blending
 
-    cv::Rect box(0, 0, tile.size().width, tile.size().height);
-    ProbaUtils::CDF originalTileData;
-    computeTileCDF(originalTileData, tile, box);
-
-    int tileDataSize = 3 * box.width * box.height;
-
-    int colorMapping[3][256];
     for (int c = 0; c < 3; c++)
     {
         int optimalColor = 0;
         for (int k = 0; k < 256; k++)
         {
-            double probability = originalTileData[c][k];
-            while (probability > _tileCDF[mosaicId][c][optimalColor])
+            double probability = _targetCDF[c][k];
+            while (probability > _referenceCDF[c][optimalColor])
                 optimalColor++;
-            colorMapping[c][k] = optimalColor;
+            _colorMapping[c][k] = optimalColor;
         }
     }
+}
 
-    uchar* data = tile.data;
-    for (int k = 0; k < tileDataSize; k += 3)
-    {
-        for (int c = 0; c < 3; c++)
-        {
-            uchar originalColor = data[k + c];
-            uchar optimalColor = colorMapping[c][originalColor];
-            data[k + c] = (uchar)(blending * (double)optimalColor + (1. - blending) * (double)originalColor);
-        }
-    }
+uchar ColorEnhancer::apply(uchar color, int channel, double blending) const
+{
+    uchar optimalColor = _colorMapping[channel][color];
+    return (uchar)(blending * (double)optimalColor + (1. - blending) * (double)color);
 }
 
 void ColorEnhancer::computeTileCDF(ProbaUtils::CDF& cdf, const cv::Mat& image, const cv::Rect& box) const

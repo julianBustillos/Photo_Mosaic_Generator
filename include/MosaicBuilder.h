@@ -21,7 +21,7 @@ public:
     void build(const Photo& photo, const Tiles& tiles, const MatchSolver& matchSolver);
 
 private:
-    void copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const ColorEnhancer& colorEnhancer, double blending, int mosaicId, const cv::Rect& box);
+    void copyTileOnMosaic(cv::Mat& mosaic, const cv::Mat& tile, const ColorEnhancer& colorEnhancer, double blending, int mosaicId, const cv::Rect& box);
     void exportMosaic(const std::string& path, double _blending, cv::Mat mosaic);
 
 private:
