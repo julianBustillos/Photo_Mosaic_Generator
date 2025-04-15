@@ -110,13 +110,10 @@ void Tiles::compute(const IRegionOfInterest& roi, const Photo& photo)
     Console::Out::waitBar();
 
     _photoFeatures.resize(_gridWidth * _gridHeight * NbFeatures);
-    for (int i = 0; i < _gridHeight; i++)
+    for (int mosaicId = 0; mosaicId < _gridWidth * _gridHeight; mosaicId++)
     {
-        for (int j = 0; j < _gridWidth; j++)
-        {
-            double* features = &_photoFeatures[(i * _gridWidth + j) * NbFeatures];
-            ImageUtils::computeFeatures(photo.getImage(), photo.getTileBox(i, j, true), features, FeatureDiv, NbFeatures);
-        }
+        double* features = &_photoFeatures[mosaicId * NbFeatures];
+        ImageUtils::computeFeatures(photo.getImage(), photo.getTileBox(mosaicId, true), features, FeatureDiv, NbFeatures);
     }
     Log::Logger::get().log(Log::TRACE) << "Photo features computed.";
 }

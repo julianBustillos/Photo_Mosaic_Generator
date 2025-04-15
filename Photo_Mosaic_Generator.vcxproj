@@ -137,7 +137,7 @@
     <ClCompile Include="source\MeanShiftROIImpl.cpp" />
     <ClCompile Include="source\ProbaUtils.cpp" />
     <ClCompile Include="source\SaliencyFilter.cpp" />
-    <ClCompile Include="source\TilesCleaner.cpp" />
+    <ClCompile Include="source\DuplicateRemover.cpp" />
     <ClCompile Include="source\Tiles.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -164,7 +164,7 @@
     <ClInclude Include="include\Clock.h" />
     <ClInclude Include="include\SystemUtils.h" />
     <ClInclude Include="include\termcolor.h" />
-    <ClInclude Include="include\TilesCleaner.h" />
+    <ClInclude Include="include\DuplicateRemover.h" />
     <ClInclude Include="include\Tiles.h" />
     <ClInclude Include="include\WindowsSafe.h" />
   </ItemGroup>

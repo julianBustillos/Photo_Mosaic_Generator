@@ -3,12 +3,12 @@
 #include "Tiles.h"
 
 
-class TilesCleaner
+class DuplicateRemover
 {
 private:
     static constexpr double DistanceTolerance = 0.16;
 
 public:
-    void clean(Tiles& tiles) const;
+    void run(Tiles& tiles) const;
 };
 

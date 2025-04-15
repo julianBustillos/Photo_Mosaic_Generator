@@ -10,10 +10,6 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_photo)
         throw CustomException("Bad allocation for _photo in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _colorEnhancer = std::make_shared<ColorEnhancer>(parameters.getGrid());
-    if (!_colorEnhancer)
-        throw CustomException("Bad allocation for _colorEnhancer in MosaicGenerator constructor.", CustomException::Level::ERROR);
-
     _roi = std::make_shared<FaceDetectionROIImpl>();
     if (!_roi)
         throw CustomException("Bad allocation for _roi in MosaicGenerator constructor.", CustomException::Level::ERROR);
@@ -22,9 +18,9 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_tiles)
         throw CustomException("Bad allocation for _tiles in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _tilesCleaner = std::make_shared<TilesCleaner>();
-    if (!_tilesCleaner)
-        throw CustomException("Bad allocation for _tilesCleaner in MosaicGenerator constructor.", CustomException::Level::ERROR);
+    _duplicateRemover = std::make_shared<DuplicateRemover>();
+    if (!_duplicateRemover)
+        throw CustomException("Bad allocation for _duplicateRemover in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
     _matchSolver = std::make_shared<MatchSolver>(parameters.getGrid());
     if (!_matchSolver)
@@ -38,7 +34,6 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
 MosaicGenerator::~MosaicGenerator()
 {
     _photo.reset();
-    _colorEnhancer.reset();
     _roi.reset();
     _tiles.reset();
     _matchSolver.reset();
@@ -52,9 +47,8 @@ void MosaicGenerator::Build()
     _roi->initialize();
     _tiles->initialize(_matchSolver->getRequiredNbTiles());
 
-    _tilesCleaner->clean(*_tiles);
+    _duplicateRemover->run(*_tiles);
     _tiles->compute(*_roi, *_photo);
-    _colorEnhancer->computeData(*_photo);
     _matchSolver->solve(*_tiles);
-    _mosaicBuilder->build(*_photo, *_colorEnhancer, *_tiles, *_matchSolver);
+    _mosaicBuilder->build(*_photo, *_tiles, *_matchSolver);
 }

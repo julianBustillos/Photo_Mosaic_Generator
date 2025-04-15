@@ -52,9 +52,11 @@ void Photo::initialize()
     Log::Logger::get().log(Log::INFO) << "Tile size   : " << _tileSize.width << "*" << _tileSize.height;
 }
 
-cv::Rect Photo::getTileBox(int i, int j, bool doShift) const
+cv::Rect Photo::getTileBox(int mosaicId, bool doShift) const
 {
     cv::Rect box;
+    int i = mosaicId / _gridWidth;
+    int j = mosaicId - i * _gridWidth;
     box.y = i * _tileSize.height;
     box.x = j * _tileSize.width;
     if (doShift)

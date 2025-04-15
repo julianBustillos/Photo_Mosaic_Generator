@@ -4,8 +4,8 @@
 #include "Console.h"
 
 
-ColorEnhancer::ColorEnhancer(std::tuple<int, int> grid) :
-    _gridWidth(std::get<0>(grid)), _gridHeight(std::get<1>(grid))
+ColorEnhancer::ColorEnhancer(int gridWidth, int gridHeight) :
+    _gridWidth(gridWidth), _gridHeight(gridHeight)
 {
 }
 
@@ -15,38 +15,42 @@ ColorEnhancer::~ColorEnhancer()
 
 void ColorEnhancer::computeData(const Photo& photo)
 {
-    Console::Out::get(Console::DEFAULT) << "Computing image correction data...";
-    _tileData.resize(_gridWidth * _gridHeight);
+    Console::Out::get(Console::DEFAULT) << "Computing image color enhancement data...";
+    _tileCDF.resize(_gridWidth * _gridHeight);
 
-    for (int i = 0; i < _gridHeight; i++)
+    for (int mosaicId = 0; mosaicId < _gridWidth * _gridHeight; mosaicId++)
     {
-        for (int j = 0; j < _gridWidth; j++)
-        {
-            int mosaicId = i * _gridWidth + j;
-            computeTileData(_tileData[mosaicId], photo.getImage(), photo.getTileBox(i, j, true));
-        }
+        computeTileCDF(_tileCDF[mosaicId], photo.getImage(), photo.getTileBox(mosaicId, true));
     }
-    Log::Logger::get().log(Log::TRACE) << "Adapter data computed.";
+    Log::Logger::get().log(Log::TRACE) << "Enhancement data computed.";
 }
 
 void ColorEnhancer::apply(cv::Mat& tile, double blending, int mosaicId) const
 {
+    //TODO: compute CDF
+    //TODO: check WDistance
+    //TODO: find optimal GMM
+    //TODO: find optimal target dist
+    //TODO: compute correction mapping
+    //TODO: compute real blending value
+    //TODO: apply blending
+
     cv::Rect box(0, 0, tile.size().width, tile.size().height);
-    EnhancerData originalTileData;
-    computeTileData(originalTileData, tile, box);
+    ProbaUtils::CDF originalTileData;
+    computeTileCDF(originalTileData, tile, box);
 
     int tileDataSize = 3 * box.width * box.height;
 
-    int colorCorrection[3][256];
+    int colorMapping[3][256];
     for (int c = 0; c < 3; c++)
     {
-        int matchingValue = 0;
+        int optimalColor = 0;
         for (int k = 0; k < 256; k++)
         {
-            double probability = originalTileData._colorCDF[c][k];
-            while (probability > _tileData[mosaicId]._colorCDF[c][matchingValue])
-                matchingValue++;
-            colorCorrection[c][k] = matchingValue;
+            double probability = originalTileData[c][k];
+            while (probability > _tileCDF[mosaicId][c][optimalColor])
+                optimalColor++;
+            colorMapping[c][k] = optimalColor;
         }
     }
 
@@ -56,20 +60,20 @@ void ColorEnhancer::apply(cv::Mat& tile, double blending, int mosaicId) const
         for (int c = 0; c < 3; c++)
         {
             uchar originalColor = data[k + c];
-            uchar correctedColor = colorCorrection[c][originalColor];
-            data[k + c] = (uchar)(blending * (double)correctedColor + (1. - blending) * (double)originalColor);
+            uchar optimalColor = colorMapping[c][originalColor];
+            data[k + c] = (uchar)(blending * (double)optimalColor + (1. - blending) * (double)originalColor);
         }
     }
 }
 
-void ColorEnhancer::computeTileData(EnhancerData& data, const cv::Mat& image, const cv::Rect& box) const
+void ColorEnhancer::computeTileCDF(ProbaUtils::CDF& cdf, const cv::Mat& image, const cv::Rect& box) const
 {
     //Compute cumulative distribution function for BGR colors
     for (int c = 0; c < 3; c++)
     {
         for (int k = 0; k < 256; k++)
         {
-            data._colorCDF[c][k] = 0.;
+            cdf[c][k] = 0.;
         }
     }
 
@@ -82,7 +86,7 @@ void ColorEnhancer::computeTileData(EnhancerData& data, const cv::Mat& image, co
         {
             for (int c = 0; c < 3; c++, p++)
             {
-                data._colorCDF[c][image.data[p]] += 1.;
+                cdf[c][image.data[p]] += 1.;
             }
         }
     }
@@ -92,9 +96,9 @@ void ColorEnhancer::computeTileData(EnhancerData& data, const cv::Mat& image, co
     {
         for (int k = 1; k < 256; k++)
         {
-            data._colorCDF[c][k] += data._colorCDF[c][k - 1];
-            data._colorCDF[c][k - 1] /= nbPixel;
+            cdf[c][k] += cdf[c][k - 1];
+            cdf[c][k - 1] /= nbPixel;
         }
-        data._colorCDF[c][255] /= nbPixel;
+        cdf[c][255] /= nbPixel;
     }
 }

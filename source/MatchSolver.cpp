@@ -35,9 +35,9 @@ void MatchSolver::solve(const Tiles& tiles)
     Log::Logger::get().log(Log::TRACE) << "Best tiles found.";
 }
 
-const std::vector<int>& MatchSolver::getMatchingTiles() const
+int MatchSolver::getMatchingTile(int mosaicId) const
 {
-    return _bestSolution;
+    return _bestSolution[mosaicId];
 }
 
 void MatchSolver::computeRedundancyBox(int i, int j, cv::Rect& box) const

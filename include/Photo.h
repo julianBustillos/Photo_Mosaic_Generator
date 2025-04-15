@@ -16,7 +16,7 @@ public:
 
 public:
     void initialize();
-    cv::Rect getTileBox(int i, int j, bool doShift) const;
+    cv::Rect getTileBox(int mosaicId, bool doShift) const;
     cv::Size getTileSize() const;
     const cv::Mat& getImage() const;
     std::string getDirectory() const;

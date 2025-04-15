@@ -51,7 +51,7 @@
     <ClCompile Include="source\FaceDetectionROIImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\TilesCleaner.cpp">
+    <ClCompile Include="source\DuplicateRemover.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\GaussianMixtureModel.cpp">
@@ -110,7 +110,7 @@
     <ClInclude Include="include\FaceDetectionROIImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\TilesCleaner.h">
+    <ClInclude Include="include\DuplicateRemover.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\OutputManager.h">

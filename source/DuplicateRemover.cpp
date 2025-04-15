@@ -1,4 +1,4 @@
-#include "TilesCleaner.h"
+#include "DuplicateRemover.h"
 #include "ImageUtils.h"
 #include "OutputManager.h"
 #include "ProgressBar.h"
@@ -7,7 +7,7 @@
 #include <stack>
 
 
-void TilesCleaner::clean(Tiles& tiles) const
+void DuplicateRemover::run(Tiles& tiles) const
 {
     const unsigned int maxBitDist = (unsigned int)(ImageUtils::HashBits * DistanceTolerance);
     std::vector<ImageUtils::Hash> hashes(tiles.getNbTiles());

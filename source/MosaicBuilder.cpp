@@ -15,49 +15,41 @@ MosaicBuilder::~MosaicBuilder()
 {
 }
 
-//DEBUG
-int dump_i, dump_j;
-const Photo* dump_photo = NULL;
-//DEBUG
-void MosaicBuilder::build(const Photo& photo, const ColorEnhancer& colorEnhancer, const Tiles& tiles, const MatchSolver& matchSolver)
+void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSolver& matchSolver)
 {
     Console::Out::get(Console::DEFAULT) << "Building mosaics...";
     cv::Size mosaicSize = photo.getTileSize();
     mosaicSize.width *= _gridWidth;
     mosaicSize.height *= _gridHeight;
-    const std::vector<int>& matchingTiles = matchSolver.getMatchingTiles();
     const double blendingSize = _blendingMax - _blendingMin;
     const int nbSteps = blendingSize > 0 ? (int)(blendingSize / _blendingStep) + 1 : 1;
+    std::vector<cv::Mat> mosaics(nbSteps, cv::Mat(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0)));
+    ColorEnhancer enhancer(_gridWidth, _gridHeight);
+    enhancer.computeData(photo);
 
-    //#pragma omp parallel for
-    for (int s = 0; s < nbSteps; s++)
+    #pragma omp parallel for
+    for (int mosaicId = 0; mosaicId < _gridWidth * _gridHeight; mosaicId++)
     {
-        cv::Mat mosaic(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
-        double blendingValue = _blendingMin + s * _blendingStep;
-        for (int i = 0; i < _gridHeight; i++)
+        int tileId = matchSolver.getMatchingTile(mosaicId);
+        if (tileId < 0)
+            throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
+
+        for (int s = 0; s < nbSteps; s++)
         {
-            for (int j = 0; j < _gridWidth; j++)
-            {
-                int mosaicId = i * _gridWidth + j;
-                int tileId = matchingTiles[mosaicId];
-
-                //DEBUG
-                dump_i = i;
-                dump_j = j;
-                dump_photo = &photo;
-                //DEBUG
-
-                if (tileId >= 0)
-                    copyTileOnMosaic(mosaic, tiles.getTileFilepath(tileId), colorEnhancer, blendingValue, mosaicId, photo.getTileBox(i, j, false));
-                else
-                    throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
-            }
+            double blending = _blendingMin + s * _blendingStep;
+            copyTileOnMosaic(mosaics[s], tiles.getTileFilepath(tileId), enhancer, blending, mosaicId, photo.getTileBox(mosaicId, false));
         }
-        exportMosaic(photo.getDirectory(), blendingValue, mosaic);
+
+    }
+    
+    #pragma omp parallel for
+    for (int s = 0; s < nbSteps; s++) 
+    {
+        double blending = _blendingMin + s * _blendingStep;
+        exportMosaic(photo.getDirectory(), blending, mosaics[s]);
     }
 
     Log::Logger::get().log(Log::TRACE) << "Mosaic computed.";
-
 }
 
 void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePath, const ColorEnhancer& colorEnhancer, double blending, int mosaicId, const cv::Rect& box)
@@ -65,57 +57,6 @@ void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const std::string& tilePat
     cv::Mat tile = cv::imread(tilePath);
     if (tile.empty())
         throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::ERROR);
-
-    //DEBUG
-    if (blending == 0)
-    {
-        std::string dumpFolder = "C:\\Users\\JulianBustillos\\Downloads\\MOSAIC_ANAELLE\\DUMP_COLORS\\";
-        std::string value_i = std::to_string((int)(dump_i));
-        value_i = std::string(3 - value_i.length(), '0') + value_i;
-        std::string value_j = std::to_string((int)(dump_j));
-        value_j = std::string(3 - value_j.length(), '0') + value_j;
-
-        std::string path = dumpFolder + "tile_" + value_i + "_" + value_j + ".jpg";
-        //cv::imwrite(path, tile, std::vector<int>({MosaicParam[0], MosaicParam[1]}));
-
-        cv::Mat reference = tile.clone();
-        cv::Rect box = dump_photo->getTileBox(dump_i, dump_j, true);
-        const cv::Size refSize = reference.size();
-
-        for (int i = 0; i < box.height; i++)
-        {
-            for (int j = 0; j < box.width; j++)
-            {
-                int refID = (i * box.width + j) * 3;
-                int photoID = ((i + box.y) * dump_photo->getImage().size().width + (j + box.x)) * 3;
-                for (int c = 0; c < 3; c++)
-                {
-                    reference.data[refID + c] = dump_photo->getImage().data[photoID + c];
-                }
-            }
-        }
-
-        path = dumpFolder + "reference_" + value_i + "_" + value_j + ".jpg";
-        //cv::imwrite(path, reference, std::vector<int>({MosaicParam[0], MosaicParam[1]}));
-
-        if (dump_i == 25 && dump_j == 33)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                std::vector<int> data;
-                data.reserve(box.width * box.height);
-                for (int d = 0; d < box.width * box.height; d++)
-                {
-                    data.push_back(reference.data[3 * d + c]);
-                }
-
-                std::vector<GaussianMixtureModel::Component> components = GaussianMixtureModel::findOptimalComponents(data, 10, 1e-3, 300, 1e-3, 1000, true);
-            }
-
-
-        }
-    }
-    //DEBUG
 
     colorEnhancer.apply(tile, blending, mosaicId);
 

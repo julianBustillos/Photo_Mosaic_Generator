@@ -5,7 +5,7 @@
 #include "ColorEnhancer.h"
 #include "IRegionOfInterest.h"
 #include "Tiles.h"
-#include "TilesCleaner.h"
+#include "DuplicateRemover.h"
 #include "MatchSolver.h"
 #include "MosaicBuilder.h"
 #include <memory>
@@ -20,10 +20,9 @@ public:
 
 private:
     std::shared_ptr<Photo> _photo;
-    std::shared_ptr<ColorEnhancer> _colorEnhancer;
     std::shared_ptr<IRegionOfInterest> _roi;
     std::shared_ptr<Tiles> _tiles;
-    std::shared_ptr<TilesCleaner> _tilesCleaner;
+    std::shared_ptr<DuplicateRemover> _duplicateRemover;
     std::shared_ptr<MatchSolver> _matchSolver;
     std::shared_ptr<MosaicBuilder> _mosaicBuilder;
 };

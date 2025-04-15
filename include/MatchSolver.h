@@ -18,7 +18,7 @@ public:
 public:
     int getRequiredNbTiles();
     void solve(const Tiles& tiles);
-    const std::vector<int>& getMatchingTiles() const;
+    int getMatchingTile(int mosaicId) const;
 
 private:
     struct MatchCandidate
