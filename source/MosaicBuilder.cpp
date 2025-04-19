@@ -17,16 +17,22 @@ MosaicBuilder::~MosaicBuilder()
 
 void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSolver& matchSolver)
 {
-    Console::Out::get(Console::DEFAULT) << "Building mosaics...";
+    const int gridSize = _gridWidth * _gridHeight;
+    const double blendingSize = _blendingMax - _blendingMin;
+    const int nbSteps = blendingSize > 0 ? (int)(blendingSize / _blendingStep) + 1 : 1;
+    Console::Out::initBar("Building mosaics          ", gridSize + nbSteps);
+    Console::Out::startBar(Console::DEFAULT);
+
     cv::Size mosaicSize = photo.getTileSize();
     mosaicSize.width *= _gridWidth;
     mosaicSize.height *= _gridHeight;
-    const double blendingSize = _blendingMax - _blendingMin;
-    const int nbSteps = blendingSize > 0 ? (int)(blendingSize / _blendingStep) + 1 : 1;
-    std::vector<cv::Mat> mosaics(nbSteps, cv::Mat(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0)));
+    std::vector<cv::Mat> mosaics;
+    mosaics.reserve(nbSteps);
+    for (int s = 0; s < nbSteps; s++)
+        mosaics.emplace_back(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
 
     #pragma omp parallel for
-    for (int mosaicId = 0; mosaicId < _gridWidth * _gridHeight; mosaicId++)
+    for (int mosaicId = 0; mosaicId < gridSize; mosaicId++)
     {
         int tileId = matchSolver.getMatchingTile(mosaicId);
         if (tileId < 0)
@@ -45,7 +51,7 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
             double blending = _blendingMin + s * _blendingStep;
             copyTileOnMosaic(mosaics[s], tile, enhancer, blending, mosaicId, photo.getTileBox(mosaicId, false));
         }
-
+        Console::Out::addBarSteps(1);
     }
     
     #pragma omp parallel for
@@ -53,8 +59,10 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
     {
         double blending = _blendingMin + s * _blendingStep;
         exportMosaic(photo.getDirectory(), blending, mosaics[s]);
+        Console::Out::addBarSteps(1);
     }
 
+    Console::Out::waitBar();
     Log::Logger::get().log(Log::TRACE) << "Mosaic computed.";
 }
 

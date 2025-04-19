@@ -1,31 +1,23 @@
 #pragma once
 
+#include "ProbaUtils.h"
 #include <vector>
 
 
 class GaussianMixtureModel
 {
 private:
-    static double square(double value);
     static const double EpsilonCovariance;
 
 public:
-    struct Component
-    {
-        double _mean;
-        double _covariance;
-        double _weight;
-    };
+    static bool findOptimalComponents(ProbaUtils::GMMComponents& optimalComponents, const std::vector<int>& data, int maxNbComponents, int nbIter, double convergenceTol, bool defaultSeed);
 
 public:
-    static std::vector<Component> findOptimalComponents(const std::vector<int>& data, int maxNbComponents, double kmeansTol, int kmeansIter, double emTol, int emIter, bool defaultSeed);
-
-public:
-    GaussianMixtureModel(double kmeansTol, int kmeansIter, double emTol, int emIter, bool defaultSeed);
+    GaussianMixtureModel(int nbIter, double convergenceTol, bool defaultSeed);
     void setData(const std::vector<int>& data);
     bool run(int nbComponents);
     double getBIC();
-    std::vector<Component> getComponents();
+    ProbaUtils::GMMComponents getComponents();
 
 private:
     struct Bin
@@ -42,21 +34,19 @@ private:
 
 private:
     bool checkValidity(int nbComponents);
-    void runKmeansPlusPlus();
-    void runExpectationMaximization();
-    double normalPDF(double value, const Component& component);
-    double logLikelihood();
-    void computeBIC();
+    void runKmeansPlusPlus(int histogramSize, int nbComponents);
+    double runExpectationMaximization(int histogramSize, int nbComponents);
+    void evalGaussianPDF(std::vector<double>& evals, int histogramSize, int nbComponents) const;
+    double logLikelihood(const std::vector<double>& evals, int histogramSize, int nbComponents) const;
+    void computeBIC(double logLH, int nbComponents);
 
 private:
-    const double _kmeansTol;
-    const int _kmeansIter;
-    const double _emTol;
-    const int _emIter;
+    const int _nbIter;
+    const double _convergenceTol;
     const bool _defaultSeed;
     std::vector<Bin> _histogram;
     int _nbData;
-    std::vector<Component> _components;
+    ProbaUtils::GMMComponents _components;
     double _BIC;
 };
 

@@ -19,7 +19,7 @@ MatchSolver::~MatchSolver()
 
 int MatchSolver::getRequiredNbTiles()
 {
-    return RedundancyTilesNumber;
+    return RedundancyNbTiles;
 }
 
 void MatchSolver::solve(const Tiles& tiles)
@@ -42,10 +42,10 @@ int MatchSolver::getMatchingTile(int mosaicId) const
 
 void MatchSolver::computeRedundancyBox(int i, int j, cv::Rect& box) const
 {
-    box.y = std::max(i - RedundancyDistance, 0);
-    box.height = std::min(i + RedundancyDistance, _gridHeight - 1) - box.y + 1;
-    box.x = std::max(j - RedundancyDistance, 0);
-    box.width = std::min(j + RedundancyDistance, _gridWidth - 1) - box.x + 1;
+    box.y = std::max(i - RedundancyDist, 0);
+    box.height = std::min(i + RedundancyDist, _gridHeight - 1) - box.y + 1;
+    box.x = std::max(j - RedundancyDist, 0);
+    box.width = std::min(j + RedundancyDist, _gridWidth - 1) - box.x + 1;
 }
 
 void MatchSolver::findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const Tiles& tiles) const
@@ -64,7 +64,7 @@ void MatchSolver::findCandidateTiles(std::vector<std::vector<MatchCandidate>>& c
             }
 
             std::sort(candidates[m].begin(), candidates[m].end());
-            candidates[m].resize(RedundancyTilesNumber);
+            candidates[m].resize(RedundancyNbTiles);
         }
     }
 }

@@ -1,42 +1,40 @@
 #include "GaussianMixtureModel.h"
+#include "MathUtils.h"
 #include <random>
 #include <map>
 #include <set>
-#include <limits>
 #include <numbers>
 
 
 const double GaussianMixtureModel::EpsilonCovariance = 1. / 16.;
 
-double GaussianMixtureModel::square(double value)
-{
-    return value * value;
-}
 
-
-std::vector<GaussianMixtureModel::Component> GaussianMixtureModel::findOptimalComponents(const std::vector<int>& data, int maxNbComponents, double kmeansTol, int kmeansIter, double emTol, int emIter, bool defaultSeed)
+bool GaussianMixtureModel::findOptimalComponents(ProbaUtils::GMMComponents& optimalComponents, const std::vector<int>& data, int maxNbComponents, int nbIter, double convergenceTol, bool defaultSeed)
 {
-    GaussianMixtureModel gmm(kmeansTol, kmeansIter, emTol, emIter, defaultSeed);
+    GaussianMixtureModel gmm(nbIter, convergenceTol, defaultSeed);
     gmm.setData(data);
-    std::vector<Component> optimalComponents;
-    double optimalBIC = std::numeric_limits<double>::max();
+    double optimalBIC = MathUtils::DoubleMax;
+    bool found = false;
 
     for (int nbComponents = 1; nbComponents <= maxNbComponents; nbComponents++)
     {
-        gmm.run(nbComponents);
-        double BIC = gmm.getBIC();
-        if (BIC < optimalBIC)
+        found = gmm.run(nbComponents);
+        if (found)
         {
-            optimalComponents = gmm.getComponents();
-            optimalBIC = BIC;
+            double BIC = gmm.getBIC();
+            if (BIC < optimalBIC)
+            {
+                optimalComponents = gmm.getComponents();
+                optimalBIC = BIC;
+            }
         }
     }
 
-    return optimalComponents;
+    return found;
 }
 
-GaussianMixtureModel::GaussianMixtureModel(double kmeansTol, int kmeansIter, double emTol, int emIter, bool defaultSeed) :
-    _kmeansTol(kmeansTol), _kmeansIter(kmeansIter), _emTol(emTol), _emIter(emIter), _defaultSeed(defaultSeed), _nbData(0), _BIC(-1)
+GaussianMixtureModel::GaussianMixtureModel(int nbIter, double convergenceTol,  bool defaultSeed) :
+    _nbIter(nbIter), _convergenceTol(convergenceTol), _defaultSeed(defaultSeed), _nbData(0), _BIC(-1)
 {
 }
 
@@ -61,10 +59,10 @@ bool GaussianMixtureModel::run(int nbComponents)
 
     _components.resize(nbComponents);
 
-    runKmeansPlusPlus();
-    runExpectationMaximization();
-    computeBIC();
-    
+    runKmeansPlusPlus(_histogram.size(), nbComponents);
+    double logLH = runExpectationMaximization(_histogram.size(), nbComponents);
+    computeBIC(logLH, nbComponents);
+  
     return true;
 }
 
@@ -73,7 +71,7 @@ double GaussianMixtureModel::getBIC()
     return _BIC;
 }
 
-std::vector<GaussianMixtureModel::Component> GaussianMixtureModel::getComponents()
+ProbaUtils::GMMComponents GaussianMixtureModel::getComponents()
 {
     return _components;
 }
@@ -83,30 +81,30 @@ bool GaussianMixtureModel::checkValidity(int nbComponents)
     return nbComponents > 0 && _histogram.size() >= nbComponents;
 }
 
-void GaussianMixtureModel::runKmeansPlusPlus()
+void GaussianMixtureModel::runKmeansPlusPlus(int histogramSize, int nbComponents)
 {
     //Use kmeans++ as initializer for GMM
     std::random_device rd;
     std::unique_ptr<std::mt19937> gen = _defaultSeed ? std::make_unique<std::mt19937>() : std::make_unique<std::mt19937>(rd());
 
     //Choose initial clusters (means)
-    std::uniform_int_distribution<> uniformDistrib(0, _histogram.size() - 1);
+    std::uniform_int_distribution<> uniformDistrib(0, histogramSize - 1);
     _components[0]._mean = _histogram[uniformDistrib(*gen.get())]._value;
 
-    std::vector<int> intervals(2 * _histogram.size());
+    std::vector<int> intervals(2 * histogramSize);
     std::vector<int> weights(intervals.size() - 1, 0);
-    for (int b = 0; b < _histogram.size(); b++)
+    for (int b = 0; b < histogramSize; b++)
     {
         intervals[2 * b] = _histogram[b]._value;
         intervals[2 * b + 1] = _histogram[b]._value;
-        weights[2 * b] = std::numeric_limits<int>::max();
+        weights[2 * b] = std::numeric_limits<int>::max(); //TODO CHANGE??!!!!
     }
 
-    for (int c = 1; c < _components.size(); c++)
+    for (int c = 1; c < nbComponents; c++)
     {
-        for (int b = 0; b < _histogram.size(); b++)
+        for (int b = 0; b < histogramSize; b++)
         {
-            int sqDistance = square((int)_components[c - 1]._mean - _histogram[b]._value);
+            int sqDistance = ((int)_components[c - 1]._mean - _histogram[b]._value) * ((int)_components[c - 1]._mean - _histogram[b]._value);
             if (sqDistance < weights[2 * b])
                 weights[2 * b] = sqDistance;
         }
@@ -116,12 +114,12 @@ void GaussianMixtureModel::runKmeansPlusPlus()
     }
 
     //Iteration step
-    std::vector<ClusterData> clusters(_components.size());
-    std::vector<int> assignedCluster(_histogram.size(), -1);
-    double meanMaxDiff = std::numeric_limits<double>::max();
+    std::vector<ClusterData> clusters(nbComponents);
+    std::vector<int> assignedCluster(histogramSize, -1);
+    double meanMaxDiff = MathUtils::DoubleMax;
     int iteration = 0;
 
-    while (meanMaxDiff > _kmeansTol && iteration < _kmeansIter)
+    while (meanMaxDiff > _convergenceTol && iteration < _nbIter)
     {
         for (ClusterData& cluster : clusters)
         {
@@ -130,10 +128,10 @@ void GaussianMixtureModel::runKmeansPlusPlus()
         }
 
         //Assign each point to closest cluster centroid
-        for (int b= 0; b < _histogram.size(); b++)
+        for (int b= 0; b < histogramSize; b++)
         {
-            double distanceMin = std::numeric_limits<double>::max();
-            for (int c = 0; c < _components.size(); c++)
+            double distanceMin = MathUtils::DoubleMax;
+            for (int c = 0; c < nbComponents; c++)
             {
                 double distance = abs(_components[c]._mean - (double)_histogram[b]._value);
                 if (distance < distanceMin)
@@ -148,7 +146,7 @@ void GaussianMixtureModel::runKmeansPlusPlus()
 
         //Compute new centroids
         meanMaxDiff = 0;
-        for (int c = 0; c < _components.size(); c++)
+        for (int c = 0; c < nbComponents; c++)
         {
             double newCentroid = (double)clusters[c]._sum / (double)clusters[c]._count;
             double meanDiff = abs(_components[c]._mean - newCentroid);
@@ -161,110 +159,140 @@ void GaussianMixtureModel::runKmeansPlusPlus()
         iteration++;
     }
 
-    //Initialize covariances and weights
-    for (int b = 0; b < _histogram.size(); b++)
+    //Initialize variances and weights
+    for (int b = 0; b < histogramSize; b++)
     {
         const int cluster = assignedCluster[b];
-        _components[cluster]._covariance += square((double)_histogram[b]._value - _components[cluster]._mean) * (double)_histogram[b]._count;
+        _components[cluster]._variance += ((double)_histogram[b]._value - _components[cluster]._mean) * ((double)_histogram[b]._value - _components[cluster]._mean) * (double)_histogram[b]._count;
     }
-    for (int c = 0; c < _components.size(); c++)
+    for (int c = 0; c < nbComponents; c++)
     {
-        _components[c]._covariance = _components[c]._covariance / (double)clusters[c]._count;
-        if (_components[c]._covariance < EpsilonCovariance)
-            _components[c]._covariance = EpsilonCovariance;
-        _components[c]._weight = 1. / (double)_components.size();
+        _components[c]._variance = _components[c]._variance / (double)clusters[c]._count;
+        if (_components[c]._variance < EpsilonCovariance)
+            _components[c]._variance = EpsilonCovariance;
+        _components[c]._weight = 1. / (double)nbComponents;
     }
 
 }
 
-void GaussianMixtureModel::runExpectationMaximization()
+double GaussianMixtureModel::runExpectationMaximization(int histogramSize, int nbComponents)
 {
-    std::vector<std::vector<double>> resp(_components.size(), std::vector<double>(_histogram.size())); //Responsabilities
+    std::vector<double> evals(nbComponents * histogramSize); //Gaussian PDF evaluations
+    std::vector<double> resps(nbComponents * histogramSize); //Responsabilities
+    std::vector<double> composResp(nbComponents);
     int iteration = 0;
-    double logLH = logLikelihood();
-    double logLHDiff = std::numeric_limits<double>::max(); //Log-likelihood iteration difference
+    evalGaussianPDF(evals, histogramSize, nbComponents);
+    double logLH = logLikelihood(evals, histogramSize, nbComponents);
+    double logLHDiff = MathUtils::DoubleMax; //Log-likelihood iteration difference
 
-    while (logLHDiff > _emTol && iteration < _emIter)
+    while (logLHDiff > _convergenceTol && iteration < _nbIter)
     {
         //Expectation step
-        std::vector<double> respAcc(_histogram.size(), 0);
-        for (int c = 0; c < _components.size(); c++)
+        for (int b = 0, r = 0; b < histogramSize; b++)
         {
-            for (int b = 0; b < _histogram.size(); b++)
+            double respAcc = 0;
+            for (int c = 0; c < nbComponents; c++, r++)
             {
-				resp[c][b] = normalPDF((double)_histogram[b]._value, _components[c]);
-                if (resp[c][b] > std::numeric_limits<double>::epsilon())
-                    respAcc[b] += resp[c][b];
-                else
-                    resp[c][b] = 0;
+                respAcc += evals[r];
             }
-        }
-        for (int c = 0; c < _components.size(); c++)
-        {
-            for (int b = 0; b < _histogram.size(); b++)
+            r -= nbComponents;
+            for (int c = 0; c < nbComponents; c++, r++)
             {
-				if (respAcc[b] > std::numeric_limits<double>::epsilon())
-					resp[c][b] /= respAcc[b];
-				else
-					resp[c][b] = 1 / (double)_components.size();
+                resps[r] = (evals[r] * (double)_histogram[b]._count) / respAcc;
             }
         }
 
         //Maximization step
-        for (int c = 0; c < _components.size(); c++)
+        for (int c = 0; c < nbComponents; c++)
         {
-            double clusterResp = 0;
             _components[c]._mean = 0;
-            for (int b = 0; b < _histogram.size(); b++)
-            {
-                clusterResp += resp[c][b] * (double)_histogram[b]._count;
-                _components[c]._mean += resp[c][b] * (double)_histogram[b]._value * (double)_histogram[b]._count;
-            }
-            _components[c]._mean /= clusterResp;
+            _components[c]._variance = 0;
+            composResp[c] = 0;
+        }
 
-            _components[c]._covariance = 0;
-            for (int b = 0; b < _histogram.size(); b++)
+        for (int b = 0, r = 0; b < histogramSize; b++)
+        {
+            for (int c = 0; c < nbComponents; c++, r++)
             {
-                _components[c]._covariance += resp[c][b] * square((double)_histogram[b]._value - _components[c]._mean) * (double)_histogram[b]._count;
+                composResp[c] += resps[r];
+                _components[c]._mean += resps[r] * (double)_histogram[b]._value;
             }
-            _components[c]._covariance /= clusterResp;
-            if (_components[c]._covariance < EpsilonCovariance)
-                _components[c]._covariance = EpsilonCovariance;
+        }
 
-            _components[c]._weight = clusterResp / _nbData;
+        for (int c = 0; c < nbComponents; c++)
+        {
+            _components[c]._mean /= composResp[c];
+        }
+
+        for (int b = 0, r = 0; b < histogramSize; b++)
+        {
+            for (int c = 0; c < nbComponents; c++, r++)
+            {
+                _components[c]._variance += resps[r] * ((double)_histogram[b]._value - _components[c]._mean) * ((double)_histogram[b]._value - _components[c]._mean);
+            }
+
+        }
+
+        for (int c = 0; c < nbComponents; c++)
+        {
+            _components[c]._variance /= composResp[c];
+            if (_components[c]._variance < EpsilonCovariance)
+                _components[c]._variance = EpsilonCovariance;
+
+            _components[c]._weight = composResp[c] / _nbData;
         }
     
         //Compute log-likelihood
-        double newLogLH = logLikelihood();
+        evalGaussianPDF(evals, histogramSize, nbComponents);
+        double newLogLH = logLikelihood(evals, histogramSize, nbComponents);
         logLHDiff = newLogLH - logLH;
         logLH = newLogLH;
 
         iteration++;
     }
-}
 
-double GaussianMixtureModel::normalPDF(double x, const Component& component)
-{
-    return exp(-square(x - component._mean) / (2. * component._covariance)) / sqrt(2. * std::numbers::pi * component._covariance) * component._weight;
-}
-
-double GaussianMixtureModel::logLikelihood()
-{
-    double logLH = 0;
-    for (int b = 0; b < _histogram.size(); b++)
-    {
-        double valueLogLH = 0;
-        for (int c = 0; c < _components.size(); c++)
-        {
-            valueLogLH += normalPDF((double)_histogram[b]._value, _components[c]);
-        }
-        logLH += log(valueLogLH) * (double)_histogram[b]._count;
-    }
     return logLH;
 }
 
-void GaussianMixtureModel::computeBIC()
+void GaussianMixtureModel::evalGaussianPDF(std::vector<double>& evals, int histogramSize, int nbComponents) const
 {
-	_BIC = -2. * logLikelihood() + (double)(3 * _components.size() - 1) * log(_nbData);
+    std::vector<double> coeffs(3 * nbComponents);
+    for (int c = 0, k = 0; c < nbComponents; c++, k += 3)
+    {
+        coeffs[k] = _components[c]._mean;
+        coeffs[k + 1] = 2. * _components[c]._variance;
+        coeffs[k + 2] = -0.5 * log(2. * std::numbers::pi * _components[c]._variance) + log(_components[c]._weight);
+
+    }
+    for (int b = 0, r = 0; b < histogramSize; b++)
+    {
+        for (int c = 0, k = 0; c < nbComponents; c++, k += 3, r++)
+        {
+            evals[r] = exp(- (_histogram[b]._value - coeffs[k]) * (_histogram[b]._value - coeffs[k]) / coeffs[k + 1] + coeffs[k + 2]);
+            if (evals[r] < MathUtils::DoubleEpsilon)
+                evals[r] = MathUtils::DoubleEpsilon;
+        }
+    }
+}
+
+double GaussianMixtureModel::logLikelihood(const std::vector<double>& evals, int histogramSize, int nbComponents) const
+{
+    double logLH = 0;
+    for (int b = 0, r = 0; b < histogramSize; b++)
+    {
+        double binEval = 0;
+        for (int c = 0; c < nbComponents; c++, r++)
+        {
+            binEval += evals[r];
+        }
+        logLH += log(binEval) * (double)_histogram[b]._count;
+    }
+
+    return logLH;
+}
+
+void GaussianMixtureModel::computeBIC(double logLH, int nbComponents)
+{
+	_BIC = -2. * logLH + (double)(3 * nbComponents - 1) * log(_nbData);
 }
 

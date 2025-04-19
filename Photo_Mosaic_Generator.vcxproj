@@ -150,6 +150,7 @@
     <ClInclude Include="include\IRegionOfInterest.h" />
     <ClInclude Include="include\Log.h" />
     <ClInclude Include="include\MatchSolver.h" />
+    <ClInclude Include="include\MathUtils.h" />
     <ClInclude Include="include\MeanShift.h" />
     <ClInclude Include="include\MosaicBuilder.h" />
     <ClInclude Include="include\MosaicGenerator.h" />

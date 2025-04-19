@@ -9,7 +9,7 @@
 
 void DuplicateRemover::run(Tiles& tiles) const
 {
-    const unsigned int maxBitDist = (unsigned int)(ImageUtils::HashBits * DistanceTolerance);
+    const unsigned int maxBitDist = (unsigned int)(ImageUtils::HashBits * DistanceTol);
     std::vector<ImageUtils::Hash> hashes(tiles.getNbTiles());
     std::vector<bool> isEmpty(tiles.getNbTiles(), false);
     std::vector<bool> isDuplicate(tiles.getNbTiles(), false);

@@ -6,7 +6,7 @@
 class DuplicateRemover
 {
 private:
-    static constexpr double DistanceTolerance = 0.16;
+    static constexpr double DistanceTol = 0.16;
 
 public:
     void run(Tiles& tiles) const;

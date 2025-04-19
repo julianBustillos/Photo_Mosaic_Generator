@@ -8,8 +8,8 @@
 class MatchSolver
 {
 private:
-    static constexpr int RedundancyDistance = 4;
-    static constexpr int RedundancyTilesNumber = (RedundancyDistance * 2 + 1) * (RedundancyDistance * 2 + 1);
+    static constexpr int RedundancyDist = 4;
+    static constexpr int RedundancyNbTiles = (RedundancyDist * 2 + 1) * (RedundancyDist * 2 + 1);
 
 public:
     MatchSolver(std::tuple<int, int> grid);
