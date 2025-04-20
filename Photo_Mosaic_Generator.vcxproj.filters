@@ -21,9 +21,6 @@
     <ClCompile Include="source\MosaicGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\MeanShift.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\MosaicBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -31,12 +28,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\Photo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\MeanShiftROIImpl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\SaliencyFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\ColorEnhancer.cpp">
@@ -48,7 +39,7 @@
     <ClCompile Include="source\Tiles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\FaceDetectionROIImpl.cpp">
+    <ClCompile Include="source\FaceDetectionROI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\DuplicateRemover.cpp">
@@ -66,9 +57,6 @@
     <ClCompile Include="source\ProbaUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\MathUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Clock.h">
@@ -80,9 +68,6 @@
     <ClInclude Include="include\CustomException.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\MeanShift.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\MosaicBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -90,12 +75,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Photo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\MeanShiftROIImpl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\SaliencyFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ColorEnhancer.h">
@@ -107,10 +86,7 @@
     <ClInclude Include="include\Tiles.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\IRegionOfInterest.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\FaceDetectionROIImpl.h">
+    <ClInclude Include="include\FaceDetectionROI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\DuplicateRemover.h">

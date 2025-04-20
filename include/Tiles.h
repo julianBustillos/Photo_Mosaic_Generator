@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Photo.h"
-#include "IRegionOfInterest.h"
+#include "FaceDetectionROI.h"
 #include <vector>
 #include <string>
 #include <tuple>
@@ -24,7 +24,7 @@ public:
     unsigned int getNbTiles() const;
     void getImage(int tileID, cv::Mat& image) const;
     void remove(std::vector<unsigned int>& toRemove);
-    void compute(const IRegionOfInterest& roi, const Photo& photo);
+    void compute(const FaceDetectionROI& roi, const Photo& photo);
     double computeDistance(int i, int j, int tileID) const;
     const std::string getTileFilepath(int tileId) const;
 
@@ -40,8 +40,8 @@ private:
     bool checkExtension(const std::string& extension) const;
     void createTemp() const;
     void removeTemp() const;
-    void computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data, int threadID);
-    void computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize, int threadID);
+    void computeTileFeatures(const cv::Mat& image, const FaceDetectionROI& roi, const cv::Size& tileSize, Data& data, int threadID);
+    void computeCropInfo(const cv::Mat& image, cv::Rect& box, const FaceDetectionROI& roi, const cv::Size& tileSize, int threadID);
     void exportTile(const cv::Mat& tile, const std::string& tilePath);
 
 private:

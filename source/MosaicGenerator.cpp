@@ -1,5 +1,4 @@
 #include "MosaicGenerator.h"
-#include "FaceDetectionROIImpl.h"
 #include "CustomException.h"
 #include "Console.h"
 
@@ -10,7 +9,7 @@ MosaicGenerator::MosaicGenerator(const Parameters& parameters)
     if (!_photo)
         throw CustomException("Bad allocation for _photo in MosaicGenerator constructor.", CustomException::Level::ERROR);
 
-    _roi = std::make_shared<FaceDetectionROIImpl>();
+    _roi = std::make_shared<FaceDetectionROI>();
     if (!_roi)
         throw CustomException("Bad allocation for _roi in MosaicGenerator constructor.", CustomException::Level::ERROR);
 

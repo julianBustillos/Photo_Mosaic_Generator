@@ -1,12 +1,11 @@
 #pragma once
 
-#include "IRegionOfInterest.h"
 #include <opencv2/objdetect.hpp>
 #include <vector>
 #include <string>
 
 
-class FaceDetectionROIImpl : public IRegionOfInterest
+class FaceDetectionROI
 {
 private:
     static constexpr double MinCroppedRatio = 0.9;
@@ -14,12 +13,12 @@ private:
     static constexpr double LowFaceConfidence = 0.5;
 
 public:
-    FaceDetectionROIImpl();
-    ~FaceDetectionROIImpl();
+    FaceDetectionROI();
+    ~FaceDetectionROI();
 
 public:
-    virtual void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const;
-    virtual void initialize();
+    void initialize();
+    void find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const;
 
 private:
     void getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Rect& box, double scaleInv, bool rowDirSearch) const;

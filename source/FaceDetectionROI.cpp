@@ -1,4 +1,4 @@
-#include "FaceDetectionROIImpl.h"
+#include "FaceDetectionROI.h"
 #include "CustomException.h"
 #include "ImageUtils.h"
 #include "SystemUtils.h"
@@ -8,19 +8,33 @@
 #include <omp.h>
 
 
-const int FaceDetectionROIImpl::_detectionSize = 640;
+const int FaceDetectionROI::_detectionSize = 640;
 
 
-FaceDetectionROIImpl::FaceDetectionROIImpl()
+FaceDetectionROI::FaceDetectionROI()
 {
 }
 
-FaceDetectionROIImpl::~FaceDetectionROIImpl()
+FaceDetectionROI::~FaceDetectionROI()
 {
     _faceDetectors.clear();
 }
 
-void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const
+void FaceDetectionROI::initialize()
+{
+    std::string processPath = SystemUtils::getCurrentProcessDirectory();
+    const int nbThreads = omp_get_max_threads();
+    _faceDetectors.resize(nbThreads);
+    for (int t = 0; t < nbThreads; t++)
+    {
+        _faceDetectors[t] = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5f, 0.3f, 5000);
+        if (!_faceDetectors[t])
+            throw CustomException("Bad allocation for _faceDetector in FaceDetectionROI.", CustomException::Level::ERROR);
+    }
+    Log::Logger::get().log(Log::TRACE) << "Face detection model loaded.";
+}
+
+void FaceDetectionROI::find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const
 {
     //Test if face search is needed
     double croppedRatio = rowDirSearch ? (double)box.height / (double)image.size().height : (double)box.width / (double)image.size().width;
@@ -49,21 +63,7 @@ void FaceDetectionROIImpl::find(const cv::Mat& image, cv::Rect& box, bool rowDir
     getDefaultROI(image.size(), box, rowDirSearch);
 }
 
-void FaceDetectionROIImpl::initialize()
-{
-    std::string processPath = SystemUtils::getCurrentProcessDirectory();
-    const int nbThreads = omp_get_max_threads();
-    _faceDetectors.resize(nbThreads);
-    for (int t = 0; t < nbThreads; t++)
-    {
-        _faceDetectors[t] = cv::FaceDetectorYN::create(processPath + "\\ressources\\face_detection_yunet_2023mar.onnx", "", cv::Size(0, 0), 0.5f, 0.3f, 5000);
-        if (!_faceDetectors[t])
-            throw CustomException("Bad allocation for _faceDetector in FaceDetectionROIImpl.", CustomException::Level::ERROR);
-    }
-    Log::Logger::get().log(Log::TRACE) << "Face detection model loaded.";
-}
-
-void FaceDetectionROIImpl::getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Rect& box, double scaleInv, bool rowDirSearch) const
+void FaceDetectionROI::getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Rect& box, double scaleInv, bool rowDirSearch) const
 {
     double minConfidence = (faces.at<float>(0, 14) >= HighFaceConfidence) ? HighFaceConfidence : LowFaceConfidence; // If there is no face detected with high confidence, try other detected faces !
     cv::Point min(imageSize.width, imageSize.height);
@@ -130,7 +130,7 @@ void FaceDetectionROIImpl::getDetectionROI(const cv::Size& imageSize, const cv::
     }
 }
 
-void FaceDetectionROIImpl::getDefaultROI(const cv::Size& imageSize, cv::Rect& box, bool rowDirSearch) const
+void FaceDetectionROI::getDefaultROI(const cv::Size& imageSize, cv::Rect& box, bool rowDirSearch) const
 {
     box.x = (int)(floor((imageSize.width - box.width) / 2.));
     if (rowDirSearch)
@@ -143,7 +143,7 @@ void FaceDetectionROIImpl::getDefaultROI(const cv::Size& imageSize, cv::Rect& bo
     }
 }
 
-void FaceDetectionROIImpl::dumpDetection(std::string path, const cv::Mat& image, const cv::Mat& faces, double scaleInv, bool confidence) const
+void FaceDetectionROI::dumpDetection(std::string path, const cv::Mat& image, const cv::Mat& faces, double scaleInv, bool confidence) const
 {
     cv::Scalar red(50, 50, 255);
     cv::Mat imageCopy(image);

@@ -84,7 +84,7 @@ void Tiles::remove(std::vector<unsigned int>& toRemove)
     _tilesData.resize(_tilesData.size() - (t2 - t1));
 }
 
-void Tiles::compute(const IRegionOfInterest& roi, const Photo& photo)
+void Tiles::compute(const FaceDetectionROI& roi, const Photo& photo)
 {
     removeTemp();
     createTemp();
@@ -171,7 +171,7 @@ void Tiles::removeTemp() const
     }
 }
 
-void Tiles::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& roi, const cv::Size& tileSize, Data& data, int threadID)
+void Tiles::computeTileFeatures(const cv::Mat& image, const FaceDetectionROI& roi, const cv::Size& tileSize, Data& data, int threadID)
 {
     cv::Rect box;
     cv::Mat tileMat;
@@ -182,7 +182,7 @@ void Tiles::computeTileFeatures(const cv::Mat& image, const IRegionOfInterest& r
     exportTile(tileMat, data._tilePath);
 }
 
-void Tiles::computeCropInfo(const cv::Mat& image, cv::Rect& box, const IRegionOfInterest& roi, const cv::Size& tileSize, int threadID)
+void Tiles::computeCropInfo(const cv::Mat& image, cv::Rect& box, const FaceDetectionROI& roi, const cv::Size& tileSize, int threadID)
 {
     if (image.size() == tileSize)
     {
