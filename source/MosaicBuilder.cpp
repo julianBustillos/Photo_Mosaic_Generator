@@ -31,7 +31,7 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
     for (int s = 0; s < nbSteps; s++)
         mosaics.emplace_back(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int mosaicId = 0; mosaicId < gridSize; mosaicId++)
     {
         int tileId = matchSolver.getMatchingTile(mosaicId);

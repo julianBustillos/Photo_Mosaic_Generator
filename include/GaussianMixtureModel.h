@@ -10,11 +10,11 @@ private:
     static const double EpsilonCovariance;
 
 public:
-    static bool findOptimalComponents(ProbaUtils::GMMComponents& optimalComponents, const std::vector<int>& data, int maxNbComponents, int nbIter, double convergenceTol, bool defaultSeed);
+    static bool findOptimalComponents(ProbaUtils::GMMComponents& optimalComponents, const ProbaUtils::CDF& cdf, int color, int nbData, int maxNbComponents, int nbIter, double convergenceTol, bool defaultSeed);
 
 public:
     GaussianMixtureModel(int nbIter, double convergenceTol, bool defaultSeed);
-    void setData(const std::vector<int>& data);
+    void setData(const ProbaUtils::CDF& cdf, int color, int nbData);
     bool run(int nbComponents);
     double getBIC();
     ProbaUtils::GMMComponents getComponents();

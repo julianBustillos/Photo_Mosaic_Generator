@@ -1,18 +1,16 @@
 #include "GaussianMixtureModel.h"
 #include "MathUtils.h"
 #include <random>
-#include <map>
 #include <set>
 #include <numbers>
 
 
 const double GaussianMixtureModel::EpsilonCovariance = 1. / 16.;
 
-
-bool GaussianMixtureModel::findOptimalComponents(ProbaUtils::GMMComponents& optimalComponents, const std::vector<int>& data, int maxNbComponents, int nbIter, double convergenceTol, bool defaultSeed)
+bool GaussianMixtureModel::findOptimalComponents(ProbaUtils::GMMComponents& optimalComponents, const ProbaUtils::CDF& cdf, int color, int nbData, int maxNbComponents, int nbIter, double convergenceTol, bool defaultSeed)
 {
     GaussianMixtureModel gmm(nbIter, convergenceTol, defaultSeed);
-    gmm.setData(data);
+    gmm.setData(cdf, color, nbData);
     double optimalBIC = MathUtils::DoubleMax;
     bool found = false;
 
@@ -34,22 +32,25 @@ bool GaussianMixtureModel::findOptimalComponents(ProbaUtils::GMMComponents& opti
 }
 
 GaussianMixtureModel::GaussianMixtureModel(int nbIter, double convergenceTol,  bool defaultSeed) :
-    _nbIter(nbIter), _convergenceTol(convergenceTol), _defaultSeed(defaultSeed), _nbData(0), _BIC(-1)
+    _nbIter(nbIter), _convergenceTol(convergenceTol), _defaultSeed(defaultSeed), _nbData(0), _BIC(0)
 {
 }
 
-void GaussianMixtureModel::setData(const std::vector<int>& data)
+void GaussianMixtureModel::setData(const ProbaUtils::CDF& cdf, int color, int nbData)
 {
-	std::map<int, int> valueCount;
-	for (int value : data)
-		valueCount[value]++;
-
-	_histogram.reserve(valueCount.size());
-	for (auto element : valueCount)
-		_histogram.emplace_back(element.first, element.second);
-
-    _nbData = data.size();
+    _histogram.clear();
     _components.clear();
+    _BIC = MathUtils::DoubleMax;
+
+    for (int value = 0; value < 256; value++)
+    {
+        double density = value ? cdf[color][value] - cdf[color][value - 1] : cdf[color][value];
+        if (density > 0)
+        {
+            _histogram.emplace_back(value, (int)std::round(density * (double)nbData));
+        }
+    }
+    _nbData = nbData;
 }
 
 bool GaussianMixtureModel::run(int nbComponents)
@@ -97,7 +98,7 @@ void GaussianMixtureModel::runKmeansPlusPlus(int histogramSize, int nbComponents
     {
         intervals[2 * b] = _histogram[b]._value;
         intervals[2 * b + 1] = _histogram[b]._value;
-        weights[2 * b] = std::numeric_limits<int>::max(); //TODO CHANGE??!!!!
+        weights[2 * b] = MathUtils::IntMax;
     }
 
     for (int c = 1; c < nbComponents; c++)

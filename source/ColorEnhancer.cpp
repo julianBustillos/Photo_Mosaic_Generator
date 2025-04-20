@@ -25,32 +25,10 @@ void ColorEnhancer::computeData(const Photo& photo, const cv::Mat& tile, int mos
     if (_w1Distance > W1DistTarget)
     {
         ProbaUtils::GMMCDFComponents components;
+        const int nbData = tile.size().width * tile.size().height;
         bool found = true;
         for (int c = 0; c < 3 && found; c++)
-        {
-            //DEBUG
-            std::vector<int> data;
-            data.reserve(tile.size().width * tile.size().height);
-            for (int d = 0; d < tile.size().width * tile.size().height; d++)
-            {
-                data.push_back(tile.data[3 * d + c]);
-            }
-
-            const int width = photo.getImage().size().width;
-            const int step = 3 * (width - photo.getTileBox(mosaicId, true).width);
-            int p = 3 * (photo.getTileBox(mosaicId, true).y * width + photo.getTileBox(mosaicId, true).x) + c;
-            for (int i = 0; i < photo.getTileBox(mosaicId, true).height; i++, p += step)
-            {
-                for (int j = 0; j < photo.getTileBox(mosaicId, true).width; j++, p+= 3)
-                {
-                    data.push_back(photo.getImage().data[p]);
-                }
-            }
-            //DEBUG 
-            
-            //TODO: better data computation (replace with CDF ?)
-            found = GaussianMixtureModel::findOptimalComponents(components[c], data, CompoMaxNb, MaxIter, ConvergenceTol, true);
-        }
+            found = GaussianMixtureModel::findOptimalComponents(components[c], optimalCDF, c, nbData, CompoMaxNb, MaxIter, ConvergenceTol, true);
 
         if (found)
         {
