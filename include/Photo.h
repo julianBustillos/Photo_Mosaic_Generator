@@ -2,6 +2,7 @@
 
 #include <string>
 #include <tuple>
+#include <vector>
 #include <opencv2/opencv.hpp>
 
 
@@ -16,10 +17,13 @@ public:
 
 public:
     void initialize();
-    cv::Rect getTileBox(int mosaicId, bool doShift) const;
+    cv::Rect getTileBox(int mosaicId) const;
     cv::Size getTileSize() const;
-    const cv::Mat& getImage() const;
+    const cv::Mat& getTile(int mosaicId) const;
     std::string getDirectory() const;
+
+private:
+    void computeTile(const cv::Mat& photo, int mosaicId);
 
 private:
     const std::string _filePath;
@@ -29,7 +33,7 @@ private:
     const int _resolutionWidth;
     const int _resolutionHeight;
     const bool _resolutionCrop;
-    cv::Mat _resampledPhoto;
+    std::vector<cv::Mat> _tiles;
     cv::Size _inputSize;
     cv::Size _tileSize;
     cv::Size _croppedSize;

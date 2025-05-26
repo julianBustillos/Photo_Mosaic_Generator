@@ -22,7 +22,7 @@ public:
 public:
     void initialize(int minNbTiles);
     unsigned int getNbTiles() const;
-    void getImage(int tileID, cv::Mat& image) const;
+    void readImage(int tileID, cv::Mat& image) const;
     void remove(std::vector<unsigned int>& toRemove);
     void compute(const FaceDetectionROI& roi, const Photo& photo);
     double computeDistance(int i, int j, int tileID) const;

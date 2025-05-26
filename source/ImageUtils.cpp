@@ -101,7 +101,7 @@ namespace
     void computeGrayscale(cv::Mat& target, const cv::Mat& source)
     {
         constexpr double HalfPixel = 0.5;
-        const int nbPixels = source.size().width * source.size().height;
+        const int nbPixels = source.rows * source.cols;
         target.create(source.size(), CV_8UC1);
 
         for (int pt = 0, ps = 0; pt < nbPixels; pt++, ps += 3)
@@ -177,9 +177,9 @@ namespace
             shiftedCoeffs[c] = std::round(coeffs[c] * PrecisionShift);
         }
 
-        const int outWidth = output.size().width;
-        const int outHeight = output.size().height;
-        const int inWidth = input.size().width;
+        const int outHeight = output.rows;
+        const int outWidth = output.cols;
+        const int inWidth = input.cols;
         const int channels = input.channels();
 
         int pOut = 0;
@@ -213,13 +213,13 @@ namespace
 
     void copy(cv::Mat& output, const cv::Mat& input, const cv::Rect& box)
     {
-        const int height = output.size().height;
-        const int width = output.size().width;
+        const int height = output.rows;
+        const int width = output.cols;
         const int channels = output.channels();
-        const int step = (input.size().width - box.width) * channels;
+        const int step = (input.cols - box.width) * channels;
 
         int pOut = 0;
-        int pIn = (box.y * input.size().width + box.x) * channels;
+        int pIn = (box.y * input.cols + box.x) * channels;
         for (int y = 0; y < height; y++, pIn += step)
         {
             for (int x = 0; x < width; x++)
@@ -245,10 +245,10 @@ namespace
         std::vector<int> boundsHori, boundsVert;
 
         if (doHoriSampling)
-            computeCoefficients(source.size().width, targetSize.width, limits[0], limits[2], nbCoeffsHori, coeffsHori, boundsHori, filter);
+            computeCoefficients(source.cols, targetSize.width, limits[0], limits[2], nbCoeffsHori, coeffsHori, boundsHori, filter);
 
         if (doVertSampling)
-            computeCoefficients(source.size().height, targetSize.height, limits[1], limits[3], nbCoeffsVert, coeffsVert, boundsVert, filter);
+            computeCoefficients(source.rows, targetSize.height, limits[1], limits[3], nbCoeffsVert, coeffsVert, boundsVert, filter);
 
         if (doHoriSampling)
         {
@@ -435,7 +435,7 @@ namespace
 
 void ImageUtils::resample(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, Filter filter)
 {
-    cv::Rect box(0, 0, source.size().width, source.size().height);
+    cv::Rect box(0, 0, source.cols, source.rows);
     resample(target, targetSize, source, box, filter);
 }
 
@@ -464,20 +464,19 @@ void ImageUtils::resample(cv::Mat& target, const cv::Size targetSize, const cv::
     }
 }
 
-void ImageUtils::computeFeatures(const cv::Mat& image, const cv::Rect& box, double* features, int featureDiv, int nbFeatures)
+void ImageUtils::computeFeatures(const cv::Mat& image, double* features, int featureDiv, int nbFeatures)
 {
-    const int width = image.size().width;
-    int blockWidth = (int)ceil(box.width / (double)featureDiv);
-    int blockHeight = (int)ceil(box.height / (double)featureDiv);
+    const int width = image.cols;
+    const int height = image.rows;
+    int blockWidth = (int)ceil(width / (double)featureDiv);
+    int blockHeight = (int)ceil(height / (double)featureDiv);
 
     for (int k = 0; k < nbFeatures; k++)
         features[k] = 0;
 
-    const int step = 3 * (width - box.width);
-    int p = 3 * (box.y * width + box.x);
-    for (int i = 0; i < box.height; i++, p += step)
+    for (int i = 0, p = 0; i < height; i++)
     {
-        for (int j = 0; j < box.width; j++)
+        for (int j = 0; j < width; j++)
         {
             int blockPos = 3 * (featureDiv * (i / blockHeight) + j / blockWidth);
             for (int c = 0; c < 3; c++, p++)
@@ -489,8 +488,8 @@ void ImageUtils::computeFeatures(const cv::Mat& image, const cv::Rect& box, doub
 
     for (int k = 0; k < nbFeatures; k++)
     {
-        int corrBlockHeight = (k < featureDiv * (featureDiv - 1) * 3) ? blockHeight : box.height - (featureDiv - 1) * blockHeight;
-        int corrBlockWidth = (((k / 4 + 1) % featureDiv) != 0) ? blockWidth : box.width - (featureDiv - 1) * blockWidth;
+        int corrBlockHeight = (k < featureDiv * (featureDiv - 1) * 3) ? blockHeight : height - (featureDiv - 1) * blockHeight;
+        int corrBlockWidth = (((k / 4 + 1) % featureDiv) != 0) ? blockWidth : width - (featureDiv - 1) * blockWidth;
         features[k] /= corrBlockWidth * corrBlockHeight;
     }
 }

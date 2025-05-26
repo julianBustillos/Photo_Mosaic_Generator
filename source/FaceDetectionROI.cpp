@@ -37,17 +37,17 @@ void FaceDetectionROI::initialize()
 void FaceDetectionROI::find(const cv::Mat& image, cv::Rect& box, bool rowDirSearch, int threadID) const
 {
     //Test if face search is needed
-    double croppedRatio = rowDirSearch ? (double)box.height / (double)image.size().height : (double)box.width / (double)image.size().width;
+    double croppedRatio = rowDirSearch ? (double)box.height / (double)image.rows : (double)box.width / (double)image.cols;
 
     if (croppedRatio < MinCroppedRatio)
     {
         //Deep learning based face detection using YuNet
         cv::Mat faces;
-        double maxSize = std::max(image.size().width, image.size().height);
+        double maxSize = std::max(image.cols, image.rows);
         double scale = _detectionSize / maxSize;
         double scaleInv = maxSize / _detectionSize;
-        int sWidth = (int)std::round((double)image.size().width * scale);
-        int sHeight = (int)std::round((double)image.size().height * scale);
+        int sWidth = (int)std::round((double)image.cols * scale);
+        int sHeight = (int)std::round((double)image.rows * scale);
         cv::Mat sImage;
         ImageUtils::resample(sImage, cv::Size(sWidth, sHeight), image, ImageUtils::AREA);
         _faceDetectors[threadID]->setInputSize(sImage.size());

@@ -22,7 +22,7 @@ void DuplicateRemover::run(Tiles& tiles) const
     for (int t = 0; t < tiles.getNbTiles(); t++)
     {
         cv::Mat tile;
-        tiles.getImage(t, tile);
+        tiles.readImage(t, tile);
         if (!tile.empty())
         {
             ImageUtils::DHash(tile, hashes[t]);

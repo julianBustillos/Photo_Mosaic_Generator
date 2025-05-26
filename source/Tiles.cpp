@@ -54,9 +54,9 @@ unsigned int Tiles::getNbTiles() const
     return _tilesData.size();
 }
 
-void Tiles::getImage(int tileID, cv::Mat& image) const
+void Tiles::readImage(int tileID, cv::Mat& image) const
 {
-    image = cv::imread(_tilesData[tileID]._imagePath, cv::IMREAD_COLOR);
+    image = cv::imread(_tilesData[tileID]._imagePath);
 }
 
 void Tiles::remove(std::vector<unsigned int>& toRemove)
@@ -98,7 +98,7 @@ void Tiles::compute(const FaceDetectionROI& roi, const Photo& photo)
     for (int t = 0; t < _tilesData.size(); t++)
     {
         cv::Mat image;
-        getImage(t, image);
+        readImage(t, image);
         std::string index = std::to_string(t);
         index = std::string(padding - index.length(), '0') + index;
         _tilesData[t]._tilePath = _tempPath + "\\tile_" + index + ".png";
@@ -113,7 +113,7 @@ void Tiles::compute(const FaceDetectionROI& roi, const Photo& photo)
     for (int mosaicId = 0; mosaicId < _gridWidth * _gridHeight; mosaicId++)
     {
         double* features = &_photoFeatures[mosaicId * NbFeatures];
-        ImageUtils::computeFeatures(photo.getImage(), photo.getTileBox(mosaicId, true), features, FeatureDiv, NbFeatures);
+        ImageUtils::computeFeatures(photo.getTile(mosaicId), features, FeatureDiv, NbFeatures);
     }
     Log::Logger::get().log(Log::TRACE) << "Photo features computed.";
 }
@@ -178,7 +178,7 @@ void Tiles::computeTileFeatures(const cv::Mat& image, const FaceDetectionROI& ro
 
     computeCropInfo(image, box, roi, tileSize, threadID);
     ImageUtils::resample(tileMat, tileSize, image, box, ImageUtils::LANCZOS);
-    ImageUtils::computeFeatures(tileMat, cv::Rect(0, 0, tileSize.width, tileSize.height), data._features, FeatureDiv, NbFeatures);
+    ImageUtils::computeFeatures(tileMat, data._features, FeatureDiv, NbFeatures);
     exportTile(tileMat, data._tilePath);
 }
 
@@ -187,13 +187,13 @@ void Tiles::computeCropInfo(const cv::Mat& image, cv::Rect& box, const FaceDetec
     if (image.size() == tileSize)
     {
         box.x = box.y = 0;
-        box.width = image.size().width;
-        box.height = image.size().height;
+        box.width = image.cols;
+        box.height = image.rows;
         return;
     }
 
-    double wScaleInv = (double)image.size().width / (double)tileSize.width;
-    double hScaleInv = (double)image.size().height / (double)tileSize.height;
+    double wScaleInv = (double)image.cols / (double)tileSize.width;
+    double hScaleInv = (double)image.rows / (double)tileSize.height;
     double scaleInv = std::min(wScaleInv, hScaleInv);
 
     box.width = (int)ceil(tileSize.width * scaleInv);

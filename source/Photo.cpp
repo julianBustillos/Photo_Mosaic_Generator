@@ -13,7 +13,7 @@ Photo::Photo(const std::string& path, std::tuple<int, int> grid, double scale, s
 void Photo::initialize()
 {
     OutputManager::get().cstderr_silent();
-    cv::Mat inputImage = cv::imread(_filePath, cv::IMREAD_COLOR);
+    cv::Mat inputImage = cv::imread(_filePath);
     OutputManager::get().cstderr_restore();
     if (!inputImage.data)
         throw CustomException("Impossible to load image : " + _filePath, CustomException::Level::ERROR);
@@ -38,32 +38,35 @@ void Photo::initialize()
                 resampleSize.width = (int)((double)targetSize.height * inputRatio);
         }
     }
-    ImageUtils::resample(_resampledPhoto, resampleSize, inputImage, ImageUtils::LANCZOS);
+    cv::Mat resampledPhoto;
+    ImageUtils::resample(resampledPhoto, resampleSize, inputImage, ImageUtils::LANCZOS);
 
     _tileSize = cv::Size(targetSize.width / _gridWidth, targetSize.height / _gridHeight);
-    _croppedSize = cv::Size(_resampledPhoto.size().width - _gridWidth * _tileSize.width, _resampledPhoto.size().height - _gridHeight * _tileSize.height);
-
     if (_tileSize.width < MinTileSize || _tileSize.height < MinTileSize)
         throw CustomException("Image subdivision leads to tiles with " + std::to_string(_tileSize.width) + "*" + std::to_string(_tileSize.height) + " size (minimum is " + std::to_string(MinTileSize) + "*" + std::to_string(MinTileSize) + ")", CustomException::Level::ERROR);
+    
+    _croppedSize = cv::Size(resampledPhoto.cols - _gridWidth * _tileSize.width, resampledPhoto.rows - _gridHeight * _tileSize.height);
+    const int nbTiles = _gridWidth * _gridHeight;
+    _tiles.reserve(nbTiles);
+    for (int mosaicId = 0; mosaicId < nbTiles; mosaicId++)
+    {
+        _tiles.emplace_back(_tileSize, CV_8UC3);
+        computeTile(resampledPhoto, mosaicId);
+    }
 
     Log::Logger::get().log(Log::INFO) << "Photo size  : " << _inputSize.width << "*" << _inputSize.height;
-    Log::Logger::get().log(Log::INFO) << "Mosaic size : " << _resampledPhoto.size().width - _croppedSize.width << "*" << _resampledPhoto.size().height - _croppedSize.height;
+    Log::Logger::get().log(Log::INFO) << "Mosaic size : " << resampledPhoto.cols - _croppedSize.width << "*" << resampledPhoto.rows - _croppedSize.height;
     Log::Logger::get().log(Log::INFO) << "Cropped size   : " << _croppedSize.width << "*" << _croppedSize.height;
     Log::Logger::get().log(Log::INFO) << "Tile size   : " << _tileSize.width << "*" << _tileSize.height;
 }
 
-cv::Rect Photo::getTileBox(int mosaicId, bool doShift) const
+cv::Rect Photo::getTileBox(int mosaicId) const
 {
     cv::Rect box;
     int i = mosaicId / _gridWidth;
     int j = mosaicId - i * _gridWidth;
     box.y = i * _tileSize.height;
     box.x = j * _tileSize.width;
-    if (doShift)
-    {
-        box.y += _croppedSize.height / 2;
-        box.x += _croppedSize.width / 2;
-    }
     box.width = _tileSize.width;
     box.height = _tileSize.height;
 
@@ -75,9 +78,9 @@ cv::Size Photo::getTileSize() const
     return _tileSize;
 }
 
-const cv::Mat& Photo::getImage() const
+const cv::Mat& Photo::getTile(int mosaicId) const
 {
-    return _resampledPhoto;
+    return _tiles[mosaicId];
 }
 
 std::string Photo::getDirectory() const
@@ -88,3 +91,24 @@ std::string Photo::getDirectory() const
     return "";
 }
 
+void Photo::computeTile(const cv::Mat& photo, int mosaicId)
+{
+    const int photoWidth = photo.cols;
+    cv::Rect box = getTileBox(mosaicId);
+    box.y += _croppedSize.height / 2;
+    box.x += _croppedSize.width / 2;
+
+    int p = 3 * (box.y * photoWidth + box.x);
+    const int step = 3 * (photoWidth - box.width);
+    for (int i = 0, t = 0; i < box.height; i++, p += step)
+    {
+        for (int j = 0; j < box.width; j++)
+        {
+            for (int c = 0; c < 3; c++, t++, p++)
+            {
+                _tiles[mosaicId].data[t] = photo.data[p];
+            }
+        }
+    }
+
+}

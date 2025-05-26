@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Photo.h"
+#include "MathUtils.h"
 #include "ProbaUtils.h"
 #include "GaussianMixtureModel.h"
 #include <tuple>
@@ -9,25 +10,20 @@
 class ColorEnhancer
 {
 public:
-    static constexpr double W1DistTarget = 25.6;
-    static constexpr int CompoMaxNb = 10;
-    static constexpr int MaxIter = 1000;
-    static constexpr double ConvergenceTol = 1e-3;
-    static constexpr double StdDevIncr = 10.;
-    static constexpr double StdDevMax = 12800.;
-
-public:
-    ColorEnhancer();
+    ColorEnhancer(const ProbaUtils::SampleData<3>& sourceSample, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm);
     ~ColorEnhancer();
 
 public:
-    void computeData(const Photo& photo, const cv::Mat& tile, int mosaicId);
-    uchar apply(uchar color, int channel, double blending) const;
+    void apply(cv::Mat& enhancedImage, double blending) const;
 
 private:
-    bool findOptimalDistanceCDF(ProbaUtils::CDF& optimalCDF, const ProbaUtils::GMMCDFComponents& components, const ProbaUtils::CDF& targetCDF) const;
+    void computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double blending) const;
 
 private:
-    int _colorMapping[3][256];
-    double _w1Distance;
+    const ProbaUtils::SampleData<3>& _sourceSample;
+    const ProbaUtils::GMMNDComponents<3>& _sourceGmm;
+    const ProbaUtils::GMMNDComponents<3>& _targetGmm;
+    std::vector<double> _histCompDensities;
+    std::vector<double> _histDensity;
+    ProbaUtils::W2Minimizers _wstar;
 };

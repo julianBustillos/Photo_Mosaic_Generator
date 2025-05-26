@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Photo.h"
-#include "ColorEnhancer.h"
 #include "Tiles.h"
 #include "MatchSolver.h"
+#include "ProbaUtils.h"
 #include <vector>
 #include <tuple>
 #include <opencv2/opencv.hpp>
@@ -13,6 +13,9 @@
 class MosaicBuilder
 {
 private:
+    static constexpr int MaxNbCompo = 10;
+    static constexpr int MaxIter = 1000;
+    static constexpr double ConvergenceTol = 1e-3;
     static constexpr int MosaicParam[2] = {cv::IMWRITE_JPEG_QUALITY, 100};
 
 public:
@@ -21,8 +24,15 @@ public:
     void build(const Photo& photo, const Tiles& tiles, const MatchSolver& matchSolver);
 
 private:
-    void copyTileOnMosaic(cv::Mat& mosaic, const cv::Mat& tile, const ColorEnhancer& colorEnhancer, double blending, int mosaicId, const cv::Rect& box);
-    void exportMosaic(const std::string& path, double _blending, cv::Mat mosaic);
+    void copyTileOnMosaic(cv::Mat& mosaic, const cv::Mat& tile, int mosaicId, const cv::Rect& box);
+    void exportMosaic(const std::string& path, double blending, cv::Mat mosaic);
+
+private:
+    struct TileData
+    {
+        ProbaUtils::SampleData<3> _sampleData;
+        ProbaUtils::GMMNDComponents<3> _gmm;
+    };
 
 private:
     std::shared_ptr<const Photo> _photo;

@@ -3,13 +3,14 @@
 #include <vector>
 #include <algorithm>
 #include <stack>
+#include <set>
 #include "Log.h"
 #include "Console.h"
 #include "CustomException.h"
 
 
 MatchSolver::MatchSolver(std::tuple<int, int> grid) :
-    _gridWidth(std::get<0>(grid)), _gridHeight(std::get<1>(grid)), _bestCost(-1)
+    _gridWidth(std::get<0>(grid)), _gridHeight(std::get<1>(grid)), _matchingCost(-1)
 {
 }
 
@@ -26,18 +27,23 @@ void MatchSolver::solve(const Tiles& tiles)
 {
     Console::Out::get(Console::DEFAULT) << "Computing tiles matching...";
     const int mosaicSize = _gridWidth * _gridHeight;
-    _bestSolution.resize(mosaicSize, -1);
+    _matchingIds.resize(mosaicSize, -1);
     std::vector<std::vector<MatchCandidate>> candidates(mosaicSize);
 
     findCandidateTiles(candidates, tiles);
     reduceCandidateTiles(candidates);
-    findInitialSolution(candidates);
+    findSolution(candidates);
     Log::Logger::get().log(Log::TRACE) << "Best tiles found.";
 }
 
-int MatchSolver::getMatchingTile(int mosaicId) const
+const std::vector<int>& MatchSolver::getUniqueIds() const
 {
-    return _bestSolution[mosaicId];
+    return _uniqueIds;
+}
+
+int MatchSolver::getMatchingId(int mosaicId) const
+{
+    return _matchingIds[mosaicId];
 }
 
 void MatchSolver::computeRedundancyBox(int i, int j, cv::Rect& box) const
@@ -132,32 +138,33 @@ void MatchSolver::reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>&
     }
 }
 
-void MatchSolver::findInitialSolution(std::vector<std::vector<MatchCandidate>>& candidates)
+void MatchSolver::findSolution(std::vector<std::vector<MatchCandidate>>& candidates)
 {
-    std::vector<InitCandidate> initCandidates;
+    std::vector<SortCandidate> sortedCandidates;
+    std::set<int> idSet;
     for (int m = 0; m < candidates.size(); m++)
     {
         const int i = m / _gridWidth;
         const int j = m - i * _gridWidth;
-        const int start = initCandidates.size();
-        initCandidates.resize(start + candidates[m].size(), InitCandidate(i, j));
+        const int start = sortedCandidates.size();
+        sortedCandidates.resize(start + candidates[m].size(), SortCandidate(i, j));
         for (int t = 0; t < candidates[m].size(); t++)
         {
-            initCandidates[start + t]._id = candidates[m][t]._id;
-            initCandidates[start + t]._dist = candidates[m][t]._dist;
+            sortedCandidates[start + t]._id = candidates[m][t]._id;
+            sortedCandidates[start + t]._dist = candidates[m][t]._dist;
         }
     }
-    std::sort(initCandidates.begin(), initCandidates.end());
+    std::sort(sortedCandidates.begin(), sortedCandidates.end());
    
-    _bestCost = 0;
+    _matchingCost = 0;
     cv::Rect box;
-    for (int k = 0; k < initCandidates.size(); k++)
+    for (int k = 0; k < sortedCandidates.size(); k++)
     {
-        int candidateId = initCandidates[k]._i * _gridWidth + initCandidates[k]._j;
-        if (_bestSolution[candidateId] >= 0)
+        int candidateId = sortedCandidates[k]._i * _gridWidth + sortedCandidates[k]._j;
+        if (_matchingIds[candidateId] >= 0)
             continue;
 
-        computeRedundancyBox(initCandidates[k]._i, initCandidates[k]._j, box);
+        computeRedundancyBox(sortedCandidates[k]._i, sortedCandidates[k]._j, box);
         bool redundancy = false;
         int currId = box.y * _gridWidth + box.x;
         const int step = _gridWidth - box.width;
@@ -165,7 +172,7 @@ void MatchSolver::findInitialSolution(std::vector<std::vector<MatchCandidate>>& 
         {
             for (int j = 0; j < box.width && !redundancy; j++, currId++)
             {
-                if (_bestSolution[currId] == initCandidates[k]._id)
+                if (_matchingIds[currId] == sortedCandidates[k]._id)
                     redundancy = true;
             }
         }
@@ -173,11 +180,13 @@ void MatchSolver::findInitialSolution(std::vector<std::vector<MatchCandidate>>& 
         if (redundancy)
             continue;
 
-        _bestSolution[candidateId] = initCandidates[k]._id;
-        _bestCost += initCandidates[k]._dist;
-
+        idSet.insert(sortedCandidates[k]._id).second;
+        _matchingIds[candidateId] = sortedCandidates[k]._id;
+        _matchingCost += sortedCandidates[k]._dist;
     }
+    _uniqueIds.assign(idSet.begin(), idSet.end());
+
     Log::Logger::get().log(Log::TRACE) << "Matching tiles initial solution found.";
-    Log::Logger::get().log(Log::TRACE) << "With mean cost : " << (_bestCost / (_gridWidth * _gridHeight));
+    Log::Logger::get().log(Log::TRACE) << "With mean cost : " << (_matchingCost / (_gridWidth * _gridHeight));
 }
 

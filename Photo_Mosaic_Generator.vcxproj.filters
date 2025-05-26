@@ -45,16 +45,10 @@
     <ClCompile Include="source\DuplicateRemover.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\GaussianMixtureModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\ColorUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\ImageUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\ProbaUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
