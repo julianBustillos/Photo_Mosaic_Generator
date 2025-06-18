@@ -430,6 +430,61 @@ namespace
         applyRowBlur(image, buffer, size, boxRadius);
         applyColBlur(buffer, image, size, boxRadius);
     }
+
+    void computeKernel(std::vector<int>& kernel, const cv::Size& size, int radius)
+    {
+        kernel.resize(size.width * size.height);
+
+        for (int i = 0, k = 0; i < size.height; i++)
+        {
+            int iSize = 1;
+            iSize += (i >= radius) ? radius : i;
+            iSize += (size.height - i - 1 >= radius) ? radius : size.height - i - 1;
+
+            for (int j = 0; j < size.width; j++, k++)
+            {
+                int jSize = 1;
+                jSize += (j >= radius) ? radius : j;
+                jSize += (size.width - j - 1 >= radius) ? radius : size.width - j - 1;
+
+                kernel[k] = iSize * jSize;
+            }
+        }
+    }
+
+    void averageFilter(std::vector<double>& output, std::vector<double>& buffer, const std::vector<double>& input, const std::vector<int>& kernel, const cv::Size& size, int radius)
+    {
+        std::fill(buffer.begin(), buffer.end(), 0.);
+        const int b0 = (size.width + 2 * radius + 2) * (radius + 1) * 3;
+
+        //Initialize buffer
+        int bs = (2 * radius + 1) * 3;
+        for (int i = 0, k = 0, b = b0; i < size.height; i++, b += bs)
+            for (int j = 0; j < size.width * 3; j++, k++, b++)
+                buffer[b] = input[k];
+        
+        const int bWidth = (size.width + 2 * radius + 1) * 3;
+        const int bHeight = size.height + 2 * radius + 1;
+
+        //Integral image computation
+        bs = (radius + 1) * 3;
+        for (int i = radius + 1, b = b0; i < bHeight; i++, b += bs)
+            for (int j = (radius + 1) * 3; j < bWidth; j++, b++)
+                buffer[b] += buffer[b - bWidth];
+
+        for (int i = radius + 1, b = b0; i < bHeight; i++, b += bs)
+            for (int j = (radius + 1) * 3; j < bWidth; j++, b++)
+                buffer[b] += buffer[b - 3];
+
+        const int ws = (2 * radius + 1) * 3;
+        int w0 = 0;
+        int w1 = ws;
+        int w2 = (size.width + 2 * radius + 1) * (2 * radius + 1) * 3;
+        int w3 = w2 + ws;
+        for (int i = 0, k = 0; i < size.height; i++, w0 += ws, w1 += ws, w2 += ws, w3 += ws)
+            for (int j = 0; j < size.width * 3; j++, k++, w0++, w1++, w2++, w3++)
+                output[k] = (buffer[w0] + buffer[w3] - buffer[w1] - buffer[w2]) / kernel[k / 3];
+    }
 };
 
 
@@ -441,27 +496,23 @@ void ImageUtils::resample(cv::Mat& target, const cv::Size targetSize, const cv::
 
 void ImageUtils::resample(cv::Mat& target, const cv::Size targetSize, const cv::Mat& source, const cv::Rect& box, Filter filter)
 {
-    SamplingFilter* samplingFilter = nullptr;
+    std::unique_ptr<SamplingFilter> samplingFilter;
 
     if (filter == ImageUtils::AREA)
     {
-        samplingFilter = new AreaFilter();
+        samplingFilter = std::make_unique<AreaFilter>();
     }
     else if (filter == ImageUtils::BICUBIC)
     {
-        samplingFilter = new BicubicFilter();
+        samplingFilter = std::make_unique<BicubicFilter>();
     }
     else if (filter == ImageUtils::LANCZOS)
     {
-        samplingFilter = new LanczosFilter();
+        samplingFilter = std::make_unique<LanczosFilter>();
     }
 
     if (samplingFilter)
-    {
-        computeResampling(target, targetSize, source, box, samplingFilter);
-        delete samplingFilter;
-        samplingFilter = nullptr;
-    }
+        computeResampling(target, targetSize, source, box, samplingFilter.get());
 }
 
 void ImageUtils::computeFeatures(const cv::Mat& image, double* features, int featureDiv, int nbFeatures)
@@ -513,9 +564,7 @@ double ImageUtils::featureDistance(const double* features1, const double* featur
 
 void ImageUtils::gaussianBlur(uchar* image, const cv::Size& size, double sigma)
 {
-    uchar* buffer = new uchar[3 * size.width * size.height];
-    if (!buffer)
-        return;
+    std::vector<uchar> buffer(3 * size.width * size.height);
 
     int boxRadius[BlurNbBoxes];
     getGaussianApproxBoxRadiuses(sigma, boxRadius);
@@ -523,10 +572,8 @@ void ImageUtils::gaussianBlur(uchar* image, const cv::Size& size, double sigma)
     if (boxRadius[BlurNbBoxes - 1] <= std::min(size.width, size.height) / 2)
     {
         for (int k = 0; k < BlurNbBoxes; k++)
-            applyBoxBlur(image, buffer, size, boxRadius[k]);
+            applyBoxBlur(image, buffer.data(), size, boxRadius[k]);
     }
-
-    delete[] buffer;
 }
 
 void ImageUtils::DHash(const cv::Mat& image, Hash& hash)
@@ -563,4 +610,55 @@ void ImageUtils::DHash(const cv::Mat& image, Hash& hash)
             }
         }
     }
+}
+
+void ImageUtils::guidedFiltering(std::vector<double>& filtered, const std::vector<double>& image, const std::vector<double>& guide, const cv::Size& size, int radius, double epsilon)
+{
+    std::vector<int> kernel;
+    std::vector<double> buffer((size.width + 2 * radius + 1) * (size.height + 2 * radius + 1) * 3);
+    int imageSize = size.width * size.height * 3;
+    std::vector<double> sqGuide(imageSize);
+    std::vector<double> imgGuide(imageSize);
+    std::vector<double> guideVar(imageSize);
+    std::vector<double> imgGuideCov(imageSize);
+    std::vector<double> alpha(imageSize);
+    std::vector<double> beta(imageSize);
+    std::vector<double> imgMean(imageSize);
+    std::vector<double> guideMean(imageSize);
+    std::vector<double> guideCorr(imageSize);
+    std::vector<double> imgGuideCorr(imageSize);
+    std::vector<double> alphaMean(imageSize);
+    std::vector<double> betaMean(imageSize);
+
+    for (int i = 0; i < sqGuide.size(); i++)
+        sqGuide[i] = guide[i] * guide[i];
+
+    for (int i = 0; i < imgGuide.size(); i++)
+        imgGuide[i] = image[i] * guide[i];
+    
+    computeKernel(kernel, size, radius);
+
+    averageFilter(imgMean, buffer, image, kernel, size, radius);
+    averageFilter(guideMean, buffer, guide, kernel, size, radius);
+    averageFilter(guideCorr, buffer, sqGuide, kernel, size, radius);
+    averageFilter(imgGuideCorr, buffer, imgGuide, kernel, size, radius);
+
+    for (int i = 0; i < imageSize; i++)
+        guideVar[i] = guideCorr[i] - guideMean[i] * guideMean[i];
+
+    for (int i = 0; i < imageSize; i++)
+        imgGuideCov[i] = imgGuideCorr[i] - imgMean[i] * guideMean[i];
+
+    for (int i = 0; i < imageSize; i++)
+        alpha[i] = imgGuideCov[i] / (guideVar[i] + epsilon);
+
+    for (int i = 0; i < imageSize; i++)
+        beta[i] = imgMean[i] - alpha[i] * guideMean[i];
+
+    averageFilter(alphaMean, buffer, alpha, kernel, size, radius);
+    averageFilter(betaMean, buffer, beta, kernel, size, radius);
+
+    filtered.resize(imageSize);
+    for (int i = 0; i < imageSize; i++)
+        filtered[i] = alphaMean[i] * guide[i] + betaMean[i];
 }

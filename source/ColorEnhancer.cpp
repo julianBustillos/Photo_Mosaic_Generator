@@ -2,7 +2,8 @@
 #include "CustomException.h"
 #include "Log.h"
 #include "Console.h"
-#include "MathUtils.h"
+#include "ImageUtils.h"
+#include "ColorUtils.h"
 #include <numbers>
 
 
@@ -31,10 +32,27 @@ void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending) const
     std::vector<MathUtils::VectorNd<3>> colorMap(_sourceSample._histogram.size(), MathUtils::VectorNd<3>::Zero());
     computeColorMap(colorMap, blending);
 
-    int nbPixels = enhancedImage.rows * enhancedImage.cols;
-    for (int p = 0; p < nbPixels; p++)
-        for (int c = 0; c < 3; c++)
-            enhancedImage.data[3 * p + c] = (int)colorMap[_sourceSample._mapId[p]][c];
+    //Compute color enhanced color image
+    const int nbPixels = enhancedImage.rows * enhancedImage.cols;
+    std::vector<double> img(nbPixels * 3);
+    std::vector<double> enhancedDiff(nbPixels * 3);
+    for (int p = 0, k = 0; p < nbPixels; p++)
+    {
+        int mapId = _sourceSample._mapId[p];
+        const MathUtils::VectorNd<3>& pixel = _sourceSample._histogram[mapId]._value;
+        for (int c = 0; c < 3; c++, k++)
+        {
+            img[k] = pixel(c);
+            enhancedDiff[k] = colorMap[mapId](c) - img[k];
+        }
+    }
+
+    //Compute correction to avoid artifacts on enhanced image
+    std::vector<double> filtered(nbPixels * 3);
+    ImageUtils::guidedFiltering(filtered, enhancedDiff, img, enhancedImage.size(), 4, 1e-4); //TODO CONSTANT VALUES
+
+    for (int k = 0; k < nbPixels * 3; k++)
+        enhancedImage.data[k] = ColorUtils::clip<double>(img[k] + filtered[k], 0, 255);
 }
 
 void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double blending) const
@@ -57,7 +75,10 @@ void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMa
     }
 
     for (int h = 0; h < histogramSize; h++)
+    {
         colorMap[h] /= _histDensity[h];
+        colorMap[h] = colorMap[h].cwiseMax(0).cwiseMin(255); //clipping
+    }
 
     /*uchar optimalColor = _colorMapping[channel][color];
     double corrBlending = std::min(blending * W1DistTarget / _w1Distance, 1.);

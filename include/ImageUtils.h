@@ -28,5 +28,7 @@ namespace ImageUtils
     void gaussianBlur(uchar* image, const cv::Size& size, double sigma);
 
     void DHash(const cv::Mat& image, Hash& hash);
+
+    void guidedFiltering(std::vector<double>& filtered, const std::vector<double>& image, const std::vector<double>& guide, const cv::Size& size, int radius, double epsilon);
 };
 

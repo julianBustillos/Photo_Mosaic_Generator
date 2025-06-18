@@ -111,15 +111,9 @@ void MosaicBuilder::copyTileOnMosaic(cv::Mat& mosaic, const cv::Mat& tile, int m
     const int step = 3 * (mosaic.cols - box.width);
     int pm = channels * (box.y * mosaic.cols + box.x);
     for (int i = 0; i < tile.rows; i++, pm += step)
-    {
         for (int j = 0; j < tile.cols; j++)
-        {
             for (int c = 0; c < channels; c++, pt++, pm++)
-            {
-                mosaic.data[pm] = (uchar)tile.data[pt];//TODO uchar conversion / clipping ????????
-            }
-        }
-    }
+                mosaic.data[pm] = (uchar)tile.data[pt];
 }
 
 void MosaicBuilder::exportMosaic(const std::string& path, double blending, const cv::Mat mosaic)
