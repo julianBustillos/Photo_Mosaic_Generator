@@ -49,7 +49,7 @@ void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending) const
 
     //Compute correction to avoid artifacts on enhanced image
     std::vector<double> filtered(nbPixels * 3);
-    ImageUtils::guidedFiltering(filtered, enhancedDiff, img, enhancedImage.size(), 4, 1e-4); //TODO CONSTANT VALUES
+    ImageUtils::guidedFiltering(filtered, enhancedDiff, img, enhancedImage.size(), FilterRadius, FilterEpsilon);
 
     for (int k = 0; k < nbPixels * 3; k++)
         enhancedImage.data[k] = ColorUtils::clip<double>(img[k] + filtered[k], 0, 255);

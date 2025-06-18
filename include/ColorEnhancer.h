@@ -9,6 +9,10 @@
 
 class ColorEnhancer
 {
+private:
+    static constexpr int FilterRadius = 4;
+    static constexpr double FilterEpsilon = (0.01 * 255) * (0.01 * 255);
+
 public:
     ColorEnhancer(const ProbaUtils::SampleData<3>& sourceSample, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm);
     ~ColorEnhancer();
