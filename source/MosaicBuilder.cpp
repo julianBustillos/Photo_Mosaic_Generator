@@ -35,7 +35,7 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
 
         ProbaUtils::SampleData<3> sampleData;
         ProbaUtils::computeSampleData(sampleData, photoTile.ptr<double>(), photoTile.rows * photoTile.cols);
-        GaussianMixtureModel<3>::findOptimalComponents(photoTileGmm[mosaicId], sampleData, 1, MaxNbCompo, MaxIter, ConvergenceTol, true);
+        GaussianMixtureModel<3>::findOptimalComponents(photoTileGmm[mosaicId], sampleData, 1, MaxNbCompo, NbInit, MaxIter, ConvergenceTol, true);
         Console::Out::addBarSteps(1);
     }
 
@@ -58,7 +58,7 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
         tile.convertTo(tile, CV_64FC3);
 
         ProbaUtils::computeSampleData(tileData._sampleData, tile.ptr<double>(), tile.rows * tile.cols);
-        GaussianMixtureModel<3>::findOptimalComponents(tileData._gmm, tileData._sampleData, MaxNbCompo, MaxNbCompo, MaxIter, ConvergenceTol, true);
+        GaussianMixtureModel<3>::findOptimalComponents(tileData._gmm, tileData._sampleData, MaxNbCompo, MaxNbCompo, NbInit, MaxIter, ConvergenceTol, true);
         Console::Out::addBarSteps(1);
     }
 

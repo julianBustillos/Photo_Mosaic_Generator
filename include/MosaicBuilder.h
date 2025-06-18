@@ -14,6 +14,7 @@ class MosaicBuilder
 {
 private:
     static constexpr int MaxNbCompo = 10;
+    static constexpr int NbInit = 20;
     static constexpr int MaxIter = 1000;
     static constexpr double ConvergenceTol = 1e-3;
     static constexpr int MosaicParam[2] = {cv::IMWRITE_JPEG_QUALITY, 100};

@@ -111,11 +111,21 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& evals, const SampleData<N>
         constLog[c] = -0.5 * N * log(2. * std::numbers::pi) - 0.5 * log(gmm[c]._covariance.determinant()) + log(gmm[c]._weight);
     }
 
+    MathUtils::VectorNd<N> valMeanDiff;
     for (int b = 0, e = 0; b < histogramSize; b++)
     {
         for (int c = 0; c < nbComponents; c++, e++)
         {
-            evals[e] = exp(-(sampleData._histogram[b]._value - gmm[c]._mean).transpose() * halfCovInv[c] * (sampleData._histogram[b]._value - gmm[c]._mean) + constLog[c]);
+            valMeanDiff = sampleData._histogram[b]._value - gmm[c]._mean;
+            double value = constLog[c];
+            for (int i = 0, k = 0; i < N; i++, k+= i)
+            {
+                value -= halfCovInv[c].data()[k] * valMeanDiff.data()[i] * valMeanDiff.data()[i];
+                k++;
+                for (int j = i + 1; j < N; j++, k++)
+                    value -= 2. * halfCovInv[c].data()[k] * valMeanDiff.data()[i] * valMeanDiff.data()[j];
+            }
+            evals[e] = exp(value);
             if (evals[e] < MathUtils::DoubleEpsilon)
                 evals[e] = MathUtils::DoubleEpsilon;
         }
@@ -125,7 +135,8 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& evals, const SampleData<N>
 template<unsigned int N>
 double ProbaUtils::computeGW2(const GaussianComponent<N>& gaussian0, const GaussianComponent<N>& gaussian1)
 {
-    return MathUtils::sqDistance(gaussian0._mean, gaussian1._mean) + (gaussian0._covariance + gaussian1._covariance - 2. * (gaussian0._covariance * gaussian1._covariance).sqrt()).trace();
+    MathUtils::VectorNd<N> gaussianDiff = gaussian1._mean - gaussian0._mean;
+    return gaussianDiff.dot(gaussianDiff) + (gaussian0._covariance + gaussian1._covariance - 2. * (gaussian0._covariance * gaussian1._covariance).sqrt()).trace();
 }
 
 template<unsigned int N>
