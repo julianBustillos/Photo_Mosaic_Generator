@@ -36,7 +36,7 @@ namespace ProbaUtils
     {
         double _value;
         unsigned int _k;
-        unsigned int _j;
+        unsigned int _l;
     };
 
     using W2Minimizers = std::vector<W2Coefficient>;
@@ -48,7 +48,7 @@ namespace ProbaUtils
     void computeSampleData(SampleData<N>& sampleData, const double* data, int nbData);
 
     template <unsigned int N>
-    void evalGaussianPDF(std::vector<double>& evals, const SampleData<N>& sampleData, const GMMNDComponents<N>& gmm);
+    void evalGaussianPDF(std::vector<double>& probas, std::vector<double>& norms, const SampleData<N>& sampleData, const GMMNDComponents<N>& gmm);
 
     template <unsigned int N>
     double computeGW2(const GaussianComponent<N>& gaussian0, const GaussianComponent<N>& gaussian1); //Wasserstein-2 distance between 2 Nd gaussians.
@@ -99,7 +99,7 @@ void ProbaUtils::computeSampleData(SampleData<N>& sampleData, const double* data
 }
 
 template <unsigned int N>
-void ProbaUtils::evalGaussianPDF(std::vector<double>& evals, const SampleData<N>& sampleData, const GMMNDComponents<N>& gmm)
+void ProbaUtils::evalGaussianPDF(std::vector<double>& probas, std::vector<double>& norms, const SampleData<N>& sampleData, const GMMNDComponents<N>& gmm)
 {
     const int histogramSize = sampleData._histogram.size();
     const int nbComponents = gmm.size();
@@ -107,13 +107,15 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& evals, const SampleData<N>
     std::vector<double> constLog(nbComponents);
     for (int c = 0; c < nbComponents; c++)
     {
-        halfCovInv[c] = 0.5 * gmm[c]._covariance.inverse();
+        halfCovInv[c] = 0.5 * MathUtils::inv<3>(gmm[c]._covariance);
         constLog[c] = -0.5 * N * log(2. * std::numbers::pi) - 0.5 * log(gmm[c]._covariance.determinant()) + log(gmm[c]._weight);
     }
 
     MathUtils::VectorNd<N> valMeanDiff;
     for (int b = 0, e = 0; b < histogramSize; b++)
     {
+        norms[b] = 0;
+        int zeroCount = 0;
         for (int c = 0; c < nbComponents; c++, e++)
         {
             valMeanDiff = sampleData._histogram[b]._value - gmm[c]._mean;
@@ -125,18 +127,36 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& evals, const SampleData<N>
                 for (int j = i + 1; j < N; j++, k++)
                     value -= 2. * halfCovInv[c].data()[k] * valMeanDiff.data()[i] * valMeanDiff.data()[j];
             }
-            evals[e] = exp(value);
-            if (evals[e] < MathUtils::DoubleEpsilon)
-                evals[e] = MathUtils::DoubleEpsilon;
+            probas[e] = exp(value);
+            if (probas[e] < MathUtils::DoubleEpsilon)
+            {
+                probas[e] = 0;
+                zeroCount++;
+            }
+            norms[b] += probas[e];
+        }
+
+        if (zeroCount == nbComponents)
+        {
+            e -= nbComponents;
+            for (int c = 0; c < nbComponents; c++, e++)
+                probas[e] = MathUtils::DoubleEpsilon;
+            norms[b] = nbComponents * MathUtils::DoubleEpsilon;
         }
     }
+
+    for (int b = 0, e = 0; b < histogramSize; b++)
+        for (int c = 0; c < nbComponents; c++, e++)
+            probas[e] /= norms[b];
 }
 
 template<unsigned int N>
 double ProbaUtils::computeGW2(const GaussianComponent<N>& gaussian0, const GaussianComponent<N>& gaussian1)
 {
     MathUtils::VectorNd<N> gaussianDiff = gaussian1._mean - gaussian0._mean;
-    return gaussianDiff.dot(gaussianDiff) + (gaussian0._covariance + gaussian1._covariance - 2. * (gaussian0._covariance * gaussian1._covariance).sqrt()).trace();
+    MathUtils::MatrixNd<N> cov0Sqrt = MathUtils::sqrt<3>(gaussian0._covariance);
+
+    return gaussianDiff.dot(gaussianDiff) + (gaussian0._covariance + gaussian1._covariance - 2. * MathUtils::sqrt<3>(cov0Sqrt * gaussian1._covariance * cov0Sqrt)).trace();
 }
 
 template<unsigned int N>

@@ -21,13 +21,12 @@ public:
     void apply(cv::Mat& enhancedImage, double blending) const;
 
 private:
-    void computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double blending) const;
+    void computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double t) const;
 
 private:
     const ProbaUtils::SampleData<3>& _sourceSample;
     const ProbaUtils::GMMNDComponents<3>& _sourceGmm;
     const ProbaUtils::GMMNDComponents<3>& _targetGmm;
-    std::vector<double> _histCompDensities;
-    std::vector<double> _histDensity;
+    std::vector<double> _histCompProbas;
     ProbaUtils::W2Minimizers _wstar;
 };

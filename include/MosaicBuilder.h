@@ -17,6 +17,7 @@ private:
     static constexpr int NbInit = 20;
     static constexpr int MaxIter = 1000;
     static constexpr double ConvergenceTol = 1e-3;
+    static constexpr double CovarianceReg = 1e-6;
     static constexpr int MosaicParam[2] = {cv::IMWRITE_JPEG_QUALITY, 100};
 
 public:

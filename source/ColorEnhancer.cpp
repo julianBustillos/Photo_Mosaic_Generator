@@ -10,15 +10,10 @@
 ColorEnhancer::ColorEnhancer(const ProbaUtils::SampleData<3>& sourceSample, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm) :
     _sourceSample(sourceSample), _sourceGmm(sourceGmm), _targetGmm(targetGmm)
 {
-    _histCompDensities.resize(_sourceGmm.size() * _sourceSample._histogram.size());
-    ProbaUtils::evalGaussianPDF(_histCompDensities, sourceSample, sourceGmm);
-
-    _histDensity.resize(_sourceSample._histogram.size(), 0.);
-    for (int h = 0, d = 0; h < _histDensity.size(); h++)
-    {
-        for (int c = 0; c < _sourceGmm.size(); c++, d++)
-            _histDensity[h] += _sourceGmm[c]._weight * _histCompDensities[d];
-    }
+    const int histogramSize = _sourceSample._histogram.size();
+    _histCompProbas.resize(_sourceGmm.size() * histogramSize);
+    std::vector<double> histProbaNorms(histogramSize);
+    ProbaUtils::evalGaussianPDF(_histCompProbas, histProbaNorms, sourceSample, sourceGmm);
 
     double distance = ProbaUtils::computeGmmW2<3>(_wstar, _sourceGmm, _targetGmm);
 }
@@ -55,30 +50,32 @@ void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending) const
         enhancedImage.data[k] = ColorUtils::clip<double>(img[k] + filtered[k], 0, 255);
 }
 
-void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double blending) const
+void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double t) const
 {
     const int nbComponents = _sourceGmm.size();
     const int histogramSize = _sourceSample._histogram.size();
 
     for (int i = 0; i < _wstar.size(); i++)
     {
-        double wstar_kj = _wstar[i]._value;
+        double wstar_kl = _wstar[i]._value;
         double k = _wstar[i]._k;
-        double j = _wstar[i]._j;
-        const MathUtils::VectorNd<3> meanBlending = (1. - blending) * _sourceGmm[k]._mean + blending * _targetGmm[j]._mean;
+        double l = _wstar[i]._l;
+        const MathUtils::VectorNd<3> meanT = (1. - t) * _sourceGmm[k]._mean + t * _targetGmm[l]._mean;
         const MathUtils::MatrixNd<3>& sigma0 = _sourceGmm[k]._covariance;
-        const MathUtils::MatrixNd<3>& sigma1 = _targetGmm[j]._covariance;
-        const MathUtils::MatrixNd<3> sigmaBlending = (1. - blending) * MathUtils::MatrixNd<3>::Identity() + blending * sigma0.inverse() * (sigma0 * sigma1).sqrt();
+        const MathUtils::MatrixNd<3>& sigma1 = _targetGmm[l]._covariance;
 
-        for (int h = 0, d = 0; h < histogramSize; h++, d += nbComponents)
-            colorMap[h] += wstar_kj * _histCompDensities[d + k] * (meanBlending + sigmaBlending * (_sourceSample._histogram[h]._value - _sourceGmm[k]._mean));
+        const MathUtils::MatrixNd<3> sigma1Sqrt = MathUtils::sqrt<3>(sigma1);
+        const MathUtils::MatrixNd<3> C = sigma1Sqrt * MathUtils::sqrt<3>(MathUtils::inv<3>(sigma1Sqrt * sigma0 * sigma1Sqrt)) * sigma1Sqrt;
+        const MathUtils::MatrixNd<3> Cinterp = (1 - t) * MathUtils::MatrixNd<3>::Identity() + t * C;
+        const MathUtils::MatrixNd<3> sigmaT = Cinterp * sigma0 * Cinterp;
+        const MathUtils::MatrixNd<3> sigmaBlending = MathUtils::inv<3>(sigma0) * MathUtils::sqrt<3>(sigma0 * sigmaT);
+
+        for (int h = 0, p = k; h < histogramSize; h++, p += nbComponents)
+            colorMap[h] += wstar_kl / _sourceGmm[k]._weight * _histCompProbas[p] * (meanT + sigmaBlending.transpose() * (_sourceSample._histogram[h]._value - _sourceGmm[k]._mean));
     }
 
     for (int h = 0; h < histogramSize; h++)
-    {
-        colorMap[h] /= _histDensity[h];
         colorMap[h] = colorMap[h].cwiseMax(0).cwiseMin(255); //clipping
-    }
 
     /*uchar optimalColor = _colorMapping[channel][color];
     double corrBlending = std::min(blending * W1DistTarget / _w1Distance, 1.);

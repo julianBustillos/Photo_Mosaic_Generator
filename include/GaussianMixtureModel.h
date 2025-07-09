@@ -12,15 +12,11 @@
 template<unsigned int N>
 class GaussianMixtureModel
 {
-private:
-    static const double EpsilonCovariance;
-    static const double EpsilonDetCovariance;
+public:
+    static bool findOptimalComponents(ProbaUtils::GMMNDComponents<N>& optimalComponents, const ProbaUtils::SampleData<N>& sampleData, int minNbComponents, int maxNbComponents, int nbInit, int nbIter, double convergenceTol, double covarianceReg, bool defaultSeed);
 
 public:
-    static bool findOptimalComponents(ProbaUtils::GMMNDComponents<N>& optimalComponents, const ProbaUtils::SampleData<N>& sampleData, int minNbComponents, int maxNbComponents, int nbInit, int nbIter, double convergenceTol, bool defaultSeed);
-
-public:
-    GaussianMixtureModel(const ProbaUtils::SampleData<N>& sampleData, int nbInit, int nbIter, double convergenceTol, bool defaultSeed);
+    GaussianMixtureModel(const ProbaUtils::SampleData<N>& sampleData, int nbInit, int nbIter, double convergenceTol, double covarianceReg, bool defaultSeed);
     bool run(int nbComponents);
     double getBIC();
     ProbaUtils::GMMNDComponents<N> getComponents();
@@ -34,15 +30,17 @@ private:
 
 private:
     bool checkValidity(int nbComponents);
+    void regularizeCovariance(double* covarianceData);
     void runKmeansPlusPlus(int nbComponents);
     double runExpectationMaximization(int nbComponents);
-    double logLikelihood(const std::vector<double>& evals, int nbComponents) const;
+    double logLikelihood(const std::vector<double>& norms, int nbComponents) const;
     void computeBIC(double logLH, int nbComponents);
 
 private:
     const int _nbInit;
     const int _nbIter;
     const double _convergenceTol;
+    const double _covarianceReg;
     const bool _defaultSeed;
     const ProbaUtils::SampleData<N>& _sampleData;
     ProbaUtils::GMMNDComponents<N> _components;
@@ -51,15 +49,9 @@ private:
 
 
 template<unsigned int N>
-const double GaussianMixtureModel<N>::EpsilonCovariance = 1. / 16.;
-
-template<unsigned int N>
-const double GaussianMixtureModel<N>::EpsilonDetCovariance = MathUtils::pow(GaussianMixtureModel<N>::EpsilonCovariance, N);
-
-template<unsigned int N>
-bool GaussianMixtureModel<N>::findOptimalComponents(ProbaUtils::GMMNDComponents<N>& optimalComponents, const ProbaUtils::SampleData<N>& sampleData, int minNbComponents, int maxNbComponents, int nbInit, int nbIter, double convergenceTol, bool defaultSeed)
+bool GaussianMixtureModel<N>::findOptimalComponents(ProbaUtils::GMMNDComponents<N>& optimalComponents, const ProbaUtils::SampleData<N>& sampleData, int minNbComponents, int maxNbComponents, int nbInit, int nbIter, double convergenceTol, double covarianceReg, bool defaultSeed)
 {
-    GaussianMixtureModel<N> gmm(sampleData, nbInit, nbIter, convergenceTol, defaultSeed);
+    GaussianMixtureModel<N> gmm(sampleData, nbInit, nbIter, convergenceTol, covarianceReg, defaultSeed);
     double optimalBIC = MathUtils::DoubleMax;
     bool found = false;
 
@@ -81,8 +73,8 @@ bool GaussianMixtureModel<N>::findOptimalComponents(ProbaUtils::GMMNDComponents<
 }
 
 template<unsigned int N>
-GaussianMixtureModel<N>::GaussianMixtureModel(const ProbaUtils::SampleData<N>& sampleData, int nbInit, int nbIter, double convergenceTol, bool defaultSeed) :
-    _sampleData(sampleData), _nbInit(nbInit), _nbIter(nbIter), _convergenceTol(convergenceTol), _defaultSeed(defaultSeed), _BIC(MathUtils::DoubleMax)
+GaussianMixtureModel<N>::GaussianMixtureModel(const ProbaUtils::SampleData<N>& sampleData, int nbInit, int nbIter, double convergenceTol, double covarianceReg, bool defaultSeed) :
+    _sampleData(sampleData), _nbInit(nbInit), _nbIter(nbIter), _convergenceTol(convergenceTol), _defaultSeed(defaultSeed), _covarianceReg(covarianceReg), _BIC(MathUtils::DoubleMax)
 {
 }
 
@@ -117,6 +109,13 @@ template<unsigned int N>
 bool GaussianMixtureModel<N>::checkValidity(int nbComponents)
 {
     return nbComponents > 0 && _sampleData._histogram.size() >= nbComponents && _nbInit > 0;
+}
+
+template<unsigned int N>
+inline void GaussianMixtureModel<N>::regularizeCovariance(double* covarianceData)
+{
+    for (int d = 0, i = 0; d < N; d++, i += N + 1)
+        covarianceData[i] += _covarianceReg;
 }
 
 template<unsigned int N>
@@ -242,11 +241,8 @@ void GaussianMixtureModel<N>::runKmeansPlusPlus(int nbComponents)
     for (int c = 0; c < nbComponents; c++)
     {
         _components[c]._covariance = _components[c]._covariance / (double)bestClusters[c]._count;
-        if (_components[c]._covariance.determinant() < EpsilonDetCovariance)
-        {
-            _components[c]._covariance.setIdentity();
-            _components[c]._covariance *= EpsilonCovariance;
-        }
+        regularizeCovariance(_components[c]._covariance.data());
+
         _components[c]._weight = 1. / (double)nbComponents;
     }
 }
@@ -256,12 +252,13 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
 {
     const int histogramSize = _sampleData._histogram.size();
 
-    std::vector<double> evals(nbComponents * histogramSize); //Gaussian PDF evaluations
+    std::vector<double> probas(nbComponents * histogramSize); //Gaussian PDF probabilities
+    std::vector<double> norms(histogramSize); //Gaussian PDF density norms
     std::vector<double> resps(nbComponents * histogramSize); //Responsabilities
     std::vector<double> composResp(nbComponents);
     int iteration = 0;
-    ProbaUtils::evalGaussianPDF(evals, _sampleData, _components);
-    double logLH = logLikelihood(evals, nbComponents);
+    ProbaUtils::evalGaussianPDF(probas, norms, _sampleData, _components);
+    double logLH = logLikelihood(norms, nbComponents);
     double logLHDiff = MathUtils::DoubleMax; //Log-likelihood iteration difference
     MathUtils::VectorNd<N> meanValDiff;
 
@@ -269,18 +266,8 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
     {
         //Expectation step
         for (int b = 0, r = 0; b < histogramSize; b++)
-        {
-            double respAcc = 0;
             for (int c = 0; c < nbComponents; c++, r++)
-            {
-                respAcc += evals[r];
-            }
-            r -= nbComponents;
-            for (int c = 0; c < nbComponents; c++, r++)
-            {
-                resps[r] = (evals[r] * (double)_sampleData._histogram[b]._count) / respAcc;
-            }
-        }
+                resps[r] = probas[r] * (double)_sampleData._histogram[b]._count;
 
         //Maximization step
         for (int c = 0; c < nbComponents; c++)
@@ -319,18 +306,14 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
         for (int c = 0; c < nbComponents; c++)
         {
             _components[c]._covariance /= composResp[c];
-            if (_components[c]._covariance.determinant() < EpsilonDetCovariance)
-            {
-                _components[c]._covariance.setIdentity();
-                _components[c]._covariance *= EpsilonCovariance;
-            }
+            regularizeCovariance(_components[c]._covariance.data());
 
             _components[c]._weight = composResp[c] / _sampleData._nbData;
         }
 
         //Compute log-likelihood
-        ProbaUtils::evalGaussianPDF(evals, _sampleData, _components);
-        double newLogLH = logLikelihood(evals, nbComponents);
+        ProbaUtils::evalGaussianPDF(probas, norms, _sampleData, _components);
+        double newLogLH = logLikelihood(norms, nbComponents);
         logLHDiff = newLogLH - logLH;
         logLH = newLogLH;
 
@@ -341,20 +324,13 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
 }
 
 template<unsigned int N>
-double GaussianMixtureModel<N>::logLikelihood(const std::vector<double>& evals, int nbComponents) const
+double GaussianMixtureModel<N>::logLikelihood(const std::vector<double>& norms, int nbComponents) const
 {
     const int histogramSize = _sampleData._histogram.size();
 
     double logLH = 0;
     for (int b = 0, e = 0; b < histogramSize; b++)
-    {
-        double binEval = 0;
-        for (int c = 0; c < nbComponents; c++, e++)
-        {
-            binEval += evals[e];
-        }
-        logLH += log(binEval) * (double)_sampleData._histogram[b]._count;
-    }
+        logLH += log(norms[b]) * (double)_sampleData._histogram[b]._count;
 
     return logLH;
 }
