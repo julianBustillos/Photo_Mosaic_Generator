@@ -54,28 +54,38 @@ void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMa
 {
     const int nbComponents = _sourceGmm.size();
     const int histogramSize = _sourceSample._histogram.size();
+    const int wstarSize = _wstar.size();
 
-    for (int i = 0; i < _wstar.size(); i++)
+    std::vector<MathUtils::VectorNd<3>> meanT(wstarSize);
+    std::vector<MathUtils::MatrixNd<3>> sigmaBlending(wstarSize);
+
+    for (int w = 0; w < wstarSize; w++)
     {
-        double wstar_kl = _wstar[i]._value;
-        double k = _wstar[i]._k;
-        double l = _wstar[i]._l;
-        const MathUtils::VectorNd<3> meanT = (1. - t) * _sourceGmm[k]._mean + t * _targetGmm[l]._mean;
+        double k = _wstar[w]._k;
+        double l = _wstar[w]._l;
         const MathUtils::MatrixNd<3>& sigma0 = _sourceGmm[k]._covariance;
         const MathUtils::MatrixNd<3>& sigma1 = _targetGmm[l]._covariance;
-
         const MathUtils::MatrixNd<3> sigma1Sqrt = MathUtils::sqrt<3>(sigma1);
         const MathUtils::MatrixNd<3> C = sigma1Sqrt * MathUtils::sqrt<3>(MathUtils::inv<3>(sigma1Sqrt * sigma0 * sigma1Sqrt)) * sigma1Sqrt;
         const MathUtils::MatrixNd<3> Cinterp = (1 - t) * MathUtils::MatrixNd<3>::Identity() + t * C;
         const MathUtils::MatrixNd<3> sigmaT = Cinterp * sigma0 * Cinterp;
-        const MathUtils::MatrixNd<3> sigmaBlending = MathUtils::inv<3>(sigma0) * MathUtils::sqrt<3>(sigma0 * sigmaT);
 
-        for (int h = 0, p = k; h < histogramSize; h++, p += nbComponents)
-            colorMap[h] += wstar_kl / _sourceGmm[k]._weight * _histCompProbas[p] * (meanT + sigmaBlending.transpose() * (_sourceSample._histogram[h]._value - _sourceGmm[k]._mean));
+        meanT[w] = (1. - t) * _sourceGmm[k]._mean + t * _targetGmm[l]._mean;
+        sigmaBlending[w] = (MathUtils::inv<3>(sigma0) * MathUtils::sqrt<3>(sigma0 * sigmaT)).transpose();
     }
 
     for (int h = 0; h < histogramSize; h++)
+    {
+        for (int w = 0; w < wstarSize; w++)
+        {
+            double wstar_kl = _wstar[w]._value;
+            double k = _wstar[w]._k;
+
+            colorMap[h] += wstar_kl / _sourceGmm[k]._weight * _histCompProbas[h * nbComponents + k] * (meanT[w] + sigmaBlending[w] * (_sourceSample._histogram[h]._value - _sourceGmm[k]._mean));
+        }
+
         colorMap[h] = colorMap[h].cwiseMax(0).cwiseMin(255); //clipping
+    }
 
     /*uchar optimalColor = _colorMapping[channel][color];
     double corrBlending = std::min(blending * W1DistTarget / _w1Distance, 1.);
