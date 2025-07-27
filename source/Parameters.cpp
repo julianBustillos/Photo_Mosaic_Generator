@@ -177,7 +177,7 @@ void Parameters::check()
             }
         }
         if (_grid.value().size() == 1)
-            _grid.value().push_back(_grid.value()[0]);
+            _grid.value().emplace_back(_grid.value()[0]);
     }
 
     if (_scale.has_value() && _resolution.has_value())
@@ -258,8 +258,8 @@ void Parameters::check()
             }
             else
             {
-                _blending.value().push_back(0);
-                _blending.value().push_back(1);
+                _blending.value().emplace_back(0);
+                _blending.value().emplace_back(1);
             }
         }
     }
