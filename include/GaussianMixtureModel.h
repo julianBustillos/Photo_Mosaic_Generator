@@ -257,7 +257,7 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
     std::vector<double> resps(nbComponents * histogramSize); //Responsabilities
     std::vector<double> composResp(nbComponents);
     int iteration = 0;
-    ProbaUtils::evalGaussianPDF(probas, norms, _sampleData, _components);
+    ProbaUtils::evalGaussianPDF(probas, norms, _sampleData._histogram, _components, true);
     double logLH = logLikelihood(norms, nbComponents);
     double logLHDiff = MathUtils::DoubleMax; //Log-likelihood iteration difference
     MathUtils::VectorNd<N> meanValDiff;
@@ -312,7 +312,7 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
         }
 
         //Compute log-likelihood
-        ProbaUtils::evalGaussianPDF(probas, norms, _sampleData, _components);
+        ProbaUtils::evalGaussianPDF(probas, norms, _sampleData._histogram, _components, true);
         double newLogLH = logLikelihood(norms, nbComponents);
         logLHDiff = newLogLH - logLH;
         logLH = newLogLH;

@@ -12,6 +12,13 @@ class ColorEnhancer
 private:
     static constexpr int FilterRadius = 4;
     static constexpr double FilterEpsilon = (0.01 * 255) * (0.01 * 255);
+    static constexpr double CoverageMinDensity = 1e-12;
+    static constexpr double CoverageMinRatio = 0.1;
+    static constexpr double GSSTolerance = 1e-5;
+    static std::vector<ProbaUtils::Bin<3>> ColorSpace;
+
+public:
+    static void initializeColorSpace(double valueMin, double valueMax, int nbElements, int nbDivisions);
 
 public:
     ColorEnhancer(const ProbaUtils::SampleData<3>& sourceSample, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm);
@@ -21,6 +28,7 @@ public:
     void apply(cv::Mat& enhancedImage, double blending) const;
 
 private:
+    double goldenSectionSearch(double coverage) const;
     void computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double t) const;
 
 private:
@@ -29,4 +37,6 @@ private:
     const ProbaUtils::GMMNDComponents<3>& _targetGmm;
     std::vector<double> _histCompProbas;
     ProbaUtils::W2Minimizers _wstar;
+    double _sourceCoverage;
+    double _targetCoverage;
 };

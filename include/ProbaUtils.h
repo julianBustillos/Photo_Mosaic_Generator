@@ -5,6 +5,7 @@
 #include "unsupported/Eigen/MatrixFunctions"
 #include "network_simplex_simple.h"
 #include <numbers>
+#include <vector>
 
 
 namespace ProbaUtils
@@ -48,13 +49,19 @@ namespace ProbaUtils
     void computeSampleData(SampleData<N>& sampleData, const double* data, int nbData);
 
     template <unsigned int N>
-    void evalGaussianPDF(std::vector<double>& probas, std::vector<double>& norms, const SampleData<N>& sampleData, const GMMNDComponents<N>& gmm);
+    void evalGaussianPDF(std::vector<double>& densities, std::vector<double>& norms, const std::vector<Bin<N>>& histogram, const GMMNDComponents<N>& gmm, bool normalizeDensities);
 
     template <unsigned int N>
     double computeGW2(const GaussianComponent<N>& gaussian0, const GaussianComponent<N>& gaussian1); //Wasserstein-2 distance between 2 Nd gaussians.
 
     template <unsigned int N>
     double computeGmmW2(W2Minimizers& wstar, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1); //Wasserstein-2 distance and coefficients between 2 Nd gmms.
+
+    template <unsigned int N>
+    void computeGmmInterp(GMMNDComponents<N>& gmmt, double t, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1, const W2Minimizers& wstar); //Gaussian interpolation between two Nd gmms.
+
+    template <unsigned int N>
+    double computeHistCoverage(const GMMNDComponents<N>&gmm, const std::vector<Bin<N>>& histogram, double minDensity);
 };
 
 
@@ -99,9 +106,9 @@ void ProbaUtils::computeSampleData(SampleData<N>& sampleData, const double* data
 }
 
 template <unsigned int N>
-void ProbaUtils::evalGaussianPDF(std::vector<double>& probas, std::vector<double>& norms, const SampleData<N>& sampleData, const GMMNDComponents<N>& gmm)
+void ProbaUtils::evalGaussianPDF(std::vector<double>& densities, std::vector<double>& norms, const std::vector<Bin<N>>& histogram, const GMMNDComponents<N>& gmm, bool normalizeDensities)
 {
-    const int histogramSize = sampleData._histogram.size();
+    const int histogramSize = histogram.size();
     const int nbComponents = gmm.size();
     std::vector<MathUtils::MatrixNd<N>> halfCovInv(nbComponents);
     std::vector<double> constLog(nbComponents);
@@ -118,7 +125,7 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& probas, std::vector<double
         int zeroCount = 0;
         for (int c = 0; c < nbComponents; c++, e++)
         {
-            valMeanDiff = sampleData._histogram[b]._value - gmm[c]._mean;
+            valMeanDiff = histogram[b]._value - gmm[c]._mean;
             double value = constLog[c];
             for (int i = 0, k = 0; i < N; i++, k+= i)
             {
@@ -127,27 +134,30 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& probas, std::vector<double
                 for (int j = i + 1; j < N; j++, k++)
                     value -= 2. * halfCovInv[c].data()[k] * valMeanDiff.data()[i] * valMeanDiff.data()[j];
             }
-            probas[e] = exp(value);
-            if (probas[e] < MathUtils::DoubleEpsilon)
+            densities[e] = exp(value);
+            if (densities[e] < MathUtils::DoubleEpsilon)
             {
-                probas[e] = 0;
+                densities[e] = 0;
                 zeroCount++;
             }
-            norms[b] += probas[e];
+            norms[b] += densities[e];
         }
 
         if (zeroCount == nbComponents)
         {
             e -= nbComponents;
             for (int c = 0; c < nbComponents; c++, e++)
-                probas[e] = MathUtils::DoubleEpsilon;
+                densities[e] = MathUtils::DoubleEpsilon;
             norms[b] = nbComponents * MathUtils::DoubleEpsilon;
         }
     }
 
-    for (int b = 0, e = 0; b < histogramSize; b++)
-        for (int c = 0; c < nbComponents; c++, e++)
-            probas[e] /= norms[b];
+    if (normalizeDensities)
+    {
+        for (int b = 0, e = 0; b < histogramSize; b++)
+            for (int c = 0; c < nbComponents; c++, e++)
+                densities[e] /= norms[b];
+    }
 }
 
 template<unsigned int N>
@@ -197,5 +207,52 @@ double ProbaUtils::computeGmmW2(W2Minimizers& wstar, const GMMNDComponents<N>& g
     }
 
     return distance;
+}
+
+template<unsigned int N>
+void ProbaUtils::computeGmmInterp(GMMNDComponents<N>& gmmt, double t, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1, const W2Minimizers& wstar)
+{
+    const int nbComponents = wstar.size();
+    gmmt.resize(nbComponents);
+
+    std::vector<MathUtils::VectorNd<3>> meanT(nbComponents);
+
+    for (int c = 0; c < nbComponents; c++)
+    {
+        double k = wstar[c]._k;
+        double l = wstar[c]._l;
+
+        gmmt[c]._mean = (1. - t) * gmm0[k]._mean + t * gmm1[l]._mean;
+        const MathUtils::MatrixNd<3>& sigma0 = gmm0[k]._covariance;
+        const MathUtils::MatrixNd<3>& sigma1 = gmm1[l]._covariance;
+        const MathUtils::MatrixNd<3> sigma1Sqrt = MathUtils::sqrt<3>(sigma1);
+        const MathUtils::MatrixNd<3> C = sigma1Sqrt * MathUtils::sqrt<3>(MathUtils::inv<3>(sigma1Sqrt * sigma0 * sigma1Sqrt)) * sigma1Sqrt;
+        const MathUtils::MatrixNd<3> Cinterp = (1 - t) * MathUtils::MatrixNd<3>::Identity() + t * C;
+        gmmt[c]._covariance = Cinterp * sigma0 * Cinterp;
+        gmmt[c]._weight = wstar[c]._value;
+    }
+}
+
+template<unsigned int N>
+double ProbaUtils::computeHistCoverage(const GMMNDComponents<N>& gmm, const std::vector<Bin<N>>& histogram, double minDensity)
+{
+    int histogramSize = histogram.size();
+    int nbComponents = gmm.size();
+    std::vector<double> densities(nbComponents * histogramSize);
+    std::vector<double> norms(histogramSize);
+    ProbaUtils::evalGaussianPDF(densities, norms, histogram, gmm, false);
+
+    int countValidDensities = 0;
+    for (int b = 0, e = 0; b < histogramSize; b++)
+    {
+        double binDensity = 0;
+        for (int c = 0; c < nbComponents; c++, e++)
+            binDensity += densities[e];
+
+        if (binDensity > minDensity)
+            countValidDensities += histogram[b]._count;
+    }
+
+    return (double)countValidDensities / (double)histogramSize;
 }
 
