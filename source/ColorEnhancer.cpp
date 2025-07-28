@@ -54,7 +54,7 @@ ColorEnhancer::~ColorEnhancer()
 {
 }
 
-void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending) const
+void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending)
 {
     double t = 0.;
     if (blending > 0)
@@ -92,12 +92,11 @@ void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending) const
         enhancedImage.data[k] = ColorUtils::clip<double>(img[k] + filtered[k], 0, 255);
 }
 
-double ColorEnhancer::goldenSectionSearch(double coverage) const
+double ColorEnhancer::goldenSectionSearch(double coverage)
 {
     static const double invPhi = 1. / std::numbers::phi;
 
-    double tmin = 0, tmax = 1, t0 = -1, t1 = -1, ft0 = -1, ft1 = -1;
-    ProbaUtils::GMMNDComponents<3> gmm0, gmm1;
+    double tmin = 0, tmax = 1, t0 = -1, t1 = -1, dist0 = -1, dist1 = -1;
     bool compute0 = true, compute1 = true;
 
     double h = tmax - tmin;
@@ -108,22 +107,20 @@ double ColorEnhancer::goldenSectionSearch(double coverage) const
         if (compute0)
         {
             t0 = tmax - h;
-            ProbaUtils::computeGmmInterp(gmm0, t0, _sourceGmm, _targetGmm, _wstar);
-            ft0 = abs(ProbaUtils::computeHistCoverage(gmm0, ColorSpace, CoverageMinDensity) - coverage);
+            dist0 = computeCoverageDist(t0, coverage);
         }
 
         if (compute1)
         {
             t1 = tmin + h;
-            ProbaUtils::computeGmmInterp(gmm1, t1, _sourceGmm, _targetGmm, _wstar);
-            ft1 = abs(ProbaUtils::computeHistCoverage(gmm1, ColorSpace, CoverageMinDensity) - coverage);
+            dist1 = computeCoverageDist(t1, coverage);
         }
 
-        if (ft0 < ft1)
+        if (dist0 < dist1)
         {
             tmax = t1;
             t1 = t0;
-            ft1 = ft0;
+            dist1 = dist0;
             compute0 = true;
             compute1 = false;
         }
@@ -131,13 +128,31 @@ double ColorEnhancer::goldenSectionSearch(double coverage) const
         {
             tmin = t0;
             t0 = t1;
-            ft0 = ft1;
+            dist0 = dist1;
             compute0 = false;
             compute1 = true;
         }
     }
 
     return (tmin + tmax) * 0.5;
+}
+
+double ColorEnhancer::computeCoverageDist(double t, double coverage)
+{
+    double coveraget = 0;
+
+    auto it = _coverageCacheMap.find(t);
+    if (it == _coverageCacheMap.end())
+    {
+        ProbaUtils::GMMNDComponents<3> gmmt;
+        ProbaUtils::computeGmmInterp(gmmt, t, _sourceGmm, _targetGmm, _wstar);
+        coveraget = ProbaUtils::computeHistCoverage(gmmt, ColorSpace, CoverageMinDensity);
+        _coverageCacheMap.insert(std::make_pair(t, coveraget));
+    }
+    else
+        coveraget = it->second;
+
+    return abs(coverage - coveraget);
 }
 
 void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double t) const

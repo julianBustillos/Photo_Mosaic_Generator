@@ -72,7 +72,7 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
     for (int s = 0; s < nbSteps; s++)
         mosaics.emplace_back(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
 
-    ColorEnhancer::initializeColorSpace(0, 255, 256, 32);
+    ColorEnhancer::initializeColorSpace(0, 255, 256, 16);
 
     #pragma omp parallel for
     for (int mosaicId = 0; mosaicId < gridSize; mosaicId++)

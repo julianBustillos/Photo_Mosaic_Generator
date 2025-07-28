@@ -5,6 +5,7 @@
 #include "ProbaUtils.h"
 #include "GaussianMixtureModel.h"
 #include <tuple>
+#include <unordered_map>
 
 
 class ColorEnhancer
@@ -25,10 +26,11 @@ public:
     ~ColorEnhancer();
 
 public:
-    void apply(cv::Mat& enhancedImage, double blending) const;
+    void apply(cv::Mat& enhancedImage, double blending);
 
 private:
-    double goldenSectionSearch(double coverage) const;
+    double computeCoverageDist(double t, double coverage);
+    double goldenSectionSearch(double coverage);
     void computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double t) const;
 
 private:
@@ -39,4 +41,5 @@ private:
     ProbaUtils::W2Minimizers _wstar;
     double _sourceCoverage;
     double _targetCoverage;
+    std::unordered_map<double, double> _coverageCacheMap;
 };
