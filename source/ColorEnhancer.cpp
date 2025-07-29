@@ -169,7 +169,7 @@ void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMa
     {
         double k = _wstar[w]._k;
         const MathUtils::MatrixNd<3>& sigma0 = _sourceGmm[k]._covariance;
-        const MathUtils::MatrixNd<3>& sigmaT = gmmt[k]._covariance;
+        const MathUtils::MatrixNd<3>& sigmaT = gmmt[w]._covariance;
         transferMap[w] = (MathUtils::inv<3>(sigma0) * MathUtils::sqrt<3>(sigma0 * sigmaT)).transpose();
     }
 

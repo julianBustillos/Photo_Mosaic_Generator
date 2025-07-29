@@ -122,7 +122,6 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& densities, std::vector<dou
     for (int b = 0, e = 0; b < histogramSize; b++)
     {
         norms[b] = 0;
-        int zeroCount = 0;
         for (int c = 0; c < nbComponents; c++, e++)
         {
             valMeanDiff = histogram[b]._value - gmm[c]._mean;
@@ -138,18 +137,12 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& densities, std::vector<dou
             if (densities[e] < MathUtils::DoubleEpsilon)
             {
                 densities[e] = 0;
-                zeroCount++;
             }
             norms[b] += densities[e];
         }
 
-        if (zeroCount == nbComponents)
-        {
-            e -= nbComponents;
-            for (int c = 0; c < nbComponents; c++, e++)
-                densities[e] = MathUtils::DoubleEpsilon;
-            norms[b] = nbComponents * MathUtils::DoubleEpsilon;
-        }
+        if (norms[b] == 0)
+            norms[b] = MathUtils::DoubleEpsilon;
     }
 
     if (normalizeDensities)
