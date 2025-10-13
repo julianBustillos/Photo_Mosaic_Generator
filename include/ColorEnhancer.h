@@ -39,7 +39,6 @@ private:
     const ProbaUtils::GMMNDComponents<3>& _targetGmm;
     std::vector<double> _histCompProbas;
     ProbaUtils::W2Minimizers _wstar;
-    double _sourceCoverage;
-    double _targetCoverage;
+    double _blendingScale;
     std::unordered_map<double, double> _coverageCacheMap;
 };

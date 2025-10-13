@@ -17,6 +17,20 @@ namespace MathUtils
     using MatrixNd = Eigen::Matrix<double, N, N>;
 
     template <unsigned int N>
+    double det(const MatrixNd<N>& M)
+    {
+        Eigen::JacobiSVD<MatrixNd<N>> svdM(M, Eigen::ComputeFullV | Eigen::ComputeFullU);
+
+        VectorNd<3> sValues = svdM.singularValues();
+        double determinant = 1.;
+        for (int i = 0; i < N; i++)
+            if (abs(sValues(i)) > DoubleEpsilon)
+                determinant *= sValues(i);
+
+        return determinant;
+    }
+
+    template <unsigned int N>
     MatrixNd<N> inv(const MatrixNd<N>& M)
     {
         Eigen::JacobiSVD<MatrixNd<N>> svdM(M, Eigen::ComputeFullV | Eigen::ComputeFullU);

@@ -37,7 +37,7 @@ void ColorEnhancer::initializeColorSpace(double valueMin, double valueMax, int n
 }
 
 ColorEnhancer::ColorEnhancer(const ProbaUtils::SampleData<3>& sourceSample, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm) :
-    _sourceSample(sourceSample), _sourceGmm(sourceGmm), _targetGmm(targetGmm)
+    _sourceSample(sourceSample), _sourceGmm(sourceGmm), _targetGmm(targetGmm), _blendingScale(1.)
 {
     const int histogramSize = _sourceSample._histogram.size();
     _histCompProbas.resize(_sourceGmm.size() * histogramSize);
@@ -46,8 +46,12 @@ ColorEnhancer::ColorEnhancer(const ProbaUtils::SampleData<3>& sourceSample, cons
 
     double distance = ProbaUtils::computeGmmW2<3>(_wstar, _sourceGmm, _targetGmm);
 
-    _sourceCoverage = ProbaUtils::computeHistCoverage(sourceGmm, ColorSpace, CoverageMinDensity);
-    _targetCoverage = ProbaUtils::computeHistCoverage(targetGmm, ColorSpace, CoverageMinDensity);
+    double sourceCoverage = ProbaUtils::computeHistCoverage(sourceGmm, ColorSpace, CoverageMinDensity);
+    double targetCoverage = ProbaUtils::computeHistCoverage(targetGmm, ColorSpace, CoverageMinDensity);
+    
+    double minCoverage = CoverageMinRatio * sourceCoverage;
+    if (targetCoverage < minCoverage)
+        _blendingScale = goldenSectionSearch(minCoverage);
 }
 
 ColorEnhancer::~ColorEnhancer()
@@ -56,18 +60,8 @@ ColorEnhancer::~ColorEnhancer()
 
 void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending)
 {
-    double t = 0.;
-    if (blending > 0)
-    {
-        double blendingCoverage = (1 - blending) * _sourceCoverage + blending * CoverageMinRatio * _sourceCoverage;
-        if (blendingCoverage < _targetCoverage)
-            t = 1.;
-        else
-            t = goldenSectionSearch(blendingCoverage);
-    }
-
     std::vector<MathUtils::VectorNd<3>> colorMap(_sourceSample._histogram.size(), MathUtils::VectorNd<3>::Zero());
-    computeColorMap(colorMap, t);
+    computeColorMap(colorMap, blending * _blendingScale);
 
     //Compute color enhanced color image
     const int nbPixels = enhancedImage.rows * enhancedImage.cols;

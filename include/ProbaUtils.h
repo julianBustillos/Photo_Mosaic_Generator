@@ -115,7 +115,7 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& densities, std::vector<dou
     for (int c = 0; c < nbComponents; c++)
     {
         halfCovInv[c] = 0.5 * MathUtils::inv<3>(gmm[c]._covariance);
-        constLog[c] = -0.5 * N * log(2. * std::numbers::pi) - 0.5 * log(gmm[c]._covariance.determinant()) + log(gmm[c]._weight);
+        constLog[c] = -0.5 * N * log(2. * std::numbers::pi) - 0.5 * log(MathUtils::det<3>(gmm[c]._covariance)) + log(gmm[c]._weight);
     }
 
     MathUtils::VectorNd<N> valMeanDiff;
