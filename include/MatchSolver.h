@@ -9,8 +9,8 @@
 class MatchSolver
 {
 private:
-    static constexpr int RedundancyDist = 4;
-    static constexpr int RedundancyNbTiles = (RedundancyDist * 2 + 1) * (RedundancyDist * 2 + 1);
+    static constexpr int RedundancyRadius = 5;
+    static constexpr int MaskSize = 2 * RedundancyRadius - 1;
 
 public:
     MatchSolver(std::tuple<int, int> grid);
@@ -45,7 +45,7 @@ private:
     };
 
 private:
-    void computeRedundancyBox(int i, int j, cv::Rect& box) const;
+    void computeMaskLimits(int i, int j, int& maskStart, int& maskStep, int& iMaskSize, int& jMaskSize, int& gridStart, int& gridStep) const;
     void findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const Tiles& tiles) const;
     void reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates) const;
     void findSolution(std::vector<std::vector<MatchCandidate>>& candidates);
@@ -53,6 +53,8 @@ private:
 private:
     const int _gridWidth;
     const int _gridHeight;
+    std::vector<bool> _redundancyMask;
+    int _redundancyMaskNbTiles;
     std::vector<int> _uniqueIds;
     std::vector<int> _matchingIds;
     double _matchingCost;

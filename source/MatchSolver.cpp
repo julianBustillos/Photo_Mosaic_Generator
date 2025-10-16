@@ -12,6 +12,23 @@
 MatchSolver::MatchSolver(std::tuple<int, int> grid) :
     _gridWidth(std::get<0>(grid)), _gridHeight(std::get<1>(grid)), _matchingCost(-1)
 {
+    _redundancyMask.resize(MaskSize * MaskSize);
+    _redundancyMaskNbTiles = 0;
+
+    const double maxSqDist = (double)(RedundancyRadius - 0.5) * (double)(RedundancyRadius - 0.5);
+    const double center = (double)(RedundancyRadius - 1);
+    for (int y = 0, m = 0; y < MaskSize; y++)
+    {
+        double yDiff = (double)y - center;
+        for (int x = 0; x < MaskSize; x++, m++)
+        {
+            double xDiff = (double)x - center;
+            double sqDist = xDiff * xDiff + yDiff * yDiff;
+            _redundancyMask[m] = (0 < sqDist && sqDist <= maxSqDist);
+            if (_redundancyMask[m])
+                _redundancyMaskNbTiles++;
+        }
+    }
 }
 
 MatchSolver::~MatchSolver()
@@ -20,7 +37,7 @@ MatchSolver::~MatchSolver()
 
 int MatchSolver::getRequiredNbTiles()
 {
-    return RedundancyNbTiles;
+    return _redundancyMaskNbTiles;
 }
 
 void MatchSolver::solve(const Tiles& tiles)
@@ -31,7 +48,7 @@ void MatchSolver::solve(const Tiles& tiles)
     std::vector<std::vector<MatchCandidate>> candidates(mosaicSize);
 
     findCandidateTiles(candidates, tiles);
-    reduceCandidateTiles(candidates);
+    //reduceCandidateTiles(candidates);
     findSolution(candidates);
     Log::Logger::get().log(Log::TRACE) << "Best tiles found.";
 }
@@ -46,12 +63,21 @@ int MatchSolver::getMatchingId(int mosaicId) const
     return _matchingIds[mosaicId];
 }
 
-void MatchSolver::computeRedundancyBox(int i, int j, cv::Rect& box) const
+void MatchSolver::computeMaskLimits(int i, int j, int& maskStart, int& maskStep, int& iMaskSize, int& jMaskSize, int& gridStart, int& gridStep) const
 {
-    box.y = std::max(i - RedundancyDist, 0);
-    box.height = std::min(i + RedundancyDist, _gridHeight - 1) - box.y + 1;
-    box.x = std::max(j - RedundancyDist, 0);
-    box.width = std::min(j + RedundancyDist, _gridWidth - 1) - box.x + 1;
+    int miMin = std::max(RedundancyRadius - 1 - i, 0);
+    int miMax = std::min(RedundancyRadius - 1 + _gridHeight - 1 - i, MaskSize - 1);
+    iMaskSize = miMax - miMin + 1;
+
+    int mjMin = std::max(RedundancyRadius - 1 - j, 0);
+    int mjMax = std::min(RedundancyRadius - 1 + _gridWidth - 1 - j, MaskSize - 1);
+    jMaskSize = mjMax - mjMin + 1;
+
+    maskStart = miMin * MaskSize + mjMin;
+    maskStep = mjMin;
+
+    gridStart = (i - RedundancyRadius + 1 + miMin) * _gridWidth + (j - RedundancyRadius + 1 + mjMin);
+    gridStep = _gridWidth - jMaskSize;
 }
 
 void MatchSolver::findCandidateTiles(std::vector<std::vector<MatchCandidate>>& candidates, const Tiles& tiles) const
@@ -70,7 +96,7 @@ void MatchSolver::findCandidateTiles(std::vector<std::vector<MatchCandidate>>& c
             }
 
             std::sort(candidates[m].begin(), candidates[m].end());
-            candidates[m].resize(RedundancyNbTiles);
+            candidates[m].resize(_redundancyMaskNbTiles);
         }
     }
 }
@@ -103,17 +129,16 @@ void MatchSolver::reduceCandidateTiles(std::vector<std::vector<MatchCandidate>>&
                 if (candidates[m].size() < 2)
                     continue;
 
-                computeRedundancyBox(i, j, box);
+                int maskStart, maskStep, iMaskSize, jMaskSize, gridStart, gridStep;
+                computeMaskLimits(i, j, maskStart, maskStep, iMaskSize, jMaskSize, gridStart, gridStep);
                 for (int t = 0; t < candidates[m].size() - 1; t++)
                 {
                     bool redundancy = false;
-                    int currId = box.y * _gridWidth + box.x;
-                    const int step = _gridWidth - box.width;
-                    for (int iBox = 0; iBox < box.height && !redundancy; iBox++, currId += step)
+                    for (int iMask = 0, currMask = maskStart, currId = gridStart; iMask < iMaskSize && !redundancy; iMask++, currMask += maskStep, currId += gridStep)
                     {
-                        for (int jBox = 0; jBox < box.width && !redundancy; jBox++, currId++)
+                        for (int jMask = 0; jMask < jMaskSize && !redundancy; jMask++, currMask++, currId++)
                         {
-                            if (std::binary_search(sortedId[currId].begin(), sortedId[currId].end(), candidates[m][t]._id))
+                            if (_redundancyMask[currMask] && std::binary_search(sortedId[currId].begin(), sortedId[currId].end(), candidates[m][t]._id))
                                 redundancy = true;
                         }
                     }
@@ -164,15 +189,14 @@ void MatchSolver::findSolution(std::vector<std::vector<MatchCandidate>>& candida
         if (_matchingIds[candidateId] >= 0)
             continue;
 
-        computeRedundancyBox(sortedCandidates[k]._i, sortedCandidates[k]._j, box);
+        int maskStart, maskStep, iMaskSize, jMaskSize, gridStart, gridStep;
+        computeMaskLimits(sortedCandidates[k]._i, sortedCandidates[k]._j, maskStart, maskStep, iMaskSize, jMaskSize, gridStart, gridStep);
         bool redundancy = false;
-        int currId = box.y * _gridWidth + box.x;
-        const int step = _gridWidth - box.width;
-        for (int i = 0; i < box.height && !redundancy; i++, currId += step)
+        for (int iMask = 0, currMask = maskStart, currId = gridStart; iMask < iMaskSize && !redundancy; iMask++, currMask += maskStep, currId += gridStep)
         {
-            for (int j = 0; j < box.width && !redundancy; j++, currId++)
+            for (int jMask = 0; jMask < jMaskSize && !redundancy; jMask++, currMask++, currId++)
             {
-                if (_matchingIds[currId] == sortedCandidates[k]._id)
+                if (_redundancyMask[currMask] && _matchingIds[currId] == sortedCandidates[k]._id)
                     redundancy = true;
             }
         }
