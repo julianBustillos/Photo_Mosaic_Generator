@@ -66,66 +66,86 @@ void FaceDetectionROI::find(const cv::Mat& image, cv::Rect& box, bool rowDirSear
 void FaceDetectionROI::getDetectionROI(const cv::Size& imageSize, const cv::Mat& faces, cv::Rect& box, double scaleInv, bool rowDirSearch) const
 {
     double minConfidence = (faces.at<float>(0, 14) >= HighFaceConfidence) ? HighFaceConfidence : LowFaceConfidence; // If there is no face detected with high confidence, try other detected faces !
-    cv::Point min(imageSize.width, imageSize.height);
-    cv::Point max(0, 0);
 
-    //Compute smallest ROI containing all the detected faces
+    //Find all face boxes according to confidence
+    std::vector<cv::Rect> faceBoxes;
     for (int i = 0; i < faces.rows; i++)
     {
         if (faces.at<float>(i, 14) < minConfidence)
-        {
             break;
-        }
 
         int x = (int)(faces.at<float>(i, 0) * scaleInv);
         int y = (int)(faces.at<float>(i, 1) * scaleInv);
         int w = (int)(faces.at<float>(i, 2) * scaleInv);
         int h = (int)(faces.at<float>(i, 3) * scaleInv);
-
-        if (x < min.x)
-        {
-            min.x = x;
-        }
-        if (x + w > max.x)
-        {
-            max.x = x + w;
-        }
-        
-        if (y < min.y)
-        {
-            min.y = y;
-        }
-        if (y + h > max.y)
-        {
-            max.y = y + h;
-        }
+        faceBoxes.emplace_back(x, y, w, h);
     }
 
-    //Center ROI in cropped image
-    if (rowDirSearch)
+    //Sort face boxes according to image center proximity
+    std::sort(faceBoxes.begin(), faceBoxes.end(), [&](const cv::Rect& lhs, const cv::Rect& rhs)
+              {
+                  double imageCenter, leftFaceCenter, rightFaceCenter;
+                  if (rowDirSearch)
+                  {
+                      imageCenter = (double)imageSize.height * 0.5;
+                      leftFaceCenter = (double)lhs.y + (double)lhs.height * 0.5;
+                      rightFaceCenter = (double)rhs.y + (double)rhs.height * 0.5;
+                  }
+                  else
+                  {
+                      imageCenter = (double)imageSize.width * 0.5;
+                      leftFaceCenter = (double)lhs.x + (double)lhs.width * 0.5;
+                      rightFaceCenter = (double)rhs.x + (double)rhs.width * 0.5;
+                  }
+
+                  return abs(imageCenter - leftFaceCenter) < abs(imageCenter - rightFaceCenter);
+              });
+
+    //Find ROI with optimal number of faces
+    for (int nbFaces = faceBoxes.size(); nbFaces > 0; nbFaces--)
     {
-        box.x = 0;
-        box.y = (max.y + min.y - box.height) / 2;
-        if (box.y < 0)
+        //Compute smallest ROI containing all the detected faces
+        cv::Point min(imageSize.width, imageSize.height);
+        cv::Point max(0, 0);
+        for (int i = 0; i < nbFaces; i++)
         {
-            box.y = 0;
+            if (faceBoxes[i].x < min.x)
+                min.x = faceBoxes[i].x;
+            if (faceBoxes[i].x + faceBoxes[i].width > max.x)
+                max.x = faceBoxes[i].x + faceBoxes[i].width;
+
+            if (faceBoxes[i].y < min.y)
+                min.y = faceBoxes[i].y;
+            if (faceBoxes[i].y + faceBoxes[i].height > max.y)
+                max.y = faceBoxes[i].y + faceBoxes[i].height;
         }
-        else if (box.y + box.height > imageSize.height)
+
+        //Center ROI in cropped image
+        if (rowDirSearch)
         {
-            box.y = imageSize.height - box.height;
+            if (faceBoxes.size() == 1 || max.y - min.y <= box.height * (1. + FaceBoxTolerance))
+            {
+                box.x = 0;
+                box.y = (max.y + min.y - box.height) / 2;
+                if (box.y < 0)
+                    box.y = 0;
+                else if (box.y + box.height > imageSize.height)
+                    box.y = imageSize.height - box.height;
+                break;
+            }
         }
-    }
-    else
-    {
-        box.x = (max.x + min.x - box.width) / 2;
-        box.y = 0;
-        if (box.x < 0)
+        else
         {
-            box.x = 0;
-        }
-        else if (box.x + box.width > imageSize.width)
-        {
-            box.x = imageSize.width - box.width;
+            if (faceBoxes.size() == 1 || max.x - min.x <= box.width * (1. + FaceBoxTolerance))
+            {
+                box.x = (max.x + min.x - box.width) / 2;
+                box.y = 0;
+                if (box.x < 0)
+                    box.x = 0;
+                else if (box.x + box.width > imageSize.width)
+                    box.x = imageSize.width - box.width;
+                break;
+            }
         }
     }
 }
@@ -134,13 +154,9 @@ void FaceDetectionROI::getDefaultROI(const cv::Size& imageSize, cv::Rect& box, b
 {
     box.x = (int)(floor((imageSize.width - box.width) / 2.));
     if (rowDirSearch)
-    {
         box.y = (int)(floor((imageSize.height - box.height) / 2.));
-    }
     else
-    {
         box.y = (int)(floor((imageSize.height - box.height) / 3.));
-    }
 }
 
 void FaceDetectionROI::dumpDetection(std::string path, const cv::Mat& image, const cv::Mat& faces, double scaleInv, bool confidence) const
@@ -157,9 +173,7 @@ void FaceDetectionROI::dumpDetection(std::string path, const cv::Mat& image, con
         cv::Rect rect(x, y, w, h);
         cv::rectangle(imageCopy, rect, red, 3);
         if (confidence)
-        {
             cv::putText(imageCopy, cv::format("%.4f", conf), cv::Point(x, y - 5), cv::FONT_HERSHEY_DUPLEX, 1.3, red);
-        }
     }
 
     cv::imwrite(path, imageCopy);

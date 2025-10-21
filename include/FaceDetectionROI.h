@@ -11,6 +11,7 @@ private:
     static constexpr double MinCroppedRatio = 0.9;
     static constexpr double HighFaceConfidence = 0.8;
     static constexpr double LowFaceConfidence = 0.5;
+    static constexpr double FaceBoxTolerance = 0.15;
 
 public:
     FaceDetectionROI();
