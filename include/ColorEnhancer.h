@@ -16,7 +16,7 @@ private:
     static constexpr double CoverageMinDensity = 1e-12;
     static constexpr double CoverageMinRatio = 0.1;
     static constexpr double GSSTolerance = 1e-5;
-    static std::vector<ProbaUtils::Bin<3>> ColorSpace;
+    static std::vector<MathUtils::VectorNd<3>> ColorSpaceGrid;
 
 public:
     static void initializeColorSpace(double valueMin, double valueMax, int nbElements, int nbDivisions);
@@ -40,5 +40,4 @@ private:
     std::vector<double> _histCompProbas;
     ProbaUtils::W2Minimizers _wstar;
     double _blendingScale;
-    std::unordered_map<double, double> _coverageCacheMap;
 };

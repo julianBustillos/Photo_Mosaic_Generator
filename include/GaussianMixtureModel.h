@@ -108,7 +108,7 @@ ProbaUtils::GMMNDComponents<N> GaussianMixtureModel<N>::getComponents()
 template<unsigned int N>
 bool GaussianMixtureModel<N>::checkValidity(int nbComponents)
 {
-    return nbComponents > 0 && _sampleData._histogram.size() >= nbComponents && _nbInit > 0;
+    return nbComponents > 0 && _sampleData._histogram._values.size() == _sampleData._histogram._counts.size() && _sampleData._histogram._values.size() >= nbComponents && _nbInit > 0;
 }
 
 template<unsigned int N>
@@ -121,17 +121,17 @@ inline void GaussianMixtureModel<N>::regularizeCovariance(double* covarianceData
 template<unsigned int N>
 void GaussianMixtureModel<N>::runKmeansPlusPlus(int nbComponents)
 {
-    const int histogramSize = _sampleData._histogram.size();
+    const int nbValues = _sampleData._histogram._values.size();
 
     //Use kmeans++ as initializer for GMM
     std::random_device rd;
     std::unique_ptr<std::mt19937> gen = _defaultSeed ? std::make_unique<std::mt19937>() : std::make_unique<std::mt19937>(rd());
-    std::uniform_int_distribution<> uniformDistr(0, histogramSize - 1);
+    std::uniform_int_distribution<> uniformDistr(0, nbValues - 1);
 
     double bestInertia = MathUtils::DoubleMax;
     std::vector<ClusterData> bestClusters(nbComponents);
-    std::vector<int> bestAssignedCluster(histogramSize, -1);
-    std::vector<int> intervals(2 * histogramSize);
+    std::vector<int> bestAssignedCluster(nbValues, -1);
+    std::vector<int> intervals(2 * nbValues);
     std::vector<double> weights(intervals.size() - 1, 0);
     MathUtils::VectorNd<N> meanValDiff;
 
@@ -140,10 +140,10 @@ void GaussianMixtureModel<N>::runKmeansPlusPlus(int nbComponents)
         ProbaUtils::GMMNDComponents<N> components(nbComponents);
 
         //Choose initial clusters (means)
-        components[0]._mean = _sampleData._histogram[uniformDistr(*gen.get())]._value;
+        components[0]._mean = _sampleData._histogram._values[uniformDistr(*gen.get())];
 
         std::fill(weights.begin(), weights.end(), 0);
-        for (int b = 0; b < histogramSize; b++)
+        for (int b = 0; b < nbValues; b++)
         {
             intervals[2 * b] = b;
             intervals[2 * b + 1] = b + 1;
@@ -152,9 +152,9 @@ void GaussianMixtureModel<N>::runKmeansPlusPlus(int nbComponents)
 
         for (int c = 1; c < nbComponents; c++)
         {
-            for (int b = 0; b < histogramSize; b++)
+            for (int b = 0; b < nbValues; b++)
             {
-                MathUtils::VectorNd<N> meanValDiff = components[c - 1]._mean - _sampleData._histogram[b]._value;
+                MathUtils::VectorNd<N> meanValDiff = components[c - 1]._mean - _sampleData._histogram._values[b];
                 int sqDistance = 0;
                 for (int i = 0; i < N; i++)
                     sqDistance += meanValDiff.data()[i] * meanValDiff.data()[i];
@@ -163,12 +163,12 @@ void GaussianMixtureModel<N>::runKmeansPlusPlus(int nbComponents)
             }
 
             std::piecewise_constant_distribution<> pieceConstDistr(intervals.begin(), intervals.end(), weights.begin());
-            components[c]._mean = _sampleData._histogram[pieceConstDistr(*gen.get())]._value;
+            components[c]._mean = _sampleData._histogram._values[pieceConstDistr(*gen.get())];
         }
 
         //Iteration step
         std::vector<ClusterData> clusters(nbComponents);
-        std::vector<int> assignedCluster(histogramSize, -1);
+        std::vector<int> assignedCluster(nbValues, -1);
         double inertia = MathUtils::DoubleMax;
         double sqDistanceMax = MathUtils::DoubleMax;
         int iteration = 0;
@@ -183,12 +183,12 @@ void GaussianMixtureModel<N>::runKmeansPlusPlus(int nbComponents)
 
             //Assign each point to closest cluster centroid
             inertia = 0;
-            for (int b = 0; b < histogramSize; b++)
+            for (int b = 0; b < nbValues; b++)
             {
                 double sqDistanceMin = MathUtils::DoubleMax;
                 for (int c = 0; c < nbComponents; c++)
                 {
-                    meanValDiff = components[c]._mean - _sampleData._histogram[b]._value;
+                    meanValDiff = components[c]._mean - _sampleData._histogram._values[b];
                     int sqDistance = 0;
                     for (int i = 0; i < N; i++)
                         sqDistance += meanValDiff.data()[i] * meanValDiff.data()[i];
@@ -198,8 +198,8 @@ void GaussianMixtureModel<N>::runKmeansPlusPlus(int nbComponents)
                         sqDistanceMin = sqDistance;
                     }
                 }
-                clusters[assignedCluster[b]]._sum += _sampleData._histogram[b]._value * (double)_sampleData._histogram[b]._count;
-                clusters[assignedCluster[b]]._count += _sampleData._histogram[b]._count;
+                clusters[assignedCluster[b]]._sum += _sampleData._histogram._values[b] * (double)_sampleData._histogram._counts[b];
+                clusters[assignedCluster[b]]._count += _sampleData._histogram._counts[b];
                 inertia += sqDistanceMin;
             }
 
@@ -232,11 +232,11 @@ void GaussianMixtureModel<N>::runKmeansPlusPlus(int nbComponents)
     }
 
     //Initialize variances and weights
-    for (int b = 0; b < histogramSize; b++)
+    for (int b = 0; b < nbValues; b++)
     {
         const int cluster = bestAssignedCluster[b];
-        meanValDiff = _sampleData._histogram[b]._value - _components[cluster]._mean;
-        _components[cluster]._covariance += meanValDiff * meanValDiff.transpose() * (double)_sampleData._histogram[b]._count;
+        meanValDiff = _sampleData._histogram._values[b] - _components[cluster]._mean;
+        _components[cluster]._covariance += meanValDiff * meanValDiff.transpose() * (double)_sampleData._histogram._counts[b];
     }
     for (int c = 0; c < nbComponents; c++)
     {
@@ -250,14 +250,14 @@ void GaussianMixtureModel<N>::runKmeansPlusPlus(int nbComponents)
 template<unsigned int N>
 double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
 {
-    const int histogramSize = _sampleData._histogram.size();
+    const int nbValues = _sampleData._histogram._values.size();
 
-    std::vector<double> probas(nbComponents * histogramSize); //Gaussian PDF probabilities
-    std::vector<double> norms(histogramSize); //Gaussian PDF density norms
-    std::vector<double> resps(nbComponents * histogramSize); //Responsabilities
+    std::vector<double> probas(nbComponents * nbValues); //Gaussian PDF probabilities
+    std::vector<double> norms(nbValues); //Gaussian PDF density norms
+    std::vector<double> resps(nbComponents * nbValues); //Responsabilities
     std::vector<double> composResp(nbComponents);
     int iteration = 0;
-    ProbaUtils::evalGaussianPDF(probas, norms, _sampleData._histogram, _components, true);
+    ProbaUtils::evalGaussianPDF(probas, norms, _sampleData._histogram._values, _components, true);
     double logLH = logLikelihood(norms, nbComponents);
     double logLHDiff = MathUtils::DoubleMax; //Log-likelihood iteration difference
     MathUtils::VectorNd<N> meanValDiff;
@@ -265,9 +265,9 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
     while (logLHDiff > _convergenceTol && iteration < _nbIter)
     {
         //Expectation step
-        for (int b = 0, r = 0; b < histogramSize; b++)
+        for (int b = 0, r = 0; b < nbValues; b++)
             for (int c = 0; c < nbComponents; c++, r++)
-                resps[r] = probas[r] * (double)_sampleData._histogram[b]._count;
+                resps[r] = probas[r] * (double)_sampleData._histogram._counts[b];
 
         //Maximization step
         for (int c = 0; c < nbComponents; c++)
@@ -277,12 +277,12 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
             composResp[c] = 0;
         }
 
-        for (int b = 0, r = 0; b < histogramSize; b++)
+        for (int b = 0, r = 0; b < nbValues; b++)
         {
             for (int c = 0; c < nbComponents; c++, r++)
             {
                 composResp[c] += resps[r];
-                _components[c]._mean += resps[r] * _sampleData._histogram[b]._value;
+                _components[c]._mean += resps[r] * _sampleData._histogram._values[b];
             }
         }
 
@@ -291,11 +291,11 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
             _components[c]._mean /= composResp[c];
         }
 
-        for (int b = 0, r = 0; b < histogramSize; b++)
+        for (int b = 0, r = 0; b < nbValues; b++)
         {
             for (int c = 0; c < nbComponents; c++, r++)
             {
-                meanValDiff = _sampleData._histogram[b]._value - _components[c]._mean;
+                meanValDiff = _sampleData._histogram._values[b] - _components[c]._mean;
                 for (int i = 0; i < N; i++)
                     for (int j = 0; j < N; j++)
                         _components[c]._covariance(i, j) += resps[r] * meanValDiff.data()[i] * meanValDiff.data()[j];
@@ -312,7 +312,7 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
         }
 
         //Compute log-likelihood
-        ProbaUtils::evalGaussianPDF(probas, norms, _sampleData._histogram, _components, true);
+        ProbaUtils::evalGaussianPDF(probas, norms, _sampleData._histogram._values, _components, true);
         double newLogLH = logLikelihood(norms, nbComponents);
         logLHDiff = newLogLH - logLH;
         logLH = newLogLH;
@@ -326,11 +326,11 @@ double GaussianMixtureModel<N>::runExpectationMaximization(int nbComponents)
 template<unsigned int N>
 double GaussianMixtureModel<N>::logLikelihood(const std::vector<double>& norms, int nbComponents) const
 {
-    const int histogramSize = _sampleData._histogram.size();
+    const int nbValues = _sampleData._histogram._counts.size();
 
     double logLH = 0;
-    for (int b = 0, e = 0; b < histogramSize; b++)
-        logLH += log(norms[b]) * (double)_sampleData._histogram[b]._count;
+    for (int b = 0, e = 0; b < nbValues; b++)
+        logLH += log(norms[b]) * (double)_sampleData._histogram._counts[b];
 
     return logLH;
 }

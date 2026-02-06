@@ -7,30 +7,29 @@
 #include <numbers>
 
 
-std::vector<ProbaUtils::Bin<3>> ColorEnhancer::ColorSpace;
+std::vector<MathUtils::VectorNd<3>> ColorEnhancer::ColorSpaceGrid;
 
 void ColorEnhancer::initializeColorSpace(double valueMin, double valueMax, int nbElements, int nbDivisions)
 {
-    ColorSpace.clear();
-    ColorSpace.reserve(nbDivisions * nbDivisions * nbDivisions);
+    ColorSpaceGrid.clear();
+    ColorSpaceGrid.reserve(nbDivisions * nbDivisions * nbDivisions);
 
     double divSize = (double)nbElements / (double)nbDivisions;
     double firstPos = (divSize - 1.) * 0.5;
     double valueRange = valueMax - valueMin;
     double valueScale = valueRange / ((double)nbElements - 1.);
 
-    ProbaUtils::Bin<3> currBin;
-    currBin._count = 1;
+    MathUtils::VectorNd<3> currValue;
     for (int i = 0; i < nbDivisions; i++)
     {
-        currBin._value[0] = valueMin + (firstPos + i * divSize) * valueScale;
+        currValue[0] = valueMin + (firstPos + i * divSize) * valueScale;
         for (int j = 0; j < nbDivisions; j++)
         {
-            currBin._value[1] = valueMin + (firstPos + j * divSize) * valueScale;
+            currValue[1] = valueMin + (firstPos + j * divSize) * valueScale;
             for (int k = 0; k < nbDivisions; k++)
             {
-                currBin._value[2] = valueMin + (firstPos + k * divSize) * valueScale;
-                ColorSpace.emplace_back(currBin);
+                currValue[2] = valueMin + (firstPos + k * divSize) * valueScale;
+                ColorSpaceGrid.emplace_back(currValue);
             }
         }
     }
@@ -39,15 +38,15 @@ void ColorEnhancer::initializeColorSpace(double valueMin, double valueMax, int n
 ColorEnhancer::ColorEnhancer(const ProbaUtils::SampleData<3>& sourceSample, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm) :
     _sourceSample(sourceSample), _sourceGmm(sourceGmm), _targetGmm(targetGmm), _blendingScale(1.)
 {
-    const int histogramSize = _sourceSample._histogram.size();
-    _histCompProbas.resize(_sourceGmm.size() * histogramSize);
-    std::vector<double> histProbaNorms(histogramSize);
-    ProbaUtils::evalGaussianPDF(_histCompProbas, histProbaNorms, sourceSample._histogram, sourceGmm, true);
+    const int nbValues = _sourceSample._histogram._values.size();
+    _histCompProbas.resize(_sourceGmm.size() * nbValues);
+    std::vector<double> histProbaNorms(nbValues);
+    ProbaUtils::evalGaussianPDF(_histCompProbas, histProbaNorms, sourceSample._histogram._values, sourceGmm, true);
 
     double distance = ProbaUtils::computeGmmW2<3>(_wstar, _sourceGmm, _targetGmm);
 
-    double sourceCoverage = ProbaUtils::computeHistCoverage(sourceGmm, ColorSpace, CoverageMinDensity);
-    double targetCoverage = ProbaUtils::computeHistCoverage(targetGmm, ColorSpace, CoverageMinDensity);
+    double sourceCoverage = ProbaUtils::computeColorSpaceCoverage(sourceGmm, ColorSpaceGrid, CoverageMinDensity);
+    double targetCoverage = ProbaUtils::computeColorSpaceCoverage(targetGmm, ColorSpaceGrid, CoverageMinDensity);
     
     double minCoverage = CoverageMinRatio * sourceCoverage;
     if (targetCoverage < minCoverage)
@@ -60,7 +59,7 @@ ColorEnhancer::~ColorEnhancer()
 
 void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending)
 {
-    std::vector<MathUtils::VectorNd<3>> colorMap(_sourceSample._histogram.size(), MathUtils::VectorNd<3>::Zero());
+    std::vector<MathUtils::VectorNd<3>> colorMap(_sourceSample._histogram._values.size(), MathUtils::VectorNd<3>::Zero());
     computeColorMap(colorMap, blending * _blendingScale);
 
     //Compute color enhanced color image
@@ -70,7 +69,7 @@ void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending)
     for (int p = 0, k = 0; p < nbPixels; p++)
     {
         int mapId = _sourceSample._mapId[p];
-        const MathUtils::VectorNd<3>& pixel = _sourceSample._histogram[mapId]._value;
+        const MathUtils::VectorNd<3>& pixel = _sourceSample._histogram._values[mapId];
         for (int c = 0; c < 3; c++, k++)
         {
             img[k] = pixel(c);
@@ -133,18 +132,9 @@ double ColorEnhancer::goldenSectionSearch(double coverage)
 
 double ColorEnhancer::computeCoverageDist(double t, double coverage)
 {
-    double coveraget = 0;
-
-    auto it = _coverageCacheMap.find(t);
-    if (it == _coverageCacheMap.end())
-    {
-        ProbaUtils::GMMNDComponents<3> gmmt;
-        ProbaUtils::computeGmmInterp(gmmt, t, _sourceGmm, _targetGmm, _wstar);
-        coveraget = ProbaUtils::computeHistCoverage(gmmt, ColorSpace, CoverageMinDensity);
-        _coverageCacheMap.insert(std::make_pair(t, coveraget));
-    }
-    else
-        coveraget = it->second;
+    ProbaUtils::GMMNDComponents<3> gmmt;
+    ProbaUtils::computeGmmInterp(gmmt, t, _sourceGmm, _targetGmm, _wstar);
+    double coveraget = ProbaUtils::computeColorSpaceCoverage(gmmt, ColorSpaceGrid, CoverageMinDensity);
 
     return abs(coverage - coveraget);
 }
@@ -152,7 +142,7 @@ double ColorEnhancer::computeCoverageDist(double t, double coverage)
 void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double t) const
 {
     const int nbComponents = _sourceGmm.size();
-    const int histogramSize = _sourceSample._histogram.size();
+    const int nbValues = _sourceSample._histogram._values.size();
     const int wstarSize = _wstar.size();
 
     ProbaUtils::GMMNDComponents<3> gmmt;
@@ -167,12 +157,12 @@ void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMa
         transferMap[w] = (MathUtils::inv<3>(sigma0) * MathUtils::sqrt<3>(sigma0 * sigmaT)).transpose();
     }
 
-    for (int h = 0; h < histogramSize; h++)
+    for (int h = 0; h < nbValues; h++)
     {
         for (int w = 0; w < wstarSize; w++)
         {
             double k = _wstar[w]._k;
-            colorMap[h] += gmmt[w]._weight / _sourceGmm[k]._weight * _histCompProbas[h * nbComponents + k] * (gmmt[w]._mean + transferMap[w] * (_sourceSample._histogram[h]._value - _sourceGmm[k]._mean));
+            colorMap[h] += gmmt[w]._weight / _sourceGmm[k]._weight * _histCompProbas[h * nbComponents + k] * (gmmt[w]._mean + transferMap[w] * (_sourceSample._histogram._values[h] - _sourceGmm[k]._mean));
         }
 
         colorMap[h] = colorMap[h].cwiseMax(0).cwiseMin(255); //clipping
