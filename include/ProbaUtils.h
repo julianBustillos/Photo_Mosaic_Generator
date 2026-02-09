@@ -58,13 +58,10 @@ namespace ProbaUtils
     double computeGmmW2(W2Minimizers& wstar, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1); //Wasserstein-2 distance and coefficients between 2 Nd gmms.
 
     template <unsigned int N>
-    void computeGmmInterp(GMMNDComponents<N>& gmmt, double t, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1, const W2Minimizers& wstar); //Gaussian interpolation between two Nd gmms.
+    void computeGmmInterpolation(GMMNDComponents<N>& gmmt, double t, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1, const W2Minimizers& wstar); //Gaussian interpolation between two Nd gmms.
 
     template <unsigned int N>
     double computeColorSpaceCoverage(const GMMNDComponents<N>&gmm, const std::vector<MathUtils::VectorNd<N>>& colorSpaceGrid, double minDensity);
-
-    template <unsigned int N>
-    double computeHistCoverage(const GMMNDComponents<N>& gmm, int depthMin, int depthMax);
 };
 
 
@@ -206,7 +203,7 @@ double ProbaUtils::computeGmmW2(W2Minimizers& wstar, const GMMNDComponents<N>& g
 }
 
 template<unsigned int N>
-void ProbaUtils::computeGmmInterp(GMMNDComponents<N>& gmmt, double t, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1, const W2Minimizers& wstar)
+void ProbaUtils::computeGmmInterpolation(GMMNDComponents<N>& gmmt, double t, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1, const W2Minimizers& wstar)
 {
     const int nbComponents = wstar.size();
     gmmt.resize(nbComponents);
@@ -250,18 +247,4 @@ double ProbaUtils::computeColorSpaceCoverage(const GMMNDComponents<N>& gmm, cons
     }
 
     return (double)countValidDensities / (double)nbValues;
-}
-
-template <unsigned int N>
-double ProbaUtils::computeHistCoverage(const GMMNDComponents<N>& gmm, int depthMin, int depthMax)
-{
-    if (depthMin < 1 || depthMin > depthMax)
-        return -1;
-
-    //Create initial array
-    //std::vector<Bin<N>>;
-
-    //Recursive density computation
-
-    //Find volume coveraging ???? density percentage
 }
