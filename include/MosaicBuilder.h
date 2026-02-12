@@ -18,6 +18,7 @@ private:
     static constexpr int MaxIter = 1000;
     static constexpr double ConvergenceTol = 1e-3;
     static constexpr double CovarianceReg = 1e-6;
+    static constexpr int ColorEnhancerNbSamples = 1e6;
     static constexpr int MosaicParam[2] = {cv::IMWRITE_JPEG_QUALITY, 100};
 
 public:
@@ -32,7 +33,7 @@ private:
 private:
     struct TileData
     {
-        ProbaUtils::SampleData<3> _sampleData;
+        ProbaUtils::Histogram<3> _histogram;
         ProbaUtils::GMMNDComponents<3> _gmm;
     };
 

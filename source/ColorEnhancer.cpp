@@ -7,46 +7,18 @@
 #include <numbers>
 
 
-std::vector<MathUtils::VectorNd<3>> ColorEnhancer::ColorSpaceGrid;
-
-void ColorEnhancer::initializeColorSpace(double valueMin, double valueMax, int nbElements, int nbDivisions)
+ColorEnhancer::ColorEnhancer(const ProbaUtils::Histogram<3>& sourceHistogram, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm, const ProbaUtils::GMMSampleDatas<3>& datas) :
+    _sourceHistogram(sourceHistogram), _sourceGmm(sourceGmm), _targetGmm(targetGmm), _datas(datas), _blendingScale(1.)
 {
-    ColorSpaceGrid.clear();
-    ColorSpaceGrid.reserve(nbDivisions * nbDivisions * nbDivisions);
-
-    double divSize = (double)nbElements / (double)nbDivisions;
-    double firstPos = (divSize - 1.) * 0.5;
-    double valueRange = valueMax - valueMin;
-    double valueScale = valueRange / ((double)nbElements - 1.);
-
-    MathUtils::VectorNd<3> currValue;
-    for (int i = 0; i < nbDivisions; i++)
-    {
-        currValue[0] = valueMin + (firstPos + i * divSize) * valueScale;
-        for (int j = 0; j < nbDivisions; j++)
-        {
-            currValue[1] = valueMin + (firstPos + j * divSize) * valueScale;
-            for (int k = 0; k < nbDivisions; k++)
-            {
-                currValue[2] = valueMin + (firstPos + k * divSize) * valueScale;
-                ColorSpaceGrid.emplace_back(currValue);
-            }
-        }
-    }
-}
-
-ColorEnhancer::ColorEnhancer(const ProbaUtils::SampleData<3>& sourceSample, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm) :
-    _sourceSample(sourceSample), _sourceGmm(sourceGmm), _targetGmm(targetGmm), _blendingScale(1.)
-{
-    const int nbValues = _sourceSample._histogram._values.size();
+    const int nbValues = _sourceHistogram._values.size();
     _histCompProbas.resize(_sourceGmm.size() * nbValues);
     std::vector<double> histProbaNorms(nbValues);
-    ProbaUtils::evalGaussianPDF(_histCompProbas, histProbaNorms, sourceSample._histogram._values, sourceGmm, true);
+    ProbaUtils::evalGaussianPDF(_histCompProbas, histProbaNorms, _sourceHistogram._values, sourceGmm, true);
 
     double distance = ProbaUtils::computeGmmW2<3>(_wstar, _sourceGmm, _targetGmm);
 
-    double sourceCoverage = ProbaUtils::computeColorSpaceCoverage(sourceGmm, ColorSpaceGrid, CoverageMinDensity);
-    double targetCoverage = ProbaUtils::computeColorSpaceCoverage(targetGmm, ColorSpaceGrid, CoverageMinDensity);
+    double sourceCoverage = computeGMMSamplingCoverage(sourceGmm, CoverageGridDivisions, CoverageConfidence);
+    double targetCoverage = computeGMMSamplingCoverage(targetGmm, CoverageGridDivisions, CoverageConfidence);
     
     double minCoverage = CoverageMinRatio * sourceCoverage;
     if (targetCoverage < minCoverage)
@@ -59,7 +31,7 @@ ColorEnhancer::~ColorEnhancer()
 
 void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending)
 {
-    std::vector<MathUtils::VectorNd<3>> colorMap(_sourceSample._histogram._values.size(), MathUtils::VectorNd<3>::Zero());
+    std::vector<MathUtils::VectorNd<3>> colorMap(_sourceHistogram._values.size(), MathUtils::VectorNd<3>::Zero());
     computeColorMap(colorMap, blending * _blendingScale);
 
     //Compute color enhanced color image
@@ -68,8 +40,8 @@ void ColorEnhancer::apply(cv::Mat& enhancedImage, double blending)
     std::vector<double> enhancedDiff(nbPixels * 3);
     for (int p = 0, k = 0; p < nbPixels; p++)
     {
-        int mapId = _sourceSample._mapId[p];
-        const MathUtils::VectorNd<3>& pixel = _sourceSample._histogram._values[mapId];
+        int mapId = _sourceHistogram._mapId[p];
+        const MathUtils::VectorNd<3>& pixel = _sourceHistogram._values[mapId];
         for (int c = 0; c < 3; c++, k++)
         {
             img[k] = pixel(c);
@@ -130,11 +102,64 @@ double ColorEnhancer::goldenSectionSearch(double coverage)
     return (tmin + tmax) * 0.5;
 }
 
+double ColorEnhancer::computeGMMSamplingCoverage(const ProbaUtils::GMMNDComponents<3>& gmm, int nbDivisions, double confidence)
+{
+    ProbaUtils::GMMSamples<3> samples;
+    ProbaUtils::computeGmmSamples(samples, gmm, _datas);
+
+    const int nbSamples = samples.size();
+    int nbValidSamples = 0;
+    const int nbBins = nbDivisions * nbDivisions * nbDivisions;
+    std::vector<int> histogram(nbBins, 0);
+    double step = 255. / nbDivisions;
+
+    for (int s = 0; s < nbSamples; s++)
+    {
+        int histIdx = 0;
+        int factor = 1;
+        for (int i = 0; i < 3; i++)
+        {
+            int gridIdx = (int)std::floor(samples[s](i, 0) / step);
+            if (gridIdx < 0 || nbDivisions <= gridIdx)
+            {
+                histIdx = -1;
+                break;
+            }
+
+            histIdx += factor * gridIdx;
+            factor *= nbDivisions;
+        }
+
+        if (histIdx >= 0)
+        {
+            histogram[histIdx] += 1;
+            nbValidSamples++;
+        }
+    }
+    std::sort(histogram.begin(), histogram.end(), std::greater<int>());
+
+    double coverage = 0;
+    int cumulatedNbSamples = 0;
+    double confidenceLimit = confidence * nbValidSamples;
+    for (int b = 0; b < nbBins; b++)
+    {
+        cumulatedNbSamples += histogram[b];
+        if (cumulatedNbSamples >= confidenceLimit)
+        {
+            double binRatio = (histogram[b] - cumulatedNbSamples + confidenceLimit) / histogram[b];
+            coverage = (b + binRatio) / nbBins;
+            break;
+        }
+    }
+
+    return coverage;
+}
+
 double ColorEnhancer::computeCoverageDist(double t, double coverage)
 {
     ProbaUtils::GMMNDComponents<3> gmmt;
-    ProbaUtils::computeGmmInterp(gmmt, t, _sourceGmm, _targetGmm, _wstar);
-    double coveraget = ProbaUtils::computeColorSpaceCoverage(gmmt, ColorSpaceGrid, CoverageMinDensity);
+    ProbaUtils::computeGmmInterpolation(gmmt, t, _sourceGmm, _targetGmm, _wstar);
+    double coveraget = computeGMMSamplingCoverage(gmmt, CoverageGridDivisions, CoverageConfidence);
 
     return abs(coverage - coveraget);
 }
@@ -142,11 +167,11 @@ double ColorEnhancer::computeCoverageDist(double t, double coverage)
 void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMap, double t) const
 {
     const int nbComponents = _sourceGmm.size();
-    const int nbValues = _sourceSample._histogram._values.size();
+    const int nbValues = _sourceHistogram._values.size();
     const int wstarSize = _wstar.size();
 
     ProbaUtils::GMMNDComponents<3> gmmt;
-    ProbaUtils::computeGmmInterp<3>(gmmt, t, _sourceGmm, _targetGmm, _wstar);
+    ProbaUtils::computeGmmInterpolation<3>(gmmt, t, _sourceGmm, _targetGmm, _wstar);
 
     std::vector<MathUtils::MatrixNd<3>> transferMap(wstarSize);
     for (int w = 0; w < wstarSize; w++)
@@ -162,7 +187,7 @@ void ColorEnhancer::computeColorMap(std::vector<MathUtils::VectorNd<3>>& colorMa
         for (int w = 0; w < wstarSize; w++)
         {
             double k = _wstar[w]._k;
-            colorMap[h] += gmmt[w]._weight / _sourceGmm[k]._weight * _histCompProbas[h * nbComponents + k] * (gmmt[w]._mean + transferMap[w] * (_sourceSample._histogram._values[h] - _sourceGmm[k]._mean));
+            colorMap[h] += gmmt[w]._weight / _sourceGmm[k]._weight * _histCompProbas[h * nbComponents + k] * (gmmt[w]._mean + transferMap[w] * (_sourceHistogram._values[h] - _sourceGmm[k]._mean));
         }
 
         colorMap[h] = colorMap[h].cwiseMax(0).cwiseMin(255); //clipping

@@ -33,9 +33,9 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
         cv::Mat photoTile = photo.getTile(mosaicId);
         photoTile.convertTo(photoTile, CV_64FC3);
 
-        ProbaUtils::SampleData<3> sampleData;
-        ProbaUtils::computeSampleData(sampleData, photoTile.ptr<double>(), photoTile.rows * photoTile.cols);
-        GaussianMixtureModel<3>::findOptimalComponents(photoTileGmm[mosaicId], sampleData, 1, MaxNbCompo, NbInit, MaxIter, ConvergenceTol, CovarianceReg, true);
+        ProbaUtils::Histogram<3> histogram;
+        ProbaUtils::computeHistogram(histogram, photoTile.ptr<double>(), photoTile.rows * photoTile.cols);
+        GaussianMixtureModel<3>::findOptimalComponents(photoTileGmm[mosaicId], histogram, 1, MaxNbCompo, NbInit, MaxIter, ConvergenceTol, CovarianceReg, true);
         Console::Out::addBarSteps(1);
     }
 
@@ -57,8 +57,8 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
             throw CustomException("Impossible to find temporary exported tile : " + tilePath, CustomException::Level::ERROR);
         tile.convertTo(tile, CV_64FC3);
 
-        ProbaUtils::computeSampleData(tileData._sampleData, tile.ptr<double>(), tile.rows * tile.cols);
-        GaussianMixtureModel<3>::findOptimalComponents(tileData._gmm, tileData._sampleData, MaxNbCompo, MaxNbCompo, NbInit, MaxIter, ConvergenceTol, CovarianceReg, true);
+        ProbaUtils::computeHistogram(tileData._histogram, tile.ptr<double>(), tile.rows * tile.cols);
+        GaussianMixtureModel<3>::findOptimalComponents(tileData._gmm, tileData._histogram, MaxNbCompo, MaxNbCompo, NbInit, MaxIter, ConvergenceTol, CovarianceReg, true);
         Console::Out::addBarSteps(1);
     }
 
@@ -72,7 +72,8 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
     for (int s = 0; s < nbSteps; s++)
         mosaics.emplace_back(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
 
-    ColorEnhancer::initializeColorSpace(0, 255, 256, 16); //TODO change how this call is done!
+    ProbaUtils::GMMSampleDatas<3> datas;
+    ProbaUtils::generateGMMSampleDatas<3>(datas, ColorEnhancerNbSamples, true);
 
     #pragma omp parallel for
     for (int mosaicId = 0; mosaicId < gridSize; mosaicId++)
@@ -82,7 +83,7 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
             throw CustomException("One or several tiles missing from match solver !", CustomException::Level::ERROR);
 
         auto& tileData = tilesData[tileId];
-        ColorEnhancer enhancer(tileData._sampleData, tileData._gmm, photoTileGmm[mosaicId]);
+        ColorEnhancer enhancer(tileData._histogram, tileData._gmm, photoTileGmm[mosaicId], datas);
 
         for (int s = 0; s < nbSteps; s++)
         {

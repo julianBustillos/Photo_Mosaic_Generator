@@ -2,10 +2,11 @@
 
 #include "MathUtils.h"
 #include <opencv2/opencv.hpp>
-#include "unsupported/Eigen/MatrixFunctions"
+#include <Eigen/Cholesky>
 #include "network_simplex_simple.h"
 #include <numbers>
 #include <vector>
+#include <random>
 
 
 namespace ProbaUtils
@@ -13,15 +14,9 @@ namespace ProbaUtils
     template <unsigned int N>
     struct Histogram
     {
+        std::vector<unsigned int> _mapId;
         std::vector<MathUtils::VectorNd<N>> _values;
         std::vector<int> _counts;
-    };
-
-    template <unsigned int N>
-    struct SampleData
-    {
-        std::vector<unsigned int> _mapId;
-        Histogram<N> _histogram;
         int _nbData;
     };
 
@@ -33,6 +28,9 @@ namespace ProbaUtils
         double _weight;
     };
 
+    template <unsigned int N>
+    using GMMNDComponents = std::vector<GaussianComponent<N>>;
+
     struct W2Coefficient
     {
         double _value;
@@ -43,10 +41,21 @@ namespace ProbaUtils
     using W2Minimizers = std::vector<W2Coefficient>;
 
     template <unsigned int N>
-    using GMMNDComponents = std::vector<GaussianComponent<N>>;
+    struct GMMSampleData
+    {
+        double _component;
+        MathUtils::VectorNd<N> _stdGaussian;
+    };
 
     template <unsigned int N>
-    void computeSampleData(SampleData<N>& sampleData, const double* data, int nbData);
+    using GMMSampleDatas = std::vector<GMMSampleData<N>>;
+
+    template <unsigned int N>
+    using GMMSamples = std::vector<MathUtils::VectorNd<N>>;
+
+
+    template <unsigned int N>
+    void computeHistogram(Histogram<N>& histogram, const double* data, int nbData);
 
     template <unsigned int N>
     void evalGaussianPDF(std::vector<double>& densities, std::vector<double>& norms, const std::vector<MathUtils::VectorNd<N>>& values, const GMMNDComponents<N>& gmm, bool normalizeDensities);
@@ -61,12 +70,15 @@ namespace ProbaUtils
     void computeGmmInterpolation(GMMNDComponents<N>& gmmt, double t, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1, const W2Minimizers& wstar); //Gaussian interpolation between two Nd gmms.
 
     template <unsigned int N>
-    double computeColorSpaceCoverage(const GMMNDComponents<N>&gmm, const std::vector<MathUtils::VectorNd<N>>& colorSpaceGrid, double minDensity);
+    void generateGMMSampleDatas(GMMSampleDatas<N>& datas, int nbSamples, bool defaultSeed);
+
+    template <unsigned int N>
+    void computeGmmSamples(GMMSamples<N>& samples, const GMMNDComponents<N>& gmm, const GMMSampleDatas<N>& datas);
 };
 
 
 template<unsigned int N>
-void ProbaUtils::computeSampleData(SampleData<N>& sampleData, const double* data, int nbData)
+void ProbaUtils::computeHistogram(Histogram<N>& histogram, const double* data, int nbData)
 {
     auto cmp = [](const MathUtils::VectorNd<N>& value0, const MathUtils::VectorNd<N>& value1)
         {
@@ -84,7 +96,7 @@ void ProbaUtils::computeSampleData(SampleData<N>& sampleData, const double* data
         int _index = -1;
     };
 
-    sampleData._mapId.reserve(nbData);
+    histogram._mapId.reserve(nbData);
     std::map<MathUtils::VectorNd<N>, BinData, decltype(cmp)> histDataMap(cmp);
     for (int i = 0; i < nbData; i++)
     {
@@ -92,17 +104,17 @@ void ProbaUtils::computeSampleData(SampleData<N>& sampleData, const double* data
         histData._count++;
         if (histData._index < 0)
             histData._index = histDataMap.size() - 1;
-        sampleData._mapId.emplace_back(histData._index);
+        histogram._mapId.emplace_back(histData._index);
     }
 
-    sampleData._histogram._values.resize(histDataMap.size());
-    sampleData._histogram._counts.resize(histDataMap.size());
+    histogram._values.resize(histDataMap.size());
+    histogram._counts.resize(histDataMap.size());
     for (auto& data : histDataMap)
     {
-        sampleData._histogram._values[data.second._index] = data.first;
-        sampleData._histogram._counts[data.second._index] = data.second._count;
+        histogram._values[data.second._index] = data.first;
+        histogram._counts[data.second._index] = data.second._count;
     }
-    sampleData._nbData = nbData;
+    histogram._nbData = nbData;
 }
 
 template <unsigned int N>
@@ -114,8 +126,8 @@ void ProbaUtils::evalGaussianPDF(std::vector<double>& densities, std::vector<dou
     std::vector<double> constLog(nbComponents);
     for (int c = 0; c < nbComponents; c++)
     {
-        halfCovInv[c] = 0.5 * MathUtils::inv<3>(gmm[c]._covariance);
-        constLog[c] = -0.5 * N * log(2. * std::numbers::pi) - 0.5 * log(MathUtils::det<3>(gmm[c]._covariance)) + log(gmm[c]._weight);
+        halfCovInv[c] = 0.5 * MathUtils::inv<N>(gmm[c]._covariance);
+        constLog[c] = -0.5 * N * log(2. * std::numbers::pi) - 0.5 * log(MathUtils::det<N>(gmm[c]._covariance)) + log(gmm[c]._weight);
     }
 
     MathUtils::VectorNd<N> valMeanDiff;
@@ -157,9 +169,9 @@ template<unsigned int N>
 double ProbaUtils::computeGW2(const GaussianComponent<N>& gaussian0, const GaussianComponent<N>& gaussian1)
 {
     MathUtils::VectorNd<N> gaussianDiff = gaussian1._mean - gaussian0._mean;
-    MathUtils::MatrixNd<N> cov0Sqrt = MathUtils::sqrt<3>(gaussian0._covariance);
+    MathUtils::MatrixNd<N> cov0Sqrt = MathUtils::sqrt<N>(gaussian0._covariance);
 
-    return gaussianDiff.dot(gaussianDiff) + (gaussian0._covariance + gaussian1._covariance - 2. * MathUtils::sqrt<3>(cov0Sqrt * gaussian1._covariance * cov0Sqrt)).trace();
+    return gaussianDiff.dot(gaussianDiff) + (gaussian0._covariance + gaussian1._covariance - 2. * MathUtils::sqrt<N>(cov0Sqrt * gaussian1._covariance * cov0Sqrt)).trace();
 }
 
 template<unsigned int N>
@@ -208,7 +220,7 @@ void ProbaUtils::computeGmmInterpolation(GMMNDComponents<N>& gmmt, double t, con
     const int nbComponents = wstar.size();
     gmmt.resize(nbComponents);
 
-    std::vector<MathUtils::VectorNd<3>> meanT(nbComponents);
+    std::vector<MathUtils::VectorNd<N>> meanT(nbComponents);
 
     for (int c = 0; c < nbComponents; c++)
     {
@@ -216,35 +228,64 @@ void ProbaUtils::computeGmmInterpolation(GMMNDComponents<N>& gmmt, double t, con
         double l = wstar[c]._l;
 
         gmmt[c]._mean = (1. - t) * gmm0[k]._mean + t * gmm1[l]._mean;
-        const MathUtils::MatrixNd<3>& sigma0 = gmm0[k]._covariance;
-        const MathUtils::MatrixNd<3>& sigma1 = gmm1[l]._covariance;
-        const MathUtils::MatrixNd<3> sigma1Sqrt = MathUtils::sqrt<3>(sigma1);
-        const MathUtils::MatrixNd<3> C = sigma1Sqrt * MathUtils::sqrt<3>(MathUtils::inv<3>(sigma1Sqrt * sigma0 * sigma1Sqrt)) * sigma1Sqrt;
-        const MathUtils::MatrixNd<3> Cinterp = (1 - t) * MathUtils::MatrixNd<3>::Identity() + t * C;
+        const MathUtils::MatrixNd<N>& sigma0 = gmm0[k]._covariance;
+        const MathUtils::MatrixNd<N>& sigma1 = gmm1[l]._covariance;
+        const MathUtils::MatrixNd<N> sigma1Sqrt = MathUtils::sqrt<N>(sigma1);
+        const MathUtils::MatrixNd<N> C = sigma1Sqrt * MathUtils::sqrt<N>(MathUtils::inv<N>(sigma1Sqrt * sigma0 * sigma1Sqrt)) * sigma1Sqrt;
+        const MathUtils::MatrixNd<N> Cinterp = (1 - t) * MathUtils::MatrixNd<N>::Identity() + t * C;
         gmmt[c]._covariance = Cinterp * sigma0 * Cinterp;
         gmmt[c]._weight = wstar[c]._value;
     }
 }
 
 template<unsigned int N>
-double ProbaUtils::computeColorSpaceCoverage(const GMMNDComponents<N>& gmm, const std::vector<MathUtils::VectorNd<N>>& colorSpaceGrid, double minDensity)
+void ProbaUtils::generateGMMSampleDatas(GMMSampleDatas<N>& datas, int nbSamples, bool defaultSeed)
 {
-    int nbValues = colorSpaceGrid.size();
-    int nbComponents = gmm.size();
-    std::vector<double> densities(nbComponents * nbValues);
-    std::vector<double> norms(nbValues);
-    ProbaUtils::evalGaussianPDF(densities, norms, colorSpaceGrid, gmm, false);
+    std::unique_ptr<std::mt19937> gen = defaultSeed ? std::make_unique<std::mt19937>() : std::make_unique<std::mt19937>(std::random_device{}());
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    std::normal_distribution<double> normal(0.0, 1.0);
+    datas.resize(nbSamples);
 
-    int countValidDensities = 0;
-    for (int b = 0, e = 0; b < nbValues; b++)
+    for (int s = 0; s < nbSamples; s++)
     {
-        double binDensity = 0;
-        for (int c = 0; c < nbComponents; c++, e++)
-            binDensity += densities[e];
-
-        if (binDensity > minDensity)
-            countValidDensities += 1;
+        datas[s]._component = uniform(*gen.get());
+        for (int n = 0; n < N; n++)
+            datas[s]._stdGaussian(n, 0) = normal(*gen.get());
     }
-
-    return (double)countValidDensities / (double)nbValues;
 }
+
+template<unsigned int N>
+void ProbaUtils::computeGmmSamples(GMMSamples<N>& samples, const GMMNDComponents<N>& gmm, const GMMSampleDatas<N>& datas)
+{
+    const int nbComponents = gmm.size();
+    std::vector<double> cumulatedWeights(nbComponents);
+    cumulatedWeights[0] = gmm[0]._weight;
+    for (int w = 1; w < nbComponents; w++)
+        cumulatedWeights[w] = cumulatedWeights[w - 1] + gmm[w]._weight;
+
+    const int nbSamples = datas.size();
+    int currComponent = 0;
+    bool updateComponent = true;
+    MathUtils::MatrixNd<N> currCovCholesky;
+    samples.resize(nbSamples);
+
+    for (int s = 0; s < nbSamples; s++)
+    {
+        if (datas[s]._component > cumulatedWeights[currComponent])
+        {
+            for (currComponent++; currComponent < nbComponents; currComponent++)
+                if (cumulatedWeights[currComponent] <= datas[s]._component)
+                    break;
+            updateComponent = true;
+        }
+
+        if (updateComponent)
+        {
+            currCovCholesky = gmm[currComponent]._covariance.ldlt();
+            updateComponent = false;
+        }
+
+        samples[s] = currCovCholesky * datas[s]._stdGaussian + gmm[currComponent]._mean;
+    }
+}
+
