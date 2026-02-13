@@ -19,7 +19,7 @@ private:
     static constexpr double CoverageMinRatio = 0.1;
 
 public:
-    ColorEnhancer(const ProbaUtils::Histogram<3>& sourceHistogram, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm, const ProbaUtils::GMMSampleDatas<3>& datas);
+    ColorEnhancer(const ProbaUtils::Histogram<3>& sourceHistogram, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm, const ProbaUtils::GMMSamplerDatas<3>& datas);
     ~ColorEnhancer();
 
 public:
@@ -35,7 +35,7 @@ private:
     const ProbaUtils::Histogram<3>& _sourceHistogram;
     const ProbaUtils::GMMNDComponents<3>& _sourceGmm;
     const ProbaUtils::GMMNDComponents<3>& _targetGmm;
-    const ProbaUtils::GMMSampleDatas<3>& _datas;
+    const ProbaUtils::GMMSamplerDatas<3>& _datas;
     std::vector<double> _histCompProbas;
     ProbaUtils::W2Minimizers _wstar;
     double _blendingScale;

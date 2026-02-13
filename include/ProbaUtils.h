@@ -41,14 +41,14 @@ namespace ProbaUtils
     using W2Minimizers = std::vector<W2Coefficient>;
 
     template <unsigned int N>
-    struct GMMSampleData
+    struct GMMSamplerData
     {
         double _component;
         MathUtils::VectorNd<N> _stdGaussian;
     };
 
     template <unsigned int N>
-    using GMMSampleDatas = std::vector<GMMSampleData<N>>;
+    using GMMSamplerDatas = std::vector<GMMSamplerData<N>>;
 
     template <unsigned int N>
     using GMMSamples = std::vector<MathUtils::VectorNd<N>>;
@@ -70,10 +70,10 @@ namespace ProbaUtils
     void computeGmmInterpolation(GMMNDComponents<N>& gmmt, double t, const GMMNDComponents<N>& gmm0, const GMMNDComponents<N>& gmm1, const W2Minimizers& wstar); //Gaussian interpolation between two Nd gmms.
 
     template <unsigned int N>
-    void generateGMMSampleDatas(GMMSampleDatas<N>& datas, int nbSamples, bool defaultSeed);
+    void generateGMMSamplerDatas(GMMSamplerDatas<N>& datas, int nbSamples, bool defaultSeed);
 
     template <unsigned int N>
-    void computeGmmSamples(GMMSamples<N>& samples, const GMMNDComponents<N>& gmm, const GMMSampleDatas<N>& datas);
+    void computeGmmSamples(GMMSamples<N>& samples, const GMMNDComponents<N>& gmm, const GMMSamplerDatas<N>& datas);
 };
 
 
@@ -239,7 +239,7 @@ void ProbaUtils::computeGmmInterpolation(GMMNDComponents<N>& gmmt, double t, con
 }
 
 template<unsigned int N>
-void ProbaUtils::generateGMMSampleDatas(GMMSampleDatas<N>& datas, int nbSamples, bool defaultSeed)
+void ProbaUtils::generateGMMSamplerDatas(GMMSamplerDatas<N>& datas, int nbSamples, bool defaultSeed)
 {
     std::unique_ptr<std::mt19937> gen = defaultSeed ? std::make_unique<std::mt19937>() : std::make_unique<std::mt19937>(std::random_device{}());
     std::uniform_real_distribution<double> uniform(0.0, 1.0);
@@ -255,7 +255,7 @@ void ProbaUtils::generateGMMSampleDatas(GMMSampleDatas<N>& datas, int nbSamples,
 }
 
 template<unsigned int N>
-void ProbaUtils::computeGmmSamples(GMMSamples<N>& samples, const GMMNDComponents<N>& gmm, const GMMSampleDatas<N>& datas)
+void ProbaUtils::computeGmmSamples(GMMSamples<N>& samples, const GMMNDComponents<N>& gmm, const GMMSamplerDatas<N>& datas)
 {
     const int nbComponents = gmm.size();
     std::vector<double> cumulatedWeights(nbComponents);

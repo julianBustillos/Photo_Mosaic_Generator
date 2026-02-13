@@ -7,7 +7,7 @@
 #include <numbers>
 
 
-ColorEnhancer::ColorEnhancer(const ProbaUtils::Histogram<3>& sourceHistogram, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm, const ProbaUtils::GMMSampleDatas<3>& datas) :
+ColorEnhancer::ColorEnhancer(const ProbaUtils::Histogram<3>& sourceHistogram, const ProbaUtils::GMMNDComponents<3>& sourceGmm, const ProbaUtils::GMMNDComponents<3>& targetGmm, const ProbaUtils::GMMSamplerDatas<3>& datas) :
     _sourceHistogram(sourceHistogram), _sourceGmm(sourceGmm), _targetGmm(targetGmm), _datas(datas), _blendingScale(1.)
 {
     const int nbValues = _sourceHistogram._values.size();
