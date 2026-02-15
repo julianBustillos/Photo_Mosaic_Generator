@@ -72,8 +72,8 @@ void MosaicBuilder::build(const Photo& photo, const Tiles& tiles, const MatchSol
     for (int s = 0; s < nbSteps; s++)
         mosaics.emplace_back(mosaicSize, CV_8UC3, cv::Scalar(0, 0, 0));
 
-    ProbaUtils::GMMSampleDatas<3> datas;
-    ProbaUtils::generateGMMSampleDatas<3>(datas, ColorEnhancerNbSamples, true);
+    ProbaUtils::GMMSamplerDatas<3> datas;
+    ProbaUtils::generateGMMSamplerDatas<3>(datas, ColorEnhancerNbSamples, true);
 
     #pragma omp parallel for
     for (int mosaicId = 0; mosaicId < gridSize; mosaicId++)

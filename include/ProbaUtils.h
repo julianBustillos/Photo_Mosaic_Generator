@@ -2,7 +2,6 @@
 
 #include "MathUtils.h"
 #include <opencv2/opencv.hpp>
-#include <Eigen/Cholesky>
 #include "network_simplex_simple.h"
 #include <numbers>
 #include <vector>
@@ -252,6 +251,8 @@ void ProbaUtils::generateGMMSamplerDatas(GMMSamplerDatas<N>& datas, int nbSample
         for (int n = 0; n < N; n++)
             datas[s]._stdGaussian(n, 0) = normal(*gen.get());
     }
+
+    std::sort(datas.begin(), datas.end(), [](const GMMSamplerData<N> lhs, const GMMSamplerData<N> rhs) { return lhs._component < rhs._component; });
 }
 
 template<unsigned int N>
@@ -260,7 +261,8 @@ void ProbaUtils::computeGmmSamples(GMMSamples<N>& samples, const GMMNDComponents
     const int nbComponents = gmm.size();
     std::vector<double> cumulatedWeights(nbComponents);
     cumulatedWeights[0] = gmm[0]._weight;
-    for (int w = 1; w < nbComponents; w++)
+    cumulatedWeights[nbComponents - 1] = 1.0;
+    for (int w = 1; w < nbComponents - 1; w++)
         cumulatedWeights[w] = cumulatedWeights[w - 1] + gmm[w]._weight;
 
     const int nbSamples = datas.size();
@@ -274,18 +276,18 @@ void ProbaUtils::computeGmmSamples(GMMSamples<N>& samples, const GMMNDComponents
         if (datas[s]._component > cumulatedWeights[currComponent])
         {
             for (currComponent++; currComponent < nbComponents; currComponent++)
-                if (cumulatedWeights[currComponent] <= datas[s]._component)
+                if (datas[s]._component <= cumulatedWeights[currComponent])
                     break;
             updateComponent = true;
         }
 
         if (updateComponent)
         {
-            currCovCholesky = gmm[currComponent]._covariance.ldlt();
+            currCovCholesky = MathUtils::Cholesky(gmm[currComponent]._covariance);
             updateComponent = false;
         }
 
-        samples[s] = currCovCholesky * datas[s]._stdGaussian + gmm[currComponent]._mean;
+        samples[s] = currCovCholesky.triangularView<Eigen::Lower>() * datas[s]._stdGaussian + gmm[currComponent]._mean;
     }
 }
 

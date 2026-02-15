@@ -2,6 +2,7 @@
 
 #include <limits>
 #include <Eigen/Dense>
+#include <Eigen/Cholesky>
 
 
 namespace MathUtils
@@ -53,6 +54,13 @@ namespace MathUtils
             sqrtS(i, i) = std::sqrt(sqrtS(i, i));
 
         return svdM.matrixU() * sqrtS * svdM.matrixV().transpose();
+    }
+
+    template <unsigned int N>
+    MatrixNd<N> Cholesky(const MatrixNd<N>& M)
+    {
+        Eigen::LLT<MatrixNd<N>> llt(M);
+        return llt.matrixL();
     }
 };
 
